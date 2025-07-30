@@ -224,7 +224,8 @@
       text-align: center;
     }
 
-    .qr-modal-content .qr-code canvas {
+    .qr-modal-content .qr-code canvas,
+    .qr-modal-content .qr-code img {
       max-width: 100%;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -610,6 +611,15 @@
         }
 
         const event = eventSnapshot.val();
+        if (!event.ticketTypes || !Array.isArray(event.ticketTypes)) {
+          showAlert("Event has no valid ticket types. Returning to dashboard...", false);
+          setTimeout(() => {
+            document.body.classList.add("fade-out");
+            window.location.href = "customer-dashboard.html";
+          }, 2000);
+          return;
+        }
+
         document.getElementById("event-title").textContent = event.title;
         document.getElementById("event-date").innerHTML = `<strong>Date:</strong> ${new Date(event.date).toLocaleString()}`;
         document.getElementById("event-venue").innerHTML = `<strong>Venue:</strong> ${event.venue}`;
@@ -639,8 +649,19 @@
 
       const ticketType = ticketTypeInput.value;
       const quantity = parseInt(ticketQuantityInput.value);
-      if (!ticketType || quantity < 1) {
+      if (!ticketType || quantity < 1 || isNaN(quantity)) {
         showAlert("Please select a ticket type and valid quantity.", false);
+        purchaseBtn.disabled = false;
+        return;
+      }
+
+      const user = auth.currentUser;
+      if (!user) {
+        showAlert("Authentication session expired. Please log in again.", false);
+        setTimeout(() => {
+          document.body.classList.add("fade-out");
+          window.location.href = "auth.html";
+        }, 2000);
         purchaseBtn.disabled = false;
         return;
       }
@@ -658,10 +679,21 @@
         }
 
         const event = eventSnapshot.val();
+        if (!event.ticketTypes || !Array.isArray(event.ticketTypes)) {
+          showAlert("Event has no valid ticket types.", false);
+          purchaseBtn.disabled = false;
+          return;
+        }
+
         const ticket = event.ticketTypes.find(t => t.name === ticketType);
+        if (!ticket) {
+          showAlert("Selected ticket type is invalid.", false);
+          purchaseBtn.disabled = false;
+          return;
+        }
+
         const ticketsBought = event.tickets ? Object.values(event.tickets).filter(t => t.ticketType === ticketType).length : 0;
         const ticketsLeft = ticket.quantity - ticketsBought;
-
         if (quantity > ticketsLeft) {
           showAlert(`Only ${ticketsLeft} ticket${ticketsLeft === 1 ? "" : "s"} available for ${ticketType}.`, false);
           purchaseBtn.disabled = false;
@@ -671,30 +703,42 @@
         // Placeholder for payment processing (e.g., Stripe)
         showAlert("Payment processing not implemented. Simulating purchase...", true);
 
-        const user = auth.currentUser;
         const qrCodes = [];
         for (let i = 0; i < quantity; i++) {
           const ticketRef = push(ref(db, `events/${uid}/${eventId}/tickets`));
-          const qrCodeData = JSON.stringify({ ticketId: ticketRef.key, eventId, organizerUid: uid });
-          const qrCodeCanvas = document.createElement("canvas");
-          QRCode.toCanvas(qrCodeCanvas, qrCodeData, { width: 200 }, (error) => {
-            if (error) console.error("QR Code generation error:", error);
-          });
-          const qrCodeDataUrl = qrCodeCanvas.toDataURL("image/png");
+          const ticketId = ticketRef.key;
+          const qrCodeData = JSON.stringify({ ticketId, eventId, organizerUid: uid });
 
           const ticketData = {
             userId: user.uid,
             ticketType: ticketType,
             purchaseDate: Date.now(),
-            scanStatus: "pending",
-            qrCode: qrCodeDataUrl
+            scanStatus: "pending"
           };
 
+          // Write ticket data to database first
           await set(ticketRef, ticketData);
-          const userTicketRef = ref(db, `users/${user.uid}/purchasedTickets/${ticketRef.key}`);
+          const userTicketRef = ref(db, `users/${user.uid}/purchasedTickets/${ticketId}`);
           await set(userTicketRef, ticketData);
 
-          qrCodes.push({ ticketId: ticketRef.key, qrCodeDataUrl });
+          // Generate QR code after successful write
+          const qrCodeCanvas = document.createElement("canvas");
+          await new Promise((resolve, reject) => {
+            QRCode.toCanvas(qrCodeCanvas, qrCodeData, { width: 200 }, (error) => {
+              if (error) {
+                console.error("QR Code generation error:", error);
+                reject(error);
+              } else {
+                resolve();
+              }
+            });
+          });
+
+          const qrCodeDataUrl = qrCodeCanvas.toDataURL("image/png");
+          await set(ref(db, `events/${uid}/${eventId}/tickets/${ticketId}/qrCode`), qrCodeDataUrl);
+          await set(ref(db, `users/${user.uid}/purchasedTickets/${ticketId}/qrCode`), qrCodeDataUrl);
+
+          qrCodes.push({ ticketId, qrCodeDataUrl });
         }
 
         // Display QR codes in modal
@@ -716,7 +760,7 @@
         console.error("Purchase error:", error);
         let message = "Failed to purchase tickets. Please try again.";
         if (error.code === "PERMISSION_DENIED") {
-          message = "Permission denied. Please contact support.";
+          message = "Permission denied when saving ticket data. Please contact support.";
         } else if (error.code === "unavailable") {
           message = "Database unavailable. Please check your connection.";
         }
