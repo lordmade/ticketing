@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EventSphere - Buy Tickets</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <style>
     :root {
       --twitter-blue: #1DA1F2;
@@ -180,6 +181,103 @@
       cursor: not-allowed;
     }
 
+    .qr-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .qr-modal.active {
+      display: flex;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .qr-modal-content {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 2rem;
+      max-width: 90%;
+      width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      animation: fadeInUp 0.5s ease-out;
+    }
+
+    .qr-modal-content h2 {
+      color: var(--text-dark);
+      font-weight: 700;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .qr-modal-content .qr-code {
+      margin: 1rem 0;
+      text-align: center;
+    }
+
+    .qr-modal-content .qr-code canvas {
+      max-width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .qr-modal-content .qr-code p {
+      color: var(--text-light);
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+
+    .qr-modal-content .close-btn {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 24px;
+      height: 24px;
+      background: none;
+      border: none;
+      color: var(--twitter-blue);
+      cursor: pointer;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .qr-modal-content .close-btn:hover {
+      transform: scale(1.2);
+      color: #1a91da;
+    }
+
+    .qr-modal-content .close-btn svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .qr-modal-content .dashboard-btn {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: var(--twitter-blue);
+      color: var(--white);
+      border: none;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease;
+      width: 100%;
+      text-align: center;
+    }
+
+    .qr-modal-content .dashboard-btn:hover {
+      background: #1a91da;
+      transform: scale(1.05);
+    }
+
     .custom-alert {
       display: none;
       position: fixed;
@@ -257,6 +355,11 @@
         padding: 0.6rem;
       }
 
+      .qr-modal-content {
+        width: 85%;
+        padding: 1rem;
+      }
+
       .custom-alert {
         width: 85%;
         padding: 1rem;
@@ -286,6 +389,20 @@
       </div>
     </form>
     <a href="customer-dashboard.html" class="text-[var(--twitter-blue)] text-sm hover:underline mt-4 inline-block">Back to Dashboard</a>
+  </div>
+
+  <div id="qr-modal" class="qr-modal">
+    <div class="qr-modal-content">
+      <button class="close-btn" onclick="closeQRModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      <h2>Your Tickets</h2>
+      <div id="qr-codes"></div>
+      <button class="dashboard-btn" onclick="goToDashboard()">Back to Dashboard</button>
+    </div>
   </div>
 
   <div id="custom-alert" class="custom-alert">
@@ -326,6 +443,8 @@
     const purchaseBtn = document.getElementById("purchase-btn");
     const customAlert = document.getElementById("custom-alert");
     const alertMessage = document.getElementById("alert-message");
+    const qrModal = document.getElementById("qr-modal");
+    const qrCodesContainer = document.getElementById("qr-codes");
 
     function showAlert(message, autoHide = true) {
       alertMessage.textContent = message;
@@ -337,6 +456,22 @@
 
     function hideAlert() {
       customAlert.classList.remove("active");
+    }
+
+    function showQRModal() {
+      qrModal.classList.add("active");
+    }
+
+    function closeQRModal() {
+      qrModal.classList.remove("active");
+      qrCodesContainer.innerHTML = "";
+    }
+
+    function goToDashboard() {
+      document.body.classList.add("fade-out");
+      setTimeout(() => {
+        window.location.href = "customer-dashboard.html";
+      }, 1500);
     }
 
     function renderTicketTypes(ticketTypes, tickets = {}) {
@@ -537,25 +672,46 @@
         showAlert("Payment processing not implemented. Simulating purchase...", true);
 
         const user = auth.currentUser;
+        const qrCodes = [];
         for (let i = 0; i < quantity; i++) {
           const ticketRef = push(ref(db, `events/${uid}/${eventId}/tickets`));
+          const qrCodeData = JSON.stringify({ ticketId: ticketRef.key, eventId, organizerUid: uid });
+          const qrCodeCanvas = document.createElement("canvas");
+          QRCode.toCanvas(qrCodeCanvas, qrCodeData, { width: 200 }, (error) => {
+            if (error) console.error("QR Code generation error:", error);
+          });
+          const qrCodeDataUrl = qrCodeCanvas.toDataURL("image/png");
+
           const ticketData = {
             userId: user.uid,
             ticketType: ticketType,
             purchaseDate: Date.now(),
-            scanStatus: "pending"
+            scanStatus: "pending",
+            qrCode: qrCodeDataUrl
           };
-          await set(ticketRef, ticketData);
 
+          await set(ticketRef, ticketData);
           const userTicketRef = ref(db, `users/${user.uid}/purchasedTickets/${ticketRef.key}`);
           await set(userTicketRef, ticketData);
+
+          qrCodes.push({ ticketId: ticketRef.key, qrCodeDataUrl });
         }
 
-        showAlert(`Successfully purchased ${quantity} ticket${quantity === 1 ? "" : "s"}! Redirecting to dashboard...`, true);
-        setTimeout(() => {
-          document.body.classList.add("fade-out");
-          window.location.href = "customer-dashboard.html";
-        }, 2000);
+        // Display QR codes in modal
+        qrCodesContainer.innerHTML = "";
+        qrCodes.forEach(({ ticketId, qrCodeDataUrl }) => {
+          const qrDiv = document.createElement("div");
+          qrDiv.className = "qr-code";
+          qrDiv.innerHTML = `
+            <img src="${qrCodeDataUrl}" alt="Ticket QR Code" />
+            <p>Ticket ID: ${ticketId}</p>
+          `;
+          qrCodesContainer.appendChild(qrDiv);
+        });
+
+        showQRModal();
+        showAlert(`Successfully purchased ${quantity} ticket${quantity === 1 ? "" : "s"}!`, true);
+        purchaseBtn.disabled = false;
       } catch (error) {
         console.error("Purchase error:", error);
         let message = "Failed to purchase tickets. Please try again.";
@@ -570,6 +726,8 @@
     });
 
     window.hideAlert = hideAlert;
+    window.closeQRModal = closeQRModal;
+    window.goToDashboard = goToDashboard;
   </script>
 </body>
 </html>
