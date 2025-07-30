@@ -266,9 +266,9 @@
   </div>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-auth.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
@@ -311,6 +311,7 @@
         })
         .catch((error) => {
           showAlert("Failed to log out. Please try again.", false);
+          console.error("Logout error:", error);
         });
     }
 
@@ -324,7 +325,11 @@
             const card = document.createElement("div");
             card.className = "event-card";
             const ticketInfo = event.ticketTypes
-              .map((ticket) => `${ticket.name}: $${ticket.price.toFixed(2)} (${ticket.quantity} available)`)
+              .map((ticket) => {
+                const ticketsBought = event.tickets ? Object.values(event.tickets).filter(t => t.ticketType === ticket.name).length : 0;
+                const ticketsLeft = ticket.quantity - ticketsBought;
+                return `${ticket.name}: $${ticket.price.toFixed(2)} (${ticketsLeft} left)`;
+              })
               .join("<br>");
             card.innerHTML = `
               <img src="${event.imageUrl}" alt="${event.title}" onerror="this.src='https://via.placeholder.com/300x150?text=No+Image'"/>
@@ -361,7 +366,26 @@
       try {
         const userRef = ref(db, `users/${user.uid}`);
         const snapshot = await get(userRef);
-        const role = snapshot.exists() ? snapshot.val().role : null;
+        if (!snapshot.exists()) {
+          showAlert("User profile not found. Please sign up again.", false);
+          setTimeout(() => {
+            document.body.classList.add("fade-out");
+            window.location.href = "auth.html";
+          }, 2000);
+          return;
+        }
+
+        const userData = snapshot.val();
+        const role = userData.role || null;
+        if (!role) {
+          showAlert("User role not defined. Please sign up again.", false);
+          setTimeout(() => {
+            document.body.classList.add("fade-out");
+            window.location.href = "auth.html";
+          }, 2000);
+          return;
+        }
+
         if (role !== "customer") {
           showAlert("Access restricted to customers. Redirecting...", false);
           setTimeout(() => {
@@ -378,12 +402,25 @@
             renderEvents(events);
           } catch (error) {
             showAlert("Failed to load events. Please try again.", false);
+            console.error("Events load error:", error);
           }
         }, (error) => {
           showAlert("Error connecting to database. Please check your connection.", false);
+          console.error("Database connection error:", error);
         });
       } catch (error) {
-        showAlert("Error checking user role. Please try again.", false);
+        console.error("Role check error:", error);
+        let message = "Error checking user role. Please try again.";
+        if (error.code === "PERMISSION_DENIED") {
+          message = "Permission denied accessing user data. Please contact support.";
+        } else if (error.code === "unavailable") {
+          message = "Database unavailable. Please check your connection and try again.";
+        }
+        showAlert(message, false);
+        setTimeout(() => {
+          document.body.classList.add("fade-out");
+          window.location.href = "auth.html";
+        }, 2000);
       }
     });
 
