@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EventSphere - Create Event</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://widget.cloudinary.com/v2.0/global/all.js" type="text/javascript"></script>
+  <style>
+    :root {
+      --twitter-blue: #1DA1F2;
+      --text-dark: #0F1419;
+      --text-light: #536471;
+      --border: #D8D9DB;
+      --white: #FFFFFF;
+      --background: #F5F8FA;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background: var(--white);
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.5s ease;
+    }
+
+    body.fade-out {
+      opacity: 0;
+    }
+
+    .create-event-container {
+      text-align: center;
+      position: relative;
+      z-index: 10;
+      max-width: 500px;
+      width: 90%;
+      padding: 2rem;
+    }
+
+    .create-event-form {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    .create-event-form h2 {
+      color: var(--text-dark);
+      font-weight: 700;
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+      text-align: left;
+    }
+
+    .form-group label {
+      color: var(--text-dark);
+      font-weight: 500;
+      font-size: 0.9rem;
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      color: var(--text-dark);
+      background: var(--background);
+      transition: border-color 0.2s ease;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--twitter-blue);
+    }
+
+    .ticket-type {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      background: var(--background);
+    }
+
+    .ticket-type input {
+      margin-bottom: 0.5rem;
+    }
+
+    .add-ticket-btn,
+    .upload-image-btn {
+      color: var(--twitter-blue);
+      background: none;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+
+    .add-ticket-btn:hover,
+    .upload-image-btn:hover {
+      color: #1a91da;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--twitter-blue);
+      color: var(--white);
+      border: none;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .submit-btn:hover {
+      background: #1a91da;
+      transform: scale(1.02);
+    }
+
+    .submit-btn:disabled {
+      background: #a1cdf7;
+      cursor: not-allowed;
+    }
+
+    .custom-alert {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--white);
+      padding: 1.5rem 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      color: var(--text-dark);
+      font-weight: 500;
+      text-align: center;
+      max-width: 90%;
+      width: 320px;
+      animation: fadeIn 0.3s ease-out forwards;
+      border: 1px solid var(--border);
+    }
+
+    .custom-alert.active {
+      display: block;
+    }
+
+    .custom-alert .close-btn {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 24px;
+      height: 24px;
+      background: none;
+      border: none;
+      color: var(--twitter-blue);
+      cursor: pointer;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .custom-alert .close-btn:hover {
+      transform: scale(1.2);
+      color: #1a91da;
+    }
+
+    .custom-alert .close-btn svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    @media (max-width: 640px) {
+      .create-event-container {
+        padding: 1rem;
+      }
+
+      .create-event-form h2 {
+        font-size: 1.25rem;
+      }
+
+      .form-group input,
+      .form-group textarea {
+        padding: 0.6rem;
+        font-size: 0.9rem;
+      }
+
+      .submit-btn {
+        padding: 0.6rem;
+        font-size: 0.9rem;
+      }
+
+      .custom-alert {
+        width: 85%;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="create-event-container">
+    <form id="create-event-form" class="create-event-form">
+      <h2>Create New Event</h2>
+      <div class="form-group">
+        <label for="title">Event Title</label>
+        <input type="text" id="title" name="title" required placeholder="Enter event title" />
+      </div>
+      <div class="form-group">
+        <label for="date">Date</label>
+        <input type="datetime-local" id="date" name="date" required />
+      </div>
+      <div class="form-group">
+        <label for="venue">Venue</label>
+        <input type="text" id="venue" name="venue" required placeholder="Enter venue name" />
+      </div>
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" placeholder="Describe your event"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Ticket Types</label>
+        <div id="ticket-types">
+          <div class="ticket-type">
+            <input type="text" name="ticket-name" placeholder="Ticket Name (e.g., General Admission)" required />
+            <input type="number" name="ticket-price" placeholder="Price ($)" required min="0" step="0.01" />
+            <input type="number" name="ticket-quantity" placeholder="Quantity" required min="1" />
+          </div>
+        </div>
+        <button type="button" class="add-ticket-btn" onclick="addTicketType()">+ Add Another Ticket Type</button>
+      </div>
+      <div class="form-group">
+        <label>Event Image</label>
+        <button type="button" class="upload-image-btn" onclick="openCloudinaryWidget()">Upload Image</button>
+        <input type="hidden" id="image-url" name="image-url" />
+        <p id="image-status" class="text-sm text-gray-500 mt-1"></p>
+      </div>
+      <button type="submit" class="submit-btn" disabled>Create Event</button>
+    </form>
+  </div>
+
+  <div id="custom-alert" class="custom-alert">
+    <button class="close-btn" onclick="hideAlert()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <p id="alert-message">An error occurred. Please try again.</p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-auth.js";
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
+      authDomain: "fire-b-a8878.firebaseapp.com",
+      databaseURL: "https://fire-b-a8878.firebaseio.com",
+      projectId: "fire-b-a8878",
+      storageBucket: "fire-b-a8878.firebasestorage.app",
+      messagingSenderId: "658673187627",
+      appId: "1:658673187627:web:6e4c29af661785f0afa36e",
+      measurementId: "G-V4W97VMSKL"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const createEventForm = document.getElementById("create-event-form");
+    const customAlert = document.getElementById("custom-alert");
+    const alertMessage = document.getElementById("alert-message");
+    const submitBtn = createEventForm.querySelector(".submit-btn");
+    const imageUrlInput = document.getElementById("image-url");
+    const imageStatus = document.getElementById("image-status");
+
+    function showAlert(message, autoHide = true) {
+      alertMessage.textContent = message;
+      customAlert.classList.add("active");
+      if (autoHide) {
+        setTimeout(hideAlert, 5000);
+      }
+    }
+
+    function hideAlert() {
+      customAlert.classList.remove("active");
+    }
+
+    function addTicketType() {
+      const ticketTypes = document.getElementById("ticket-types");
+      const newTicket = document.createElement("div");
+      newTicket.className = "ticket-type";
+      newTicket.innerHTML = `
+        <input type="text" name="ticket-name" placeholder="Ticket Name (e.g., General Admission)" required />
+        <input type="number" name="ticket-price" placeholder="Price ($)" required min="0" step="0.01" />
+        <input type="number" name="ticket-quantity" placeholder="Quantity" required min="1" />
+      `;
+      ticketTypes.appendChild(newTicket);
+      updateSubmitButton();
+    }
+
+    function updateSubmitButton() {
+      const hasImage = imageUrlInput.value.trim() !== "";
+      submitBtn.disabled = !hasImage;
+    }
+
+    // Initialize Cloudinary Upload Widget
+    const cloudinaryWidget = cloudinary.createUploadWidget(
+      {
+        cloudName: "YOUR_CLOUD_NAME",
+        uploadPreset: "event_upload",
+        folder: "events",
+        cropping: true,
+        multiple: false,
+        sources: ["local", "url", "camera"],
+        clientAllowedFormats: ["jpg", "png", "jpeg"],
+        maxFileSize: 5000000 // 5MB
+      },
+      (error, result) => {
+        if (!error && result && result.event === "success") {
+          imageUrlInput.value = result.info.secure_url;
+          imageStatus.textContent = "Image uploaded successfully!";
+          updateSubmitButton();
+        } else if (error) {
+          showAlert("Failed to upload image. Please try again.", false);
+        }
+      }
+    );
+
+    function openCloudinaryWidget() {
+      cloudinaryWidget.open();
+    }
+
+    // Check authentication status
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        showAlert("You must be logged in to create events.", false);
+        setTimeout(() => {
+          document.body.classList.add("fade-out");
+          window.location.href = "signup.html";
+        }, 2000);
+      }
+    });
+
+    createEventForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+
+      const user = auth.currentUser;
+      if (!user) {
+        showAlert("Please log in to create an event.", false);
+        submitBtn.disabled = false;
+        return;
+      }
+
+      const title = createEventForm.title.value.trim();
+      const date = createEventForm.date.value;
+      const venue = createEventForm.venue.value.trim();
+      const description = createEventForm.description.value.trim();
+      const imageUrl = imageUrlInput.value.trim();
+      const ticketTypes = Array.from(document.querySelectorAll(".ticket-type")).map((ticket) => ({
+        name: ticket.querySelector("[name='ticket-name']").value.trim(),
+        price: parseFloat(ticket.querySelector("[name='ticket-price']").value),
+        quantity: parseInt(ticket.querySelector("[name='ticket-quantity']").value)
+      }));
+
+      if (!imageUrl) {
+        showAlert("Please upload an event image.", false);
+        submitBtn.disabled = false;
+        return;
+      }
+
+      try {
+        // Store event data in Firebase
+        const eventData = {
+          title,
+          date,
+          venue,
+          description,
+          ticketTypes,
+          imageUrl,
+          createdBy: user.uid,
+          createdAt: Date.now()
+        };
+
+        await push(ref(db, `events/${user.uid}`), eventData);
+
+        // Show success message and redirect
+        showAlert("Event created successfully! Redirecting...", true);
+        document.body.classList.add("fade-out");
+        setTimeout(() => {
+          window.location.href = "dashboard.html";
+        }, 1500);
+      } catch (error) {
+        console.error("Error creating event:", error);
+        let message = "Failed to create event. Please try again.";
+        if (error.code === "permission-denied") {
+          message = "Permission denied. Please contact support.";
+        }
+        showAlert(message, false);
+        submitBtn.disabled = false;
+      }
+    });
+
+    window.addTicketType = addTicketType;
+    window.openCloudinaryWidget = openCloudinaryWidget;
+  </script>
+</body>
+</html>
