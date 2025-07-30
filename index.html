@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EventSphere - Splash</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --twitter-blue: #1DA1F2;
+      --text-dark: #0F1419;
+      --text-light: #536471;
+      --border: #D8D9DB;
+      --white: #FFFFFF;
+      --background: #F5F8FA;
+      --gradient-start: #E6F0FA;
+      --gradient-end: #F0F9FF;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      transition: opacity 0.5s ease;
+    }
+
+    body.fade-out {
+      opacity: 0;
+    }
+
+    .splash-container {
+      text-align: center;
+      position: relative;
+      z-index: 10;
+      max-width: 500px;
+      width: 90%;
+    }
+
+    .logo-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .logo-text {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--twitter-blue);
+      letter-spacing: -0.5px;
+      animation: fadeInScale 1s ease-out forwards;
+    }
+
+    .loader {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .dot {
+      width: 14px;
+      height: 14px;
+      background: var(--twitter-blue);
+      border-radius: 50%;
+      animation: bounce 1.4s ease-in-out infinite;
+    }
+
+    .dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+        opacity: 0.9;
+      }
+      50% {
+        transform: translateY(-10px);
+        opacity: 0.5;
+      }
+    }
+
+    @keyframes fadeInScale {
+      0% { opacity: 0; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .splash-text {
+      color: var(--text-dark);
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: 0.5px;
+      animation: fadeInUp 0.8s ease-out 0.5s forwards;
+      opacity: 0;
+    }
+
+    .custom-alert {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--white);
+      padding: 1.5rem 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      color: var(--text-dark);
+      font-weight: 500;
+      text-align: center;
+      max-width: 90%;
+      width: 320px;
+      animation: fadeIn 0.3s ease-out forwards;
+      border: 1px solid var(--border);
+    }
+
+    .custom-alert.active {
+      display: block;
+    }
+
+    .custom-alert .close-btn {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 24px;
+      height: 24px;
+      background: none;
+      border: none;
+      color: var(--twitter-blue);
+      cursor: pointer;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .custom-alert .close-btn:hover {
+      transform: scale(1.2);
+      color: #1a91da;
+    }
+
+    .custom-alert .close-btn svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .custom-alert .retry-btn {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background: var(--twitter-blue);
+      color: var(--white);
+      border: none;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .custom-alert .retry-btn:hover {
+      background: #1a91da;
+      transform: scale(1.05);
+    }
+
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    @media (max-width: 640px) {
+      .logo-text {
+        font-size: 2rem;
+      }
+
+      .loader {
+        gap: 8px;
+      }
+
+      .dot {
+        width: 12px;
+        height: 12px;
+      }
+
+      .splash-text {
+        font-size: 1rem;
+      }
+
+      .custom-alert {
+        width: 85%;
+        padding: 1rem;
+      }
+
+      .custom-alert .retry-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="splash-container">
+    <div class="logo-container">
+      <div class="logo-text">EventSphere</div>
+      <div class="loader">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+    </div>
+    <p class="splash-text">Create and Discover Events</p>
+  </div>
+
+  <div id="custom-alert" class="custom-alert">
+    <button class="close-btn" onclick="hideAlert()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <p id="alert-message">An error occurred. Please try again later.</p>
+    <button class="retry-btn" onclick="retryAuth()">Retry</button>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-auth.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
+      authDomain: "fire-b-a8878.firebaseapp.com",
+      databaseURL: "https://fire-b-a8878.firebaseio.com",
+      projectId: "fire-b-a8878",
+      storageBucket: "fire-b-a8878.firebasestorage.app",
+      messagingSenderId: "658673187627",
+      appId: "1:658673187627:web:6e4c29af661785f0afa36e",
+      measurementId: "G-V4W97VMSKL"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const customAlert = document.getElementById("custom-alert");
+    const alertMessage = document.getElementById("alert-message");
+
+    function showAlert(message, autoHide = true) {
+      alertMessage.textContent = message;
+      customAlert.classList.add("active");
+      if (autoHide) {
+        setTimeout(hideAlert, 5000);
+      }
+    }
+
+    function hideAlert() {
+      customAlert.classList.remove("active");
+    }
+
+    async function checkAuthState(retries = 3, delay = 1000) {
+      for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+          await new Promise((resolve, reject) => {
+            onAuthStateChanged(auth, async (user) => {
+              try {
+                if (user) {
+                  const userRef = ref(db, `users/${user.uid}`);
+                  const snapshot = await get(userRef);
+                  const destination = snapshot.exists() && snapshot.val().role === "organizer" ? "create-event.html" : "signup.html";
+                  document.body.classList.add("fade-out");
+                  setTimeout(() => {
+                    window.location.href = destination;
+                  }, 1500);
+                  resolve();
+                } else {
+                  document.body.classList.add("fade-out");
+                  setTimeout(() => {
+                    window.location.href = "signup.html";
+                  }, 1500);
+                  resolve();
+                }
+              } catch (error) {
+                reject(error);
+              }
+            }, reject);
+          });
+          return;
+        } catch (error) {
+          console.error(`Auth attempt ${attempt} failed:`, error);
+          if (attempt === retries) {
+            let message = "Failed to connect to server. Please check your connection and try again.";
+            if (error.code === "permission-denied") {
+              message = "Permission denied. Please contact support.";
+            } else if (error.code === "unavailable") {
+              message = "Server is temporarily unavailable. Please try again later.";
+            }
+            showAlert(message, false);
+          } else {
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      }
+    }
+
+    function retryAuth() {
+      hideAlert();
+      checkAuthState();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      checkAuthState();
+    });
+  </script>
+</body>
+</html>
