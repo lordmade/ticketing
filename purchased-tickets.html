@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EventSphere - My Tickets</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <style>
     :root {
       --twitter-blue: #1DA1F2;
@@ -34,6 +33,7 @@
       max-width: 1200px;
       margin: 0 auto;
       padding: 1.5rem;
+      position: relative;
     }
 
     .header {
@@ -49,34 +49,74 @@
       font-size: 1.5rem;
     }
 
-    .action-buttons {
+    .user-profile {
+      position: relative;
       display: flex;
-      gap: 0.75rem;
+      align-items: center;
+      cursor: pointer;
     }
 
-    .action-btn {
-      padding: 0.5rem 1rem;
+    .user-profile .avatar {
+      width: 40px;
+      height: 40px;
       background: var(--twitter-blue);
       color: var(--white);
-      border: none;
-      border-radius: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
       font-weight: 600;
+      margin-right: 0.5rem;
+    }
+
+    .user-profile .user-info {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      z-index: 100;
+      min-width: 200px;
+      padding: 0.5rem;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .user-profile .user-info.active {
+      display: block;
+    }
+
+    .user-profile .user-info p {
+      color: var(--text-dark);
+      font-size: 0.85rem;
+      padding: 0.5rem;
+      margin: 0;
+    }
+
+    .user-profile .user-info a,
+    .user-profile .user-info button {
+      display: block;
+      padding: 0.5rem;
+      color: var(--twitter-blue);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: left;
+      background: none;
+      border: none;
       cursor: pointer;
-      transition: background 0.2s ease, transform 0.2s ease;
-      font-size: 0.9rem;
+      transition: background 0.2s ease;
     }
 
-    .action-btn:hover {
-      background: #1a91da;
-      transform: scale(1.05);
+    .user-profile .user-info button {
+      color: #6b7280;
     }
 
-    .action-btn.logout {
-      background: #6b7280;
-    }
-
-    .action-btn.logout:hover {
-      background: #5b6370;
+    .user-profile .user-info a:hover,
+    .user-profile .user-info button:hover {
+      background: var(--background);
     }
 
     .tickets-grid {
@@ -86,13 +126,47 @@
     }
 
     .ticket-card {
-      background: var(--white);
+      background: linear-gradient(145deg, var(--white), #f0f2f5);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 0.75rem;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       transition: transform 0.2s ease, box-shadow 0.2s ease;
       animation: fadeInUp 0.5s ease-out;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ticket-card::before {
+      content: '';
+      position: absolute;
+      left: -10px;
+      top: 0;
+      bottom: 0;
+      width: 10px;
+      background: repeating-linear-gradient(
+        0deg,
+        var(--border) 0,
+        var(--border) 4px,
+        transparent 4px,
+        transparent 8px
+      );
+    }
+
+    .ticket-card::after {
+      content: '';
+      position: absolute;
+      right: -10px;
+      top: 0;
+      bottom: 0;
+      width: 10px;
+      background: repeating-linear-gradient(
+        0deg,
+        var(--border) 0,
+        var(--border) 4px,
+        transparent 4px,
+        transparent 8px
+      );
     }
 
     .ticket-card:hover {
@@ -106,17 +180,6 @@
       object-fit: cover;
       border-radius: 8px;
       margin-bottom: 0.75rem;
-    }
-
-    .ticket-card .qr-code {
-      text-align: center;
-      margin: 0.75rem 0;
-    }
-
-    .ticket-card .qr-code canvas {
-      max-width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 8px;
     }
 
     .ticket-card h3 {
@@ -149,7 +212,7 @@
       padding: 1rem 1.5rem;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      z-index: 1000;
+      z-index: 2000;
       color: var(--text-dark);
       font-weight: 500;
       text-align: center;
@@ -186,6 +249,32 @@
       height: 100%;
     }
 
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--twitter-blue);
+      border-top: 4px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
     .bottom-nav {
       display: none;
       position: fixed;
@@ -196,7 +285,7 @@
       border-top: 1px solid var(--border);
       box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
       padding: 0.5rem 0;
-      z-index: 1000;
+      z-index: 1500;
     }
 
     .bottom-nav .nav-items {
@@ -239,6 +328,11 @@
       100% { opacity: 1; }
     }
 
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     @media (max-width: 640px) {
       .tickets-container {
         padding: 1rem;
@@ -246,17 +340,33 @@
       }
 
       .header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
       }
 
       .header h1 {
         font-size: 1.25rem;
+        flex-grow: 1;
       }
 
-      .action-buttons {
-        display: none;
+      .user-profile .avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+      }
+
+      .user-profile .user-info {
+        min-width: 160px;
+        top: calc(100% + 0.5rem);
+        right: -0.5rem;
+      }
+
+      .user-profile .user-info p,
+      .user-profile .user-info a,
+      .user-profile .user-info button {
+        font-size: 0.8rem;
+        padding: 0.4rem;
       }
 
       .tickets-grid {
@@ -297,12 +407,19 @@
 </head>
 <body>
   <div class="tickets-container">
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="spinner"></div>
+    </div>
     <div class="header">
       <h1>My Tickets</h1>
-      <div class="action-buttons">
-        <a href="customer-dashboard.html" class="action-btn">Back to Dashboard</a>
-        <a href="index.html" class="action-btn">Home</a>
-        <button class="action-btn logout" onclick="logout()">Log Out</button>
+      <div class="user-profile" id="user-profile">
+        <div class="avatar" id="avatar"></div>
+        <div class="user-info" id="user-info">
+          <p id="user-name">Loading...</p>
+          <p id="user-email">Loading...</p>
+          <a href="customer-dashboard.html">Back to Dashboard</a>
+          <button onclick="logout()">Log Out</button>
+        </div>
       </div>
     </div>
     <div id="tickets-grid" class="tickets-grid"></div>
@@ -370,10 +487,17 @@
     const noTicketsMessage = document.getElementById("no-tickets");
     const customAlert = document.getElementById("custom-alert");
     const alertMessage = document.getElementById("alert-message");
+    const loadingOverlay = document.getElementById("loading-overlay");
+    const userProfile = document.getElementById("user-profile");
+    const userInfo = document.getElementById("user-info");
+    const userName = document.getElementById("user-name");
+    const userEmail = document.getElementById("user-email");
+    const avatar = document.getElementById("avatar");
 
     function showAlert(message, autoHide = true) {
       alertMessage.textContent = message;
       customAlert.classList.add("active");
+      loadingOverlay.classList.remove("active");
       if (autoHide) {
         setTimeout(hideAlert, 5000);
       }
@@ -383,15 +507,25 @@
       customAlert.classList.remove("active");
     }
 
+    function showLoading() {
+      loadingOverlay.classList.add("active");
+    }
+
+    function hideLoading() {
+      loadingOverlay.classList.remove("active");
+    }
+
     function logout() {
+      showLoading();
       signOut(auth)
         .then(() => {
           document.body.classList.add("fade-out");
           setTimeout(() => {
-            window.location.href = "signup.html";
+            window.location.href = "auth.html";
           }, 1500);
         })
         .catch((error) => {
+          hideLoading();
           showAlert("Failed to log out. Please try again.", false);
           console.error("Logout error:", error, { code: error.code, message: error.message });
         });
@@ -411,19 +545,6 @@
               continue;
             }
             const event = eventSnapshot.val();
-            const qrCodeData = JSON.stringify({ ticketId, eventId: ticket.eventId, organizerUid: ticket.organizerUid });
-            const qrCanvas = document.createElement("canvas");
-            await new Promise((resolve, reject) => {
-              QRCode.toCanvas(qrCanvas, qrCodeData, { width: 150 }, (error) => {
-                if (error) {
-                  console.error("QR Code generation error:", error);
-                  reject(error);
-                } else {
-                  resolve();
-                }
-              });
-            });
-
             const card = document.createElement("div");
             card.className = "ticket-card";
             card.innerHTML = `
@@ -433,10 +554,8 @@
               <p><strong>Purchase Date:</strong> ${new Date(ticket.purchaseDate).toLocaleString()}</p>
               <p><strong>Status:</strong> ${ticket.scanStatus}</p>
               <p><strong>Venue:</strong> ${event.venue}</p>
-              <div class="qr-code"></div>
               <p><strong>Ticket ID:</strong> ${ticketId}</p>
             `;
-            card.querySelector(".qr-code").appendChild(qrCanvas);
             ticketsGrid.appendChild(card);
           } catch (error) {
             console.error(`Error rendering ticket ${ticketId}:`, error);
@@ -444,15 +563,18 @@
         }
       }
       noTicketsMessage.style.display = hasTickets ? "none" : "block";
+      hideLoading();
     }
 
     onAuthStateChanged(auth, async (user) => {
+      showLoading();
       if (!user) {
         showAlert("You must be logged in to view your tickets.", false);
         setTimeout(() => {
           document.body.classList.add("fade-out");
-          window.location.href = "signup.html";
+          window.location.href = "auth.html";
         }, 2000);
+        hideLoading();
         return;
       }
 
@@ -465,6 +587,7 @@
             document.body.classList.add("fade-out");
             window.location.href = "auth.html";
           }, 2000);
+          hideLoading();
           return;
         }
 
@@ -474,20 +597,26 @@
           showAlert("Access restricted to customers. Redirecting...", false);
           setTimeout(() => {
             document.body.classList.add("fade-out");
-            window.location.href = role === "organizer" ? "organizer-dashboard.html" : "signup.html";
+            window.location.href = role === "organizer" ? "organizer-dashboard.html" : "auth.html";
           }, 2000);
+          hideLoading();
           return;
         }
 
+        userName.textContent = userData.name || "User";
+        userEmail.textContent = user.email || "No email";
+        avatar.textContent = (userData.name || user.email || "?").charAt(0).toUpperCase();
+
         const ticketsRef = ref(db, `users/${user.uid}/purchasedTickets`);
+        showLoading();
         const ticketsSnapshot = await get(ticketsRef);
         const tickets = ticketsSnapshot.val() || {};
         const ticketsWithEventData = {};
         for (const [ticketId, ticket] of Object.entries(tickets)) {
           ticketsWithEventData[ticketId] = {
             ...ticket,
-            eventId: Object.values(tickets).find(t => t.ticketId === ticketId)?.eventId || ticketId.split("_")[1] || "",
-            organizerUid: Object.values(tickets).find(t => t.ticketId === ticketId)?.organizerUid || ticketId.split("_")[0] || ""
+            eventId: ticket.eventId || ticketId.split("_")[1] || "",
+            organizerUid: ticket.organizerUid || ticketId.split("_")[0] || ""
           };
         }
         await renderTickets(ticketsWithEventData);
@@ -500,10 +629,22 @@
           message = "Database unavailable. Please check your connection.";
         }
         showAlert(message, false);
+        hideLoading();
         setTimeout(() => {
           document.body.classList.add("fade-out");
           window.location.href = "customer-dashboard.html";
         }, 2000);
+      }
+    });
+
+    userProfile.addEventListener("click", (e) => {
+      e.stopPropagation();
+      userInfo.classList.toggle("active");
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!userProfile.contains(e.target)) {
+        userInfo.classList.remove("active");
       }
     });
 
