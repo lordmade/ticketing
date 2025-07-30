@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EventSphere - Create Event</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://widget.cloudinary.com/v2.0/global/all.js" type="text/javascript"></script>
   <style>
     :root {
       --twitter-blue: #1DA1F2;
@@ -105,8 +104,7 @@
       margin-bottom: 0.5rem;
     }
 
-    .add-ticket-btn,
-    .upload-image-btn {
+    .add-ticket-btn {
       color: var(--twitter-blue);
       background: none;
       border: none;
@@ -115,8 +113,7 @@
       transition: color 0.2s ease;
     }
 
-    .add-ticket-btn:hover,
-    .upload-image-btn:hover {
+    .add-ticket-btn:hover {
       color: #1a91da;
     }
 
@@ -190,6 +187,14 @@
       height: 100%;
     }
 
+    .image-preview {
+      max-width: 100%;
+      height: auto;
+      margin-top: 0.5rem;
+      border-radius: 8px;
+      display: none;
+    }
+
     @keyframes fadeInUp {
       0% { opacity: 0; transform: translateY(20px); }
       100% { opacity: 1; transform: translateY(0); }
@@ -259,10 +264,10 @@
         <button type="button" class="add-ticket-btn" onclick="addTicketType()">+ Add Another Ticket Type</button>
       </div>
       <div class="form-group">
-        <label>Event Image</label>
-        <button type="button" class="upload-image-btn" onclick="openCloudinaryWidget()">Upload Image</button>
-        <input type="hidden" id="image-url" name="image-url" />
+        <label for="image">Event Image</label>
+        <input type="file" id="image" name="image" accept="image/*" required />
         <p id="image-status" class="text-sm text-gray-500 mt-1"></p>
+        <img id="image-preview" class="image-preview" alt="Image Preview" />
       </div>
       <button type="submit" class="submit-btn" disabled>Create Event</button>
     </form>
@@ -301,8 +306,15 @@
     const customAlert = document.getElementById("custom-alert");
     const alertMessage = document.getElementById("alert-message");
     const submitBtn = createEventForm.querySelector(".submit-btn");
-    const imageUrlInput = document.getElementById("image-url");
+    const imageInput = document.getElementById("image");
     const imageStatus = document.getElementById("image-status");
+    const imagePreview = document.getElementById("image-preview");
+    let imageUrl = "";
+
+    // Cloudinary configuration (hardcoded, unsigned upload preset)
+    const CLOUDINARY_CLOUD_NAME = "dqkujefxj"; // Replace with your Cloudinary cloud name
+    const CLOUDINARY_UPLOAD_PRESET = "banter_box"; // Replace with your unsigned upload preset name
+    const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
     function showAlert(message, autoHide = true) {
       alertMessage.textContent = message;
@@ -330,36 +342,48 @@
     }
 
     function updateSubmitButton() {
-      const hasImage = imageUrlInput.value.trim() !== "";
+      const hasImage = imageUrl.trim() !== "" || imageInput.files.length > 0;
       submitBtn.disabled = !hasImage;
     }
 
-    // Initialize Cloudinary Upload Widget
-    const cloudinaryWidget = cloudinary.createUploadWidget(
-      {
-        cloudName: "YOUR_CLOUD_NAME",
-        uploadPreset: "event_upload",
-        folder: "events",
-        cropping: true,
-        multiple: false,
-        sources: ["local", "url", "camera"],
-        clientAllowedFormats: ["jpg", "png", "jpeg"],
-        maxFileSize: 5000000 // 5MB
-      },
-      (error, result) => {
-        if (!error && result && result.event === "success") {
-          imageUrlInput.value = result.info.secure_url;
-          imageStatus.textContent = "Image uploaded successfully!";
-          updateSubmitButton();
-        } else if (error) {
-          showAlert("Failed to upload image. Please try again.", false);
-        }
-      }
-    );
+    imageInput.addEventListener("change", async () => {
+      if (imageInput.files.length > 0) {
+        imageStatus.textContent = "Uploading image...";
+        try {
+          const formData = new FormData();
+          formData.append("file", imageInput.files[0]);
+          formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+          formData.append("folder", "events");
 
-    function openCloudinaryWidget() {
-      cloudinaryWidget.open();
-    }
+          const response = await fetch(CLOUDINARY_UPLOAD_URL, {
+            method: "POST",
+            body: formData
+          });
+
+          if (!response.ok) {
+            throw new Error("Image upload failed.");
+          }
+
+          const data = await response.json();
+          imageUrl = data.secure_url;
+          imageStatus.textContent = "Image uploaded successfully!";
+          imagePreview.src = imageUrl;
+          imagePreview.style.display = "block";
+          updateSubmitButton();
+        } catch (error) {
+          imageStatus.textContent = "";
+          imagePreview.style.display = "none";
+          showAlert("Failed to upload image. Please try again.", false);
+          imageUrl = "";
+          updateSubmitButton();
+        }
+      } else {
+        imageStatus.textContent = "";
+        imagePreview.style.display = "none";
+        imageUrl = "";
+        updateSubmitButton();
+      }
+    });
 
     // Check authentication status
     onAuthStateChanged(auth, (user) => {
@@ -367,7 +391,7 @@
         showAlert("You must be logged in to create events.", false);
         setTimeout(() => {
           document.body.classList.add("fade-out");
-          window.location.href = "signup.html";
+          window.location.href = "auth.html";
         }, 2000);
       }
     });
@@ -387,7 +411,6 @@
       const date = createEventForm.date.value;
       const venue = createEventForm.venue.value.trim();
       const description = createEventForm.description.value.trim();
-      const imageUrl = imageUrlInput.value.trim();
       const ticketTypes = Array.from(document.querySelectorAll(".ticket-type")).map((ticket) => ({
         name: ticket.querySelector("[name='ticket-name']").value.trim(),
         price: parseFloat(ticket.querySelector("[name='ticket-price']").value),
@@ -419,7 +442,7 @@
         showAlert("Event created successfully! Redirecting...", true);
         document.body.classList.add("fade-out");
         setTimeout(() => {
-          window.location.href = "dashboard.html";
+          window.location.href = "organizer-dashboard.html";
         }, 1500);
       } catch (error) {
         console.error("Error creating event:", error);
@@ -434,7 +457,6 @@
 
     // Expose functions to global scope
     window.addTicketType = addTicketType;
-    window.openCloudinaryWidget = openCloudinaryWidget;
     window.hideAlert = hideAlert;
   </script>
 </body>
