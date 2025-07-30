@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Event Organizer Signup</title>
+  <title>EventSphere - Sign In or Sign Up</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
@@ -32,7 +32,7 @@
       opacity: 0;
     }
 
-    .signup-container {
+    .auth-container {
       text-align: center;
       max-width: 400px;
       width: 90%;
@@ -41,12 +41,54 @@
       z-index: 10;
     }
 
-    .signup-form {
+    .tab-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 0.75rem;
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--text-dark);
+      background: var(--background);
+      border-bottom: 2px solid var(--border);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .tab.active {
+      background: var(--white);
+      border-bottom: 2px solid var(--twitter-blue);
+      color: var(--twitter-blue);
+    }
+
+    .tab:hover {
+      background: var(--white);
+    }
+
+    .tab-content {
+      display: none;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      animation: fadeInUp 0.5s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .auth-form {
       display: grid;
       gap: 1rem;
     }
 
-    .signup-form input {
+    .auth-form input {
       padding: 0.75rem;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -55,11 +97,11 @@
       transition: border-color 0.2s ease;
     }
 
-    .signup-form input:focus {
+    .auth-form input:focus {
       border-color: var(--twitter-blue);
     }
 
-    .signup-form button {
+    .auth-form button {
       padding: 0.75rem;
       background: var(--twitter-blue);
       color: var(--white);
@@ -70,19 +112,24 @@
       transition: background 0.2s ease, transform 0.2s ease;
     }
 
-    .signup-form button:hover {
+    .auth-form button:hover {
       background: #1a91da;
       transform: scale(1.05);
     }
 
-    .signup-form .login-link {
+    .auth-form button:disabled {
+      background: #a1cdf7;
+      cursor: not-allowed;
+    }
+
+    .auth-form .toggle-link {
       color: var(--twitter-blue);
       font-size: 0.9rem;
       text-decoration: none;
       transition: color 0.2s ease;
     }
 
-    .signup-form .login-link:hover {
+    .auth-form .toggle-link:hover {
       color: #1a91da;
       text-decoration: underline;
     }
@@ -134,18 +181,28 @@
       height: 100%;
     }
 
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
     @keyframes fadeIn {
       0% { opacity: 0; }
       100% { opacity: 1; }
     }
 
     @media (max-width: 640px) {
-      .signup-container {
+      .auth-container {
         padding: 1rem;
       }
 
-      .signup-form input,
-      .signup-form button {
+      .tab {
+        font-size: 0.9rem;
+        padding: 0.6rem;
+      }
+
+      .auth-form input,
+      .auth-form button {
         font-size: 0.9rem;
         padding: 0.6rem;
       }
@@ -158,16 +215,30 @@
   </style>
 </head>
 <body>
-  <div class="signup-container">
-    <h2 class="text-2xl font-bold text-[var(--text-dark)] mb-6">Event Organizer Signup</h2>
-    <form id="signup-form" class="signup-form">
-      <input type="text" id="name" placeholder="Full Name" required />
-      <input type="text" id="organization" placeholder="Organization Name" required />
-      <input type="email" id="email" placeholder="Email" required />
-      <input type="password" id="password" placeholder="Password" required />
-      <button type="submit">Sign Up</button>
-      <a href="login.html" class="login-link">Already have an account? Log in</a>
-    </form>
+  <div class="auth-container">
+    <h2 class="text-2xl font-bold text-[var(--text-dark)] mb-6">EventSphere</h2>
+    <div class="tab-container">
+      <div class="tab active" onclick="showTab('signup')">Sign Up</div>
+      <div class="tab" onclick="showTab('signin')">Sign In</div>
+    </div>
+    <div id="signup" class="tab-content active">
+      <form id="signup-form" class="auth-form">
+        <input type="text" id="signup-name" placeholder="Full Name" required />
+        <input type="text" id="signup-organization" placeholder="Organization Name" required />
+        <input type="email" id="signup-email" placeholder="Email" required />
+        <input type="password" id="signup-password" placeholder="Password" required minlength="6" />
+        <button type="submit">Sign Up</button>
+        <a href="#" class="toggle-link" onclick="showTab('signin')">Already have an account? Sign In</a>
+      </form>
+    </div>
+    <div id="signin" class="tab-content">
+      <form id="signin-form" class="auth-form">
+        <input type="email" id="signin-email" placeholder="Email" required />
+        <input type="password" id="signin-password" placeholder="Password" required />
+        <button type="submit">Sign In</button>
+        <a href="#" class="toggle-link" onclick="showTab('signup')">Need an account? Sign Up</a>
+      </form>
+    </div>
   </div>
 
   <div id="custom-alert" class="custom-alert">
@@ -182,8 +253,8 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
-    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-auth.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-auth.js";
+    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
@@ -200,6 +271,7 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
     const signupForm = document.getElementById("signup-form");
+    const signinForm = document.getElementById("signin-form");
     const customAlert = document.getElementById("custom-alert");
     const alertMessage = document.getElementById("alert-message");
 
@@ -215,18 +287,27 @@
       customAlert.classList.remove("active");
     }
 
+    function showTab(tabId) {
+      document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(content => content.classList.remove("active"));
+      document.querySelector(`#${tabId}`).classList.add("active");
+      document.querySelector(`[onclick="showTab('${tabId}')"]`).classList.add("active");
+    }
+
     signupForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const name = document.getElementById("name").value;
-      const organization = document.getElementById("organization").value;
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+      const submitBtn = signupForm.querySelector("button");
+      submitBtn.disabled = true;
+
+      const name = document.getElementById("signup-name").value.trim();
+      const organization = document.getElementById("signup-organization").value.trim();
+      const email = document.getElementById("signup-email").value.trim();
+      const password = document.getElementById("signup-password").value;
 
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Store organizer details in Realtime Database
         await set(ref(db, `users/${user.uid}`), {
           name,
           organization,
@@ -235,7 +316,7 @@
           createdAt: Date.now()
         });
 
-        // Redirect to organizer dashboard
+        showAlert("Signup successful! Redirecting...", true);
         document.body.classList.add("fade-out");
         setTimeout(() => {
           window.location.href = "organizer-dashboard.html";
@@ -243,15 +324,55 @@
       } catch (error) {
         let message = "Failed to sign up. Please try again.";
         if (error.code === "auth/email-already-in-use") {
-          message = "Email already in use. Try logging in or use a different email.";
+          message = "Email already in use. Try signing in or use a different email.";
         } else if (error.code === "auth/weak-password") {
           message = "Password is too weak. Use at least 6 characters.";
         } else if (error.code === "auth/invalid-email") {
           message = "Invalid email format.";
         }
         showAlert(message, false);
+        submitBtn.disabled = false;
       }
     });
+
+    signinForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const submitBtn = signinForm.querySelector("button");
+      submitBtn.disabled = true;
+
+      const email = document.getElementById("signin-email").value.trim();
+      const password = document.getElementById("signin-password").value;
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        const userRef = ref(db, `users/${user.uid}`);
+        const snapshot = await get(userRef);
+        const destination = snapshot.exists() && snapshot.val().role === "organizer" ? "organizer-dashboard.html" : "signup.html";
+
+        showAlert("Sign-in successful! Redirecting...", true);
+        document.body.classList.add("fade-out");
+        setTimeout(() => {
+          window.location.href = destination;
+        }, 1500);
+      } catch (error) {
+        let message = "Failed to sign in. Please try again.";
+        if (error.code === "auth/wrong-password") {
+          message = "Incorrect password. Please try again.";
+        } else if (error.code === "auth/user-not-found") {
+          message = "No account found with this email. Please sign up.";
+        } else if (error.code === "auth/invalid-email") {
+          message = "Invalid email format.";
+        }
+        showAlert(message, false);
+        submitBtn.disabled = false;
+      }
+    });
+
+    // Expose hideAlert to global scope
+    window.hideAlert = hideAlert;
+    window.showTab = showTab;
   </script>
 </body>
 </html>
