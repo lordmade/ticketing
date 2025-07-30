@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EventSphere - Buy Tickets</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --twitter-blue: #1DA1F2;
+      --text-dark: #0F1419;
+      --text-light: #536471;
+      --border: #D8D9DB;
+      --white: #FFFFFF;
+      --background: #F5F8FA;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background: var(--white);
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    body.fade-out {
+      opacity: 0;
+    }
+
+    .ticket-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .event-details {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1.5rem;
+      animation: fadeInUp 0.5s ease-out;
+    }
+
+    .event-details img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .event-details h2 {
+      color: var(--text-dark);
+      font-weight: 700;
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .event-details p {
+      color: var(--text-light);
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .ticket-form {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      animation: fadeInUp 0.5s ease-out;
+    }
+
+    .ticket-form .form-group {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .ticket-form .custom-select {
+      position: relative;
+      font-size: 1rem;
+    }
+
+    .ticket-form .select-toggle {
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--white);
+      color: var(--text-dark);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: border-color 0.2s ease;
+    }
+
+    .ticket-form .select-toggle:focus {
+      border-color: var(--twitter-blue);
+      outline: none;
+    }
+
+    .ticket-form .select-toggle::after {
+      content: '▼';
+      font-size: 0.8rem;
+      color: var(--text-light);
+    }
+
+    .ticket-form .select-options {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      z-index: 100;
+      margin-top: 0.25rem;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .ticket-form .select-options.active {
+      display: block;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .ticket-form .select-option {
+      padding: 0.75rem;
+      color: var(--text-dark);
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .ticket-form .select-option:hover,
+    .ticket-form .select-option:focus {
+      background: var(--background);
+    }
+
+    .ticket-form .select-option.selected {
+      background: var(--twitter-blue);
+      color: var(--white);
+    }
+
+    .ticket-form input {
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .ticket-form input:focus {
+      border-color: var(--twitter-blue);
+    }
+
+    .ticket-form button {
+      padding: 0.75rem;
+      background: var(--twitter-blue);
+      color: var(--white);
+      border: none;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .ticket-form button:hover {
+      background: #1a91da;
+      transform: scale(1.05);
+    }
+
+    .ticket-form button:disabled {
+      background: #a1cdf7;
+      cursor: not-allowed;
+    }
+
+    .custom-alert {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--white);
+      padding: 1.5rem 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      color: var(--text-dark);
+      font-weight: 500;
+      text-align: center;
+      max-width: 90%;
+      width: 320px;
+      animation: fadeIn 0.3s ease-out forwards;
+      border: 1px solid var(--border);
+    }
+
+    .custom-alert.active {
+      display: block;
+    }
+
+    .custom-alert .close-btn {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 24px;
+      height: 24px;
+      background: none;
+      border: none;
+      color: var(--twitter-blue);
+      cursor: pointer;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .custom-alert .close-btn:hover {
+      transform: scale(1.2);
+      color: #1a91da;
+    }
+
+    .custom-alert .close-btn svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    @media (max-width: 640px) {
+      .ticket-container {
+        padding: 1rem;
+      }
+
+      .event-details img {
+        height: 150px;
+      }
+
+      .event-details h2 {
+        font-size: 1.25rem;
+      }
+
+      .ticket-form input,
+      .ticket-form .select-toggle,
+      .ticket-form button {
+        font-size: 0.9rem;
+        padding: 0.6rem;
+      }
+
+      .custom-alert {
+        width: 85%;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="ticket-container">
+    <div class="event-details">
+      <img id="event-image" src="https://via.placeholder.com/600x200?text=Event+Image" alt="Event Image" />
+      <h2 id="event-title">Loading Event...</h2>
+      <p id="event-date"><strong>Date:</strong> Loading...</p>
+      <p id="event-venue"><strong>Venue:</strong> Loading...</p>
+      <p id="event-description"><strong>Description:</strong> Loading...</p>
+    </div>
+    <form id="ticket-form" class="ticket-form">
+      <div class="form-group">
+        <div class="custom-select">
+          <div class="select-toggle" tabindex="0" aria-haspopup="listbox" aria-label="Select Ticket Type">Select Ticket Type</div>
+          <ul class="select-options" role="listbox" id="ticket-type-options"></ul>
+          <input type="hidden" id="ticket-type" name="ticketType" required />
+        </div>
+        <input type="number" id="ticket-quantity" placeholder="Quantity" min="1" required />
+        <p id="ticket-availability" class="text-sm text-[var(--text-light)]"></p>
+        <button type="submit" id="purchase-btn">Purchase Tickets</button>
+      </div>
+    </form>
+    <a href="customer-dashboard.html" class="text-[var(--twitter-blue)] text-sm hover:underline mt-4 inline-block">Back to Dashboard</a>
+  </div>
+
+  <div id="custom-alert" class="custom-alert">
+    <button class="close-btn" onclick="hideAlert()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <p id="alert-message">An error occurred. Please try again.</p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getDatabase, ref, get, push, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
+      authDomain: "fire-b-a8878.firebaseapp.com",
+      databaseURL: "https://fire-b-a8878.firebaseio.com",
+      projectId: "fire-b-a8878",
+      storageBucket: "fire-b-a8878.firebasestorage.app",
+      messagingSenderId: "658673187627",
+      appId: "1:658673187627:web:6e4c29af661785f0afa36e",
+      measurementId: "G-V4W97VMSKL"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const ticketForm = document.getElementById("ticket-form");
+    const selectToggle = document.querySelector(".select-toggle");
+    const selectOptions = document.querySelector(".select-options");
+    const ticketTypeInput = document.getElementById("ticket-type");
+    const ticketQuantityInput = document.getElementById("ticket-quantity");
+    const ticketAvailability = document.getElementById("ticket-availability");
+    const purchaseBtn = document.getElementById("purchase-btn");
+    const customAlert = document.getElementById("custom-alert");
+    const alertMessage = document.getElementById("alert-message");
+
+    function showAlert(message, autoHide = true) {
+      alertMessage.textContent = message;
+      customAlert.classList.add("active");
+      if (autoHide) {
+        setTimeout(hideAlert, 5000);
+      }
+    }
+
+    function hideAlert() {
+      customAlert.classList.remove("active");
+    }
+
+    function renderTicketTypes(ticketTypes, tickets = {}) {
+      selectOptions.innerHTML = "";
+      ticketTypes.forEach((ticket, index) => {
+        const ticketsBought = tickets ? Object.values(tickets).filter(t => t.ticketType === ticket.name).length : 0;
+        const ticketsLeft = ticket.quantity - ticketsBought;
+        if (ticketsLeft > 0) {
+          const option = document.createElement("li");
+          option.className = "select-option";
+          option.setAttribute("data-value", ticket.name);
+          option.setAttribute("data-index", index);
+          option.setAttribute("role", "option");
+          option.textContent = `${ticket.name} ($${ticket.price.toFixed(2)}, ${ticketsLeft} left)`;
+          selectOptions.appendChild(option);
+        }
+      });
+
+      const optionItems = document.querySelectorAll(".select-option");
+      if (optionItems.length === 0) {
+        showAlert("No tickets available for this event.", false);
+        ticketForm.style.display = "none";
+        return;
+      }
+
+      optionItems.forEach(option => {
+        option.addEventListener("click", () => {
+          optionItems.forEach(opt => opt.classList.remove("selected"));
+          option.classList.add("selected");
+          selectToggle.textContent = option.textContent;
+          ticketTypeInput.value = option.getAttribute("data-value");
+          selectOptions.classList.remove("active");
+          updateAvailability(ticketTypes, tickets, ticketTypeInput.value);
+        });
+
+        option.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            optionItems.forEach(opt => opt.classList.remove("selected"));
+            option.classList.add("selected");
+            selectToggle.textContent = option.textContent;
+            ticketTypeInput.value = option.getAttribute("data-value");
+            selectOptions.classList.remove("active");
+            selectToggle.focus();
+            updateAvailability(ticketTypes, tickets, ticketTypeInput.value);
+          }
+        });
+      });
+    }
+
+    function updateAvailability(ticketTypes, tickets, selectedType) {
+      const ticket = ticketTypes.find(t => t.name === selectedType);
+      if (!ticket) {
+        ticketAvailability.textContent = "";
+        ticketQuantityInput.max = "0";
+        return;
+      }
+      const ticketsBought = tickets ? Object.values(tickets).filter(t => t.ticketType === ticket.name).length : 0;
+      const ticketsLeft = ticket.quantity - ticketsBought;
+      ticketAvailability.textContent = `${ticketsLeft} ticket${ticketsLeft === 1 ? "" : "s"} available`;
+      ticketQuantityInput.max = ticketsLeft;
+      ticketQuantityInput.value = ticketsLeft > 0 ? "1" : "0";
+    }
+
+    selectToggle.addEventListener("click", () => {
+      selectOptions.classList.toggle("active");
+    });
+
+    selectToggle.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        selectOptions.classList.toggle("active");
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!selectToggle.contains(e.target) && !selectOptions.contains(e.target)) {
+        selectOptions.classList.remove("active");
+      }
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        showAlert("You must be logged in to purchase tickets.", false);
+        setTimeout(() => {
+          document.body.classList.add("fade-out");
+          window.location.href = "auth.html";
+        }, 2000);
+        return;
+      }
+
+      try {
+        const userRef = ref(db, `users/${user.uid}`);
+        const userSnapshot = await get(userRef);
+        if (!userSnapshot.exists()) {
+          showAlert("User profile not found. Please sign up again.", false);
+          setTimeout(() => {
+            document.body.classList.add("fade-out");
+            window.location.href = "auth.html";
+          }, 2000);
+          return;
+        }
+
+        const userData = userSnapshot.val();
+        const role = userData.role || null;
+        if (role !== "customer") {
+          showAlert("Access restricted to customers. Redirecting...", false);
+          setTimeout(() => {
+            document.body.classList.add("fade-out");
+            window.location.href = role === "organizer" ? "organizer-dashboard.html" : "auth.html";
+          }, 2000);
+          return;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const uid = urlParams.get("uid");
+        const eventId = urlParams.get("eventId");
+        if (!uid || !eventId) {
+          showAlert("Invalid event details. Returning to dashboard...", false);
+          setTimeout(() => {
+            document.body.classList.add("fade-out");
+            window.location.href = "customer-dashboard.html";
+          }, 2000);
+          return;
+        }
+
+        const eventRef = ref(db, `events/${uid}/${eventId}`);
+        const eventSnapshot = await get(eventRef);
+        if (!eventSnapshot.exists()) {
+          showAlert("Event not found. Returning to dashboard...", false);
+          setTimeout(() => {
+            document.body.classList.add("fade-out");
+            window.location.href = "customer-dashboard.html";
+          }, 2000);
+          return;
+        }
+
+        const event = eventSnapshot.val();
+        document.getElementById("event-title").textContent = event.title;
+        document.getElementById("event-date").innerHTML = `<strong>Date:</strong> ${new Date(event.date).toLocaleString()}`;
+        document.getElementById("event-venue").innerHTML = `<strong>Venue:</strong> ${event.venue}`;
+        document.getElementById("event-description").innerHTML = `<strong>Description:</strong> ${event.description || "No description provided"}`;
+        document.getElementById("event-image").src = event.imageUrl || "https://via.placeholder.com/600x200?text=Event+Image";
+
+        renderTicketTypes(event.ticketTypes, event.tickets);
+      } catch (error) {
+        console.error("Error loading event:", error);
+        let message = "Error loading event details. Please try again.";
+        if (error.code === "PERMISSION_DENIED") {
+          message = "Permission denied accessing event data. Please contact support.";
+        } else if (error.code === "unavailable") {
+          message = "Database unavailable. Please check your connection.";
+        }
+        showAlert(message, false);
+        setTimeout(() => {
+          document.body.classList.add("fade-out");
+          window.location.href = "customer-dashboard.html";
+        }, 2000);
+      }
+    });
+
+    ticketForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      purchaseBtn.disabled = true;
+
+      const ticketType = ticketTypeInput.value;
+      const quantity = parseInt(ticketQuantityInput.value);
+      if (!ticketType || quantity < 1) {
+        showAlert("Please select a ticket type and valid quantity.", false);
+        purchaseBtn.disabled = false;
+        return;
+      }
+
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const uid = urlParams.get("uid");
+        const eventId = urlParams.get("eventId");
+        const eventRef = ref(db, `events/${uid}/${eventId}`);
+        const eventSnapshot = await get(eventRef);
+        if (!eventSnapshot.exists()) {
+          showAlert("Event no longer available.", false);
+          purchaseBtn.disabled = false;
+          return;
+        }
+
+        const event = eventSnapshot.val();
+        const ticket = event.ticketTypes.find(t => t.name === ticketType);
+        const ticketsBought = event.tickets ? Object.values(event.tickets).filter(t => t.ticketType === ticketType).length : 0;
+        const ticketsLeft = ticket.quantity - ticketsBought;
+
+        if (quantity > ticketsLeft) {
+          showAlert(`Only ${ticketsLeft} ticket${ticketsLeft === 1 ? "" : "s"} available for ${ticketType}.`, false);
+          purchaseBtn.disabled = false;
+          return;
+        }
+
+        // Placeholder for payment processing (e.g., Stripe)
+        showAlert("Payment processing not implemented. Simulating purchase...", true);
+
+        const user = auth.currentUser;
+        for (let i = 0; i < quantity; i++) {
+          const ticketRef = push(ref(db, `events/${uid}/${eventId}/tickets`));
+          const ticketData = {
+            userId: user.uid,
+            ticketType: ticketType,
+            purchaseDate: Date.now(),
+            scanStatus: "pending"
+          };
+          await set(ticketRef, ticketData);
+
+          const userTicketRef = ref(db, `users/${user.uid}/purchasedTickets/${ticketRef.key}`);
+          await set(userTicketRef, ticketData);
+        }
+
+        showAlert(`Successfully purchased ${quantity} ticket${quantity === 1 ? "" : "s"}! Redirecting to dashboard...`, true);
+        setTimeout(() => {
+          document.body.classList.add("fade-out");
+          window.location.href = "customer-dashboard.html";
+        }, 2000);
+      } catch (error) {
+        console.error("Purchase error:", error);
+        let message = "Failed to purchase tickets. Please try again.";
+        if (error.code === "PERMISSION_DENIED") {
+          message = "Permission denied. Please contact support.";
+        } else if (error.code === "unavailable") {
+          message = "Database unavailable. Please check your connection.";
+        }
+        showAlert(message, false);
+        purchaseBtn.disabled = false;
+      }
+    });
+
+    window.hideAlert = hideAlert;
+  </script>
+</body>
+</html>
