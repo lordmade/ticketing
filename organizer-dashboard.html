@@ -128,6 +128,22 @@
       font-size: 0.85rem;
     }
 
+    .event-card .ticket-stats {
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .event-card .ticket-stats p {
+      font-size: 0.85rem;
+      color: var(--text-dark);
+    }
+
+    .event-card .ticket-stats .highlight {
+      color: var(--twitter-blue);
+      font-weight: 600;
+    }
+
     .no-events {
       text-align: center;
       color: var(--text-light);
@@ -289,12 +305,31 @@
         .then(() => {
           document.body.classList.add("fade-out");
           setTimeout(() => {
-            window.location.href = "signup.html";
+            window.location.href = "auth.html";
           }, 1500);
         })
         .catch((error) => {
           showAlert("Failed to log out. Please try again.", false);
         });
+    }
+
+    function calculateTicketStats(event) {
+      const ticketTypes = event.ticketTypes || [];
+      const tickets = event.tickets || {};
+      
+      // Total available tickets from ticketTypes
+      const totalAvailable = ticketTypes.reduce((sum, type) => sum + (type.quantity || 0), 0);
+      
+      // Total tickets bought (count of ticket entries)
+      const ticketsBought = Object.keys(tickets).length;
+      
+      // Total tickets scanned (count of tickets with scanStatus: true)
+      const ticketsScanned = Object.values(tickets).filter(ticket => ticket.scanStatus === true).length;
+      
+      // Tickets left (total available minus bought)
+      const ticketsLeft = totalAvailable - ticketsBought;
+
+      return { ticketsBought, ticketsScanned, ticketsLeft, totalAvailable };
     }
 
     function renderEvents(events) {
@@ -310,6 +345,10 @@
         const ticketInfo = event.ticketTypes
           .map((ticket) => `${ticket.name}: $${ticket.price.toFixed(2)} (${ticket.quantity} available)`)
           .join("<br>");
+        
+        // Calculate ticket stats
+        const { ticketsBought, ticketsScanned, ticketsLeft, totalAvailable } = calculateTicketStats(event);
+        
         card.innerHTML = `
           <img src="${event.imageUrl}" alt="${event.title}" onerror="this.src='https://via.placeholder.com/300x150?text=No+Image'"/>
           <h3>${event.title}</h3>
@@ -317,6 +356,11 @@
           <p><strong>Venue:</strong> ${event.venue}</p>
           <p><strong>Description:</strong> ${event.description || "No description provided"}</p>
           <div class="ticket-info"><p><strong>Tickets:</strong><br>${ticketInfo}</p></div>
+          <div class="ticket-stats">
+            <p><strong>Tickets Bought:</strong> <span class="highlight">${ticketsBought}</span> / ${totalAvailable}</p>
+            <p><strong>Tickets Scanned:</strong> <span class="highlight">${ticketsScanned}</span></p>
+            <p><strong>Tickets Left:</strong> <span class="highlight">${ticketsLeft}</span></p>
+          </div>
         `;
         eventsGrid.appendChild(card);
       });
@@ -327,7 +371,7 @@
         showAlert("You must be logged in to view the dashboard.", false);
         setTimeout(() => {
           document.body.classList.add("fade-out");
-          window.location.href = "signup.html";
+          window.location.href = "auth.html";
         }, 2000);
         return;
       }
