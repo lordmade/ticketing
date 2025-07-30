@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EventSphere - Organizer Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --twitter-blue: #1DA1F2;
+      --text-dark: #0F1419;
+      --text-light: #536471;
+      --border: #D8D9DB;
+      --white: #FFFFFF;
+      --background: #F5F8FA;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background: var(--white);
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    body.fade-out {
+      opacity: 0;
+    }
+
+    .dashboard-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .header h1 {
+      color: var(--text-dark);
+      font-weight: 700;
+      font-size: 1.75rem;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .action-btn {
+      padding: 0.75rem 1.5rem;
+      background: var(--twitter-blue);
+      color: var(--white);
+      border: none;
+      border-radius: 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .action-btn:hover {
+      background: #1a91da;
+      transform: scale(1.05);
+    }
+
+    .action-btn.logout {
+      background: #6b7280;
+    }
+
+    .action-btn.logout:hover {
+      background: #5b6370;
+    }
+
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .event-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      animation: fadeInUp 0.5s ease-out;
+    }
+
+    .event-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .event-card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .event-card h3 {
+      color: var(--text-dark);
+      font-weight: 600;
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .event-card p {
+      color: var(--text-light);
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .event-card .ticket-info {
+      margin-top: 0.5rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .event-card .ticket-info p {
+      font-size: 0.85rem;
+    }
+
+    .no-events {
+      text-align: center;
+      color: var(--text-light);
+      font-size: 1rem;
+      margin-top: 2rem;
+    }
+
+    .custom-alert {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--white);
+      padding: 1.5rem 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      color: var(--text-dark);
+      font-weight: 500;
+      text-align: center;
+      max-width: 90%;
+      width: 320px;
+      animation: fadeIn 0.3s ease-out forwards;
+      border: 1px solid var(--border);
+    }
+
+    .custom-alert.active {
+      display: block;
+    }
+
+    .custom-alert .close-btn {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 24px;
+      height: 24px;
+      background: none;
+      border: none;
+      color: var(--twitter-blue);
+      cursor: pointer;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .custom-alert .close-btn:hover {
+      transform: scale(1.2);
+      color: #1a91da;
+    }
+
+    .custom-alert .close-btn svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    @media (max-width: 640px) {
+      .dashboard-container {
+        padding: 1rem;
+      }
+
+      .header h1 {
+        font-size: 1.5rem;
+      }
+
+      .action-btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+      }
+
+      .event-card {
+        padding: 0.75rem;
+      }
+
+      .event-card img {
+        height: 120px;
+      }
+
+      .event-card h3 {
+        font-size: 1.1rem;
+      }
+
+      .custom-alert {
+        width: 85%;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <div class="header">
+      <h1>Organizer Dashboard</h1>
+      <div class="action-buttons">
+        <button class="action-btn" onclick="window.location.href='create-event.html'">Create New Event</button>
+        <button class="action-btn logout" onclick="logout()">Log Out</button>
+      </div>
+    </div>
+    <div id="events-grid" class="events-grid"></div>
+    <p id="no-events" class="no-events" style="display: none;">No events found. Create your first event!</p>
+  </div>
+
+  <div id="custom-alert" class="custom-alert">
+    <button class="close-btn" onclick="hideAlert()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <p id="alert-message">An error occurred. Please try again.</p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-auth.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.11/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
+      authDomain: "fire-b-a8878.firebaseapp.com",
+      databaseURL: "https://fire-b-a8878.firebaseio.com",
+      projectId: "fire-b-a8878",
+      storageBucket: "fire-b-a8878.firebasestorage.app",
+      messagingSenderId: "658673187627",
+      appId: "1:658673187627:web:6e4c29af661785f0afa36e",
+      measurementId: "G-V4W97VMSKL"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const eventsGrid = document.getElementById("events-grid");
+    const noEventsMessage = document.getElementById("no-events");
+    const customAlert = document.getElementById("custom-alert");
+    const alertMessage = document.getElementById("alert-message");
+
+    function showAlert(message, autoHide = true) {
+      alertMessage.textContent = message;
+      customAlert.classList.add("active");
+      if (autoHide) {
+        setTimeout(hideAlert, 5000);
+      }
+    }
+
+    function hideAlert() {
+      customAlert.classList.remove("active");
+    }
+
+    function logout() {
+      signOut(auth)
+        .then(() => {
+          document.body.classList.add("fade-out");
+          setTimeout(() => {
+            window.location.href = "auth.html";
+          }, 1500);
+        })
+        .catch((error) => {
+          showAlert("Failed to log out. Please try again.", false);
+        });
+    }
+
+    function renderEvents(events) {
+      eventsGrid.innerHTML = "";
+      if (!events || Object.keys(events).length === 0) {
+        noEventsMessage.style.display = "block";
+        return;
+      }
+      noEventsMessage.style.display = "none";
+      Object.entries(events).forEach(([eventId, event]) => {
+        const card = document.createElement("div");
+        card.className = "event-card";
+        const ticketInfo = event.ticketTypes
+          .map((ticket) => `${ticket.name}: $${ticket.price.toFixed(2)} (${ticket.quantity} available)`)
+          .join("<br>");
+        card.innerHTML = `
+          <img src="${event.imageUrl}" alt="${event.title}" onerror="this.src='https://via.placeholder.com/300x150?text=No+Image'"/>
+          <h3>${event.title}</h3>
+          <p><strong>Date:</strong> ${new Date(event.date).toLocaleString()}</p>
+          <p><strong>Venue:</strong> ${event.venue}</p>
+          <p><strong>Description:</strong> ${event.description || "No description provided"}</p>
+          <div class="ticket-info"><p><strong>Tickets:</strong><br>${ticketInfo}</p></div>
+        `;
+        eventsGrid.appendChild(card);
+      });
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        showAlert("You must be logged in to view the dashboard.", false);
+        setTimeout(() => {
+          document.body.classList.add("fade-out");
+          window.location.href = "auth.html";
+        }, 2000);
+        return;
+      }
+
+      const eventsRef = ref(db, `events/${user.uid}`);
+      onValue(eventsRef, (snapshot) => {
+        try {
+          const events = snapshot.val();
+          renderEvents(events);
+        } catch (error) {
+          showAlert("Failed to load events. Please try again.", false);
+        }
+      }, (error) => {
+        showAlert("Error connecting to database. Please check your connection.", false);
+      });
+    });
+
+    window.hideAlert = hideAlert;
+    window.logout = logout;
+  </script>
+</body>
+</html>
