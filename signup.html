@@ -426,7 +426,7 @@
           const userRef = ref(db, `users/${user.uid}`);
           const snapshot = await get(userRef);
           const role = snapshot.exists() ? snapshot.val().role : null;
-          const destination = role === "organizer" ? "organizer-dashboard.html" : role === "customer" ? "customer-dashboard.html" : "auth.html";
+          const destination = role === "organizer" ? "organizer-dashboard.html" : role === "customer" ? "customer-dashboard.html" : "signup.html";
           showAlert(`Welcome back! Redirecting to ${role} dashboard...`, true);
           document.body.classList.add("fade-out");
           setTimeout(() => {
@@ -505,7 +505,7 @@
         const userRef = ref(db, `users/${user.uid}`);
         const snapshot = await get(userRef);
         const role = snapshot.exists() ? snapshot.val().role : null;
-        const destination = role === "organizer" ? "organizer-dashboard.html" : role === "customer" ? "customer-dashboard.html" : "auth.html";
+        const destination = role === "organizer" ? "organizer-dashboard.html" : role === "customer" ? "customer-dashboard.html" : "signup.html";
 
         showAlert(`Sign-in successful! Redirecting to ${role || "default"} dashboard...`, true);
         document.body.classList.add("fade-out");
