@@ -32,6 +32,90 @@
       max-width: 600px;
       margin: 0 auto;
       padding: 2rem;
+      position: relative;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .header h1 {
+      color: var(--text-dark);
+      font-weight: 700;
+      font-size: 1.5rem;
+    }
+
+    .user-profile {
+      position: relative;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .user-profile .avatar {
+      width: 40px;
+      height: 40px;
+      background: var(--twitter-blue);
+      color: var(--white);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+
+    .user-profile .user-info {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      z-index: 100;
+      min-width: 200px;
+      padding: 0.5rem;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .user-profile .user-info.active {
+      display: block;
+    }
+
+    .user-profile .user-info p {
+      color: var(--text-dark);
+      font-size: 0.85rem;
+      padding: 0.5rem;
+      margin: 0;
+    }
+
+    .user-profile .user-info a,
+    .user-profile .user-info button {
+      display: block;
+      padding: 0.5rem;
+      color: var(--twitter-blue);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: left;
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .user-profile .user-info button {
+      color: #6b7280;
+    }
+
+    .user-profile .user-info a:hover,
+    .user-profile .user-info button:hover {
+      background: var(--background);
     }
 
     .event-details {
@@ -190,7 +274,7 @@
       padding: 1.5rem 2rem;
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      z-index: 1000;
+      z-index: 2000;
       color: var(--text-dark);
       font-weight: 500;
       text-align: center;
@@ -227,6 +311,32 @@
       height: 100%;
     }
 
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--twitter-blue);
+      border-top: 4px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
     @keyframes fadeInUp {
       0% { opacity: 0; transform: translateY(20px); }
       100% { opacity: 1; transform: translateY(0); }
@@ -237,9 +347,44 @@
       100% { opacity: 1; }
     }
 
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     @media (max-width: 640px) {
       .ticket-container {
         padding: 1rem;
+      }
+
+      .header {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .header h1 {
+        font-size: 1.25rem;
+        flex-grow: 1;
+      }
+
+      .user-profile .avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+      }
+
+      .user-profile .user-info {
+        min-width: 160px;
+        top: calc(100% + 0.5rem);
+        right: -0.5rem;
+      }
+
+      .user-profile .user-info p,
+      .user-profile .user-info a,
+      .user-profile .user-info button {
+        font-size: 0.8rem;
+        padding: 0.4rem;
       }
 
       .event-details img {
@@ -266,6 +411,21 @@
 </head>
 <body>
   <div class="ticket-container">
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="spinner"></div>
+    </div>
+    <div class="header">
+      <h1>Buy Tickets</h1>
+      <div class="user-profile" id="user-profile">
+        <div class="avatar" id="avatar"></div>
+        <div class="user-info" id="user-info">
+          <p id="user-name">Loading...</p>
+          <p id="user-email">Loading...</p>
+          <a href="customer-dashboard.html">Back to Dashboard</a>
+          <button onclick="logout()">Log Out</button>
+        </div>
+      </div>
+    </div>
     <div class="event-details">
       <img id="event-image" src="https://via.placeholder.com/600x200?text=Event+Image" alt="Event Image" />
       <h2 id="event-title">Loading Event...</h2>
@@ -285,7 +445,6 @@
         <button type="submit" id="purchase-btn">Purchase Tickets</button>
       </div>
     </form>
-    <a href="customer-dashboard.html" class="text-[var(--twitter-blue)] text-sm hover:underline mt-4 inline-block">Back to Dashboard</a>
   </div>
 
   <div id="custom-alert" class="custom-alert">
@@ -300,7 +459,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getDatabase, ref, get, push, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
@@ -326,10 +485,17 @@
     const purchaseBtn = document.getElementById("purchase-btn");
     const customAlert = document.getElementById("custom-alert");
     const alertMessage = document.getElementById("alert-message");
+    const loadingOverlay = document.getElementById("loading-overlay");
+    const userProfile = document.getElementById("user-profile");
+    const userInfo = document.getElementById("user-info");
+    const userName = document.getElementById("user-name");
+    const userEmail = document.getElementById("user-email");
+    const avatar = document.getElementById("avatar");
 
     function showAlert(message, autoHide = true) {
       alertMessage.textContent = message;
       customAlert.classList.add("active");
+      loadingOverlay.classList.remove("active");
       if (autoHide) {
         setTimeout(hideAlert, 5000);
       }
@@ -337,6 +503,30 @@
 
     function hideAlert() {
       customAlert.classList.remove("active");
+    }
+
+    function showLoading() {
+      loadingOverlay.classList.add("active");
+    }
+
+    function hideLoading() {
+      loadingOverlay.classList.remove("active");
+    }
+
+    function logout() {
+      showLoading();
+      signOut(auth)
+        .then(() => {
+          document.body.classList.add("fade-out");
+          setTimeout(() => {
+            window.location.href = "auth.html";
+          }, 1500);
+        })
+        .catch((error) => {
+          hideLoading();
+          showAlert("Failed to log out. Please try again.", false);
+          console.error("Logout error:", error, { code: error.code, message: error.message });
+        });
     }
 
     function renderTicketTypes(ticketTypes, tickets = {}) {
@@ -359,6 +549,7 @@
       if (optionItems.length === 0) {
         showAlert("No tickets available for this event.", false);
         ticketForm.style.display = "none";
+        hideLoading();
         return;
       }
 
@@ -413,18 +604,26 @@
     });
 
     document.addEventListener("click", (e) => {
-      if (!selectToggle.contains(e.target) && !selectOptions.contains(e.target)) {
+      if (!selectToggle.contains(e.target) && !selectOptions.contains(e.target) && !userProfile.contains(e.target)) {
         selectOptions.classList.remove("active");
+        userInfo.classList.remove("active");
       }
     });
 
+    userProfile.addEventListener("click", (e) => {
+      e.stopPropagation();
+      userInfo.classList.toggle("active");
+    });
+
     onAuthStateChanged(auth, async (user) => {
+      showLoading();
       if (!user) {
         showAlert("You must be logged in to purchase tickets.", false);
         setTimeout(() => {
           document.body.classList.add("fade-out");
           window.location.href = "auth.html";
         }, 2000);
+        hideLoading();
         return;
       }
 
@@ -437,6 +636,7 @@
             document.body.classList.add("fade-out");
             window.location.href = "auth.html";
           }, 2000);
+          hideLoading();
           return;
         }
 
@@ -448,8 +648,13 @@
             document.body.classList.add("fade-out");
             window.location.href = role === "organizer" ? "organizer-dashboard.html" : "auth.html";
           }, 2000);
+          hideLoading();
           return;
         }
+
+        userName.textContent = userData.name || "User";
+        userEmail.textContent = user.email || "No email";
+        avatar.textContent = (userData.name || user.email || "?").charAt(0).toUpperCase();
 
         const urlParams = new URLSearchParams(window.location.search);
         const uid = urlParams.get("uid");
@@ -460,6 +665,7 @@
             document.body.classList.add("fade-out");
             window.location.href = "customer-dashboard.html";
           }, 2000);
+          hideLoading();
           return;
         }
 
@@ -471,6 +677,7 @@
             document.body.classList.add("fade-out");
             window.location.href = "customer-dashboard.html";
           }, 2000);
+          hideLoading();
           return;
         }
 
@@ -481,6 +688,7 @@
             document.body.classList.add("fade-out");
             window.location.href = "customer-dashboard.html";
           }, 2000);
+          hideLoading();
           return;
         }
 
@@ -491,6 +699,7 @@
         document.getElementById("event-image").src = event.imageUrl || "https://via.placeholder.com/600x200?text=Event+Image";
 
         renderTicketTypes(event.ticketTypes, event.tickets);
+        hideLoading();
       } catch (error) {
         console.error("Error loading event:", error, { code: error.code, message: error.message });
         let message = "Error loading event details. Please try again.";
@@ -504,18 +713,32 @@
           document.body.classList.add("fade-out");
           window.location.href = "customer-dashboard.html";
         }, 2000);
+        hideLoading();
       }
     });
 
     ticketForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       purchaseBtn.disabled = true;
+      showLoading();
 
       const ticketType = ticketTypeInput.value;
       const quantity = parseInt(ticketQuantityInput.value);
+      const urlParams = new URLSearchParams(window.location.search);
+      const uid = urlParams.get("uid");
+      const eventId = urlParams.get("eventId");
+
       if (!ticketType || quantity < 1 || isNaN(quantity)) {
         showAlert("Please select a ticket type and valid quantity.", false);
         purchaseBtn.disabled = false;
+        hideLoading();
+        return;
+      }
+
+      if (!uid || !eventId) {
+        showAlert("Invalid event details.", false);
+        purchaseBtn.disabled = false;
+        hideLoading();
         return;
       }
 
@@ -527,18 +750,17 @@
           window.location.href = "auth.html";
         }, 2000);
         purchaseBtn.disabled = false;
+        hideLoading();
         return;
       }
 
       try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const uid = urlParams.get("uid");
-        const eventId = urlParams.get("eventId");
         const eventRef = ref(db, `events/${uid}/${eventId}`);
         const eventSnapshot = await get(eventRef);
         if (!eventSnapshot.exists()) {
           showAlert("Event no longer available.", false);
           purchaseBtn.disabled = false;
+          hideLoading();
           return;
         }
 
@@ -546,6 +768,7 @@
         if (!event.ticketTypes || !Array.isArray(event.ticketTypes)) {
           showAlert("Event has no valid ticket types.", false);
           purchaseBtn.disabled = false;
+          hideLoading();
           return;
         }
 
@@ -553,6 +776,7 @@
         if (!ticket) {
           showAlert("Selected ticket type is invalid.", false);
           purchaseBtn.disabled = false;
+          hideLoading();
           return;
         }
 
@@ -561,6 +785,7 @@
         if (quantity > ticketsLeft) {
           showAlert(`Only ${ticketsLeft} ticket${ticketsLeft === 1 ? "" : "s"} available for ${ticketType}.`, false);
           purchaseBtn.disabled = false;
+          hideLoading();
           return;
         }
 
@@ -568,16 +793,19 @@
         showAlert("Payment processing not implemented. Simulating purchase...", true);
 
         for (let i = 0; i < quantity; i++) {
-          const ticketRef = push(ref(db, `events/${uid}/${eventId}/tickets`));
-          const ticketId = ticketRef.key;
+          const timestamp = Date.now();
+          const ticketId = `${uid}_${eventId}_${timestamp}_${i}`; // Unique ticket ID
           const ticketData = {
             userId: user.uid,
             ticketType: ticketType,
-            purchaseDate: Date.now(),
-            scanStatus: "pending"
+            purchaseDate: timestamp,
+            scanStatus: "pending",
+            eventId: eventId,
+            organizerUid: uid
           };
 
-          await set(ticketRef, ticketData);
+          const eventTicketRef = ref(db, `events/${uid}/${eventId}/tickets/${ticketId}`);
+          await set(eventTicketRef, ticketData);
           const userTicketRef = ref(db, `users/${user.uid}/purchasedTickets/${ticketId}`);
           await set(userTicketRef, ticketData);
         }
@@ -588,6 +816,7 @@
           window.location.href = "customer-dashboard.html";
         }, 2000);
         purchaseBtn.disabled = false;
+        hideLoading();
       } catch (error) {
         console.error("Purchase error:", error, { code: error.code, message: error.message });
         let message = "Failed to purchase tickets. Please try again.";
@@ -598,10 +827,12 @@
         }
         showAlert(message, false);
         purchaseBtn.disabled = false;
+        hideLoading();
       }
     });
 
     window.hideAlert = hideAlert;
+    window.logout = logout;
   </script>
 </body>
 </html>
