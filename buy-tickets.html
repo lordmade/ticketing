@@ -519,7 +519,7 @@
         .then(() => {
           document.body.classList.add("fade-out");
           setTimeout(() => {
-            window.location.href = "auth.html";
+            window.location.href = "signup.html";
           }, 1500);
         })
         .catch((error) => {
@@ -621,7 +621,7 @@
         showAlert("You must be logged in to purchase tickets.", false);
         setTimeout(() => {
           document.body.classList.add("fade-out");
-          window.location.href = "auth.html";
+          window.location.href = "signup.html";
         }, 2000);
         hideLoading();
         return;
@@ -634,7 +634,7 @@
           showAlert("User profile not found. Please sign up again.", false);
           setTimeout(() => {
             document.body.classList.add("fade-out");
-            window.location.href = "auth.html";
+            window.location.href = "signup.html";
           }, 2000);
           hideLoading();
           return;
@@ -646,7 +646,7 @@
           showAlert("Access restricted to customers. Redirecting...", false);
           setTimeout(() => {
             document.body.classList.add("fade-out");
-            window.location.href = role === "organizer" ? "organizer-dashboard.html" : "auth.html";
+            window.location.href = role === "organizer" ? "organizer-dashboard.html" : "signup.html";
           }, 2000);
           hideLoading();
           return;
