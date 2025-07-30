@@ -289,7 +289,7 @@
         .then(() => {
           document.body.classList.add("fade-out");
           setTimeout(() => {
-            window.location.href = "auth.html";
+            window.location.href = "signup.html";
           }, 1500);
         })
         .catch((error) => {
@@ -327,7 +327,7 @@
         showAlert("You must be logged in to view the dashboard.", false);
         setTimeout(() => {
           document.body.classList.add("fade-out");
-          window.location.href = "auth.html";
+          window.location.href = "signup.html";
         }, 2000);
         return;
       }
