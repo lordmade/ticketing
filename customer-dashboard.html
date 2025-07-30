@@ -610,7 +610,7 @@
               .map((ticket) => {
                 const ticketsBought = event.tickets ? Object.values(event.tickets).filter(t => t.ticketType === ticket.name).length : 0;
                 const ticketsLeft = ticket.quantity - ticketsBought;
-                return `${ticket.name}: $${ticket.price.toFixed(2)} (${ticketsLeft} left)`;
+                return `${ticket.name}: R${ticket.price.toFixed(2)} (${ticketsLeft} left)`;
               })
               .join("<br>");
             card.innerHTML = `
