@@ -343,7 +343,7 @@
         const card = document.createElement("div");
         card.className = "event-card";
         const ticketInfo = event.ticketTypes
-          .map((ticket) => `${ticket.name}: $${ticket.price.toFixed(2)} (${ticket.quantity} available)`)
+          .map((ticket) => `${ticket.name}: R${ticket.price.toFixed(2)} (${ticket.quantity} available)`)
           .join("<br>");
         
         // Calculate ticket stats
