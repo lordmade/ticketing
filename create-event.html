@@ -334,7 +334,7 @@
       newTicket.className = "ticket-type";
       newTicket.innerHTML = `
         <input type="text" name="ticket-name" placeholder="Ticket Name (e.g., General Admission)" required />
-        <input type="number" name="ticket-price" placeholder="Price ($)" required min="0" step="0.01" />
+        <input type="number" name="ticket-price" placeholder="Price (R)" required min="0" step="0.01" />
         <input type="number" name="ticket-quantity" placeholder="Quantity" required min="1" />
       `;
       ticketTypes.appendChild(newTicket);
@@ -391,7 +391,7 @@
         showAlert("You must be logged in to create events.", false);
         setTimeout(() => {
           document.body.classList.add("fade-out");
-          window.location.href = "auth.html";
+          window.location.href = "signup.html";
         }, 2000);
       }
     });
