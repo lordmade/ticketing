@@ -422,9 +422,16 @@
           <option value="mobile">Mobile Payment</option>
         </select>
       </div>
+      <div class="input-group" id="cash-tendered-group" style="display: none;">
+        <label for="cash-tendered">Cash Tendered (R)</label>
+        <input type="number" id="cash-tendered" placeholder="Enter cash amount" min="0" step="0.01" aria-label="Enter cash amount">
+      </div>
       <div class="flex justify-between mb-4">
         <p class="font-semibold">Subtotal: R<span id="subtotal">0.00</span></p>
         <p class="font-semibold">Total: R<span id="total">0.00</span></p>
+      </div>
+      <div class="flex justify-between mb-4" id="change-section" style="display: none;">
+        <p class="font-semibold">Change: R<span id="change">0.00</span></p>
       </div>
       <div class="flex gap-2">
         <button class="action-btn clear-btn" id="clear-cart-btn" aria-label="Clear cart">Clear</button>
@@ -481,8 +488,10 @@
     const cartItemsDiv = document.getElementById("cart-items");
     const discountInput = document.getElementById("discount");
     const paymentMethodSelect = document.getElementById("payment-method");
+    const cashTenderedInput = document.getElementById("cash-tendered");
     const subtotalSpan = document.getElementById("subtotal");
     const totalSpan = document.getElementById("total");
+    const changeSpan = document.getElementById("change");
     const orderNumberSpan = document.getElementById("order-number");
     const clearCartBtn = document.getElementById("clear-cart-btn");
     const submitOrderBtn = document.getElementById("submit-order-btn");
@@ -495,6 +504,8 @@
     const spinner = document.getElementById("spinner");
     const toast = document.getElementById("toast");
     const toastMessage = document.getElementById("toast-message");
+    const cashTenderedGroup = document.getElementById("cash-tendered-group");
+    const changeSection = document.getElementById("change-section");
 
     let menuItems = {};
     let cart = [];
@@ -504,6 +515,7 @@
     // Check authentication
     auth.onAuthStateChanged(user => {
       if (!user) {
+        console.log("No user authenticated, redirecting to login.html");
         window.location.href = 'login.html';
       } else {
         console.log("Authenticated user:", user.uid);
@@ -536,14 +548,28 @@
 
     document.querySelector(".custom-alert .close-btn").addEventListener("click", hideAlert);
 
+    // Toggle cash tendered input based on payment method
+    paymentMethodSelect.addEventListener('change', () => {
+      cashTenderedGroup.style.display = paymentMethodSelect.value === 'cash' ? 'block' : 'none';
+      changeSection.style.display = paymentMethodSelect.value === 'cash' ? 'block' : 'none';
+      updateCart(); // Reset change display when switching payment methods
+    });
+
     function loadMenuItems() {
       const menuRef = ref(db, 'menu');
       onValue(menuRef, (snapshot) => {
         menuItems = snapshot.val() || {};
+        console.log("Fetched menu items:", menuItems);
         categories = new Set(['all']);
         Object.values(menuItems).forEach(item => {
-          if (item.category) categories.add(item.category);
+          if (item.category && item.available && item.stock > 0) {
+            categories.add(item.category);
+          }
         });
+        console.log("Available categories:", [...categories]);
+        if (Object.keys(menuItems).length === 0) {
+          showAlert("No menu items available. Please add items in the management dashboard.", true);
+        }
 
         categoryTabs.innerHTML = '';
         categories.forEach(category => {
@@ -632,6 +658,15 @@
       subtotalSpan.textContent = subtotal.toFixed(2);
       totalSpan.textContent = total.toFixed(2);
 
+      // Update change for cash payments
+      if (paymentMethodSelect.value === 'cash') {
+        const cashTendered = parseFloat(cashTenderedInput.value) || 0;
+        const change = cashTendered - total;
+        changeSpan.textContent = change >= 0 ? change.toFixed(2) : '0.00';
+      } else {
+        changeSpan.textContent = '0.00';
+      }
+
       document.querySelectorAll('.cart-item button').forEach(btn => {
         btn.addEventListener('click', () => {
           const index = parseInt(btn.dataset.index);
@@ -665,6 +700,9 @@
 
       const discount = parseFloat(discountInput.value) || 0;
       const paymentMethod = paymentMethodSelect.value;
+      let cashTendered = null;
+      let change = null;
+
       if (discount < 0 || discount > 100) {
         showAlert("Discount must be between 0 and 100.", true);
         return;
@@ -672,6 +710,16 @@
       if (!paymentMethod) {
         showAlert("Please select a payment method.", true);
         return;
+      }
+      if (paymentMethod === 'cash') {
+        cashTendered = parseFloat(cashTenderedInput.value) || 0;
+        const subtotal = cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
+        const total = subtotal * (1 - discount / 100);
+        change = cashTendered - total;
+        if (cashTendered < total) {
+          showAlert("Cash tendered is less than the total amount.", true);
+          return;
+        }
       }
 
       showSpinner();
@@ -733,10 +781,12 @@
           total,
           discount,
           paymentMethod,
+          cashTendered: paymentMethod === 'cash' ? cashTendered : null,
+          change: paymentMethod === 'cash' ? change : null,
           timestamp: Date.now(),
           userId: auth.currentUser?.uid || "anonymous",
           orderNumber,
-          status: "pending" // Added for kitchen panel
+          status: "pending"
         });
 
         // Display receipt
@@ -751,6 +801,7 @@
           <p>Discount: ${discount}%</p>
           <p>Total: R${total.toFixed(2)}</p>
           <p>Payment Method: ${paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)}</p>
+          ${paymentMethod === 'cash' ? `<p>Cash Tendered: R${cashTendered.toFixed(2)}</p><p>Change: R${change.toFixed(2)}</p>` : ''}
         `;
         receiptSection.classList.remove('hidden');
         menuGrid.classList.add('opacity-50', 'pointer-events-none');
@@ -759,9 +810,11 @@
         clearCartBtn.classList.add('hidden');
         discountInput.disabled = true;
         paymentMethodSelect.disabled = true;
+        cashTenderedInput.disabled = true;
 
         cart = [];
         discountInput.value = '';
+        cashTenderedInput.value = '';
         updateCart();
         orderNumber += 1;
         orderNumberSpan.textContent = orderNumber;
@@ -795,6 +848,7 @@
     function clearCart() {
       cart = [];
       discountInput.value = '';
+      cashTenderedInput.value = '';
       updateCart();
       showToast("Cart cleared");
     }
@@ -807,6 +861,7 @@
       clearCartBtn.classList.remove('hidden');
       discountInput.disabled = false;
       paymentMethodSelect.disabled = false;
+      cashTenderedInput.disabled = false;
       updateCart();
     }
 
@@ -847,6 +902,12 @@
         discountInput.addEventListener("input", updateCart);
         discountInput.addEventListener("keypress", (e) => {
           if (e.key === "Enter") submitOrder();
+        });
+      }
+      if (cashTenderedInput) {
+        cashTenderedInput.addEventListener("input", updateCart);
+        cashTenderedInput.addEventListener("keypress", (e) => {
+          if (e.key === "Enter" && paymentMethodSelect.value === 'cash') submitOrder();
         });
       }
     }
