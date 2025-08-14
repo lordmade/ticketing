@@ -461,16 +461,16 @@
     import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
     import { getDatabase, ref, onValue, get, update, push, set } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
 
-   const firebaseConfig = {
-  apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
-  authDomain: "fire-b-a8878.firebaseapp.com",
-  databaseURL: "https://fire-b-a8878.firebaseio.com",
-  projectId: "fire-b-a8878",
-  storageBucket: "fire-b-a8878.firebasestorage.app",
-  messagingSenderId: "658673187627",
-  appId: "1:658673187627:web:6e4c29af661785f0afa36e",
-  measurementId: "G-V4W97VMSKL"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
+      authDomain: "fire-b-a8878.firebaseapp.com",
+      databaseURL: "https://fire-b-a8878-default-rtdb.firebaseio.com",
+      projectId: "fire-b-a8878",
+      storageBucket: "fire-b-a8878.firebasestorage.app",
+      messagingSenderId: "658673187627",
+      appId: "1:658673187627:web:6e4c29af661785f0afa36e",
+      measurementId: "G-V4W97VMSKL"
+    };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -504,7 +504,9 @@
     // Check authentication
     auth.onAuthStateChanged(user => {
       if (!user) {
-        window.location.href = 'login.html'; // Redirect to login page if not authenticated
+        window.location.href = 'login.html';
+      } else {
+        console.log("Authenticated user:", user.uid);
       }
     });
 
@@ -543,7 +545,6 @@
           if (item.category) categories.add(item.category);
         });
 
-        // Update category tabs
         categoryTabs.innerHTML = '';
         categories.forEach(category => {
           const tab = document.createElement('button');
@@ -560,6 +561,7 @@
 
         displayMenuItems('all');
       }, (error) => {
+        console.error("Error loading menu items:", error);
         showAlert("Failed to load menu items: " + error.message, true);
       });
     }
@@ -677,6 +679,10 @@
         // Validate stock for items and ingredients
         for (const cartItem of cart) {
           const item = menuItems[cartItem.itemId];
+          if (!item) {
+            showAlert(`Item with ID ${cartItem.itemId} not found.`, true);
+            return;
+          }
           if (item.stock < cartItem.quantity) {
             showAlert(`Not enough stock for ${item.name}.`, true);
             return;
@@ -686,6 +692,10 @@
               const ingredientRef = ref(db, `menu/${ingId}`);
               const ingSnapshot = await get(ingredientRef);
               const ingredient = ingSnapshot.val();
+              if (!ingredient) {
+                showAlert(`Ingredient with ID ${ingId} not found.`, true);
+                return;
+              }
               const required = cartItem.quantity * ingQuantity;
               if (ingredient.stock < required) {
                 showAlert(`Not enough stock for ingredient ${ingredient.name}.`, true);
@@ -725,7 +735,8 @@
           paymentMethod,
           timestamp: Date.now(),
           userId: auth.currentUser?.uid || "anonymous",
-          orderNumber
+          orderNumber,
+          status: "pending" // Added for kitchen panel
         });
 
         // Display receipt
@@ -756,6 +767,7 @@
         orderNumberSpan.textContent = orderNumber;
         showToast(`Order #${orderNumber - 1} submitted successfully`);
       } catch (error) {
+        console.error("Error submitting order:", error);
         showAlert("Failed to submit order: " + error.message, true);
       } finally {
         hideSpinner();
@@ -763,16 +775,21 @@
     }
 
     async function logHistory(itemId, type, quantity, reason) {
-      const historyRef = ref(db, 'inventoryHistory');
-      const newHistoryRef = push(historyRef);
-      await set(newHistoryRef, {
-        itemId,
-        type,
-        quantity,
-        reason,
-        timestamp: Date.now(),
-        userId: auth.currentUser?.uid || "anonymous"
-      });
+      try {
+        const historyRef = ref(db, 'inventoryHistory');
+        const newHistoryRef = push(historyRef);
+        await set(newHistoryRef, {
+          itemId,
+          type,
+          quantity,
+          reason,
+          timestamp: Date.now(),
+          userId: auth.currentUser?.uid || "anonymous"
+        });
+      } catch (error) {
+        console.error("Error logging history:", error);
+        showAlert("Failed to log inventory history: " + error.message, true);
+      }
     }
 
     function clearCart() {
@@ -821,6 +838,7 @@
             await signOut(auth);
             window.location.href = 'login.html';
           } catch (error) {
+            console.error("Error logging out:", error);
             showAlert("Failed to logout: " + error.message, true);
           }
         });
