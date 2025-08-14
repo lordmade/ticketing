@@ -232,6 +232,28 @@
       background: #b00e28;
     }
 
+    .badge {
+      position: relative;
+    }
+
+    .badge::after {
+      content: attr(data-count);
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: var(--mcd-red);
+      color: var(--white);
+      border-radius: 50%;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: none;
+    }
+
+    .badge[data-count]:not([data-count="0"])::after {
+      display: block;
+    }
+
     .custom-alert {
       display: none;
       position: fixed;
@@ -387,6 +409,13 @@
         right: 10px;
         max-width: 80%;
       }
+
+      .badge::after {
+        top: -6px;
+        right: -6px;
+        padding: 0.2rem 0.4rem;
+        font-size: 0.65rem;
+      }
     }
   </style>
 </head>
@@ -400,7 +429,10 @@
           </svg>
           McDonald's POS
         </div>
-        <button class="action-btn" id="logout-btn" aria-label="Logout">Logout</button>
+        <div class="flex gap-2">
+          <button class="action-btn badge" id="online-orders-btn" aria-label="View online orders" data-count="0">Online Orders</button>
+          <button class="action-btn" id="logout-btn" aria-label="Logout">Logout</button>
+        </div>
       </div>
       <div class="category-tabs" id="category-tabs">
         <button class="category-tab active" data-category="all">All</button>
@@ -466,12 +498,12 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-    import { getDatabase, ref, onValue, get, update, push, set } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+    import { getDatabase, ref, onValue, get, update, push, set, remove } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
       authDomain: "fire-b-a8878.firebaseapp.com",
-     databaseURL: "https://fire-b-a8878.firebaseio.com",
+      databaseURL: "https://fire-b-a8878.firebaseio.com",
       projectId: "fire-b-a8878",
       storageBucket: "fire-b-a8878.firebasestorage.app",
       messagingSenderId: "658673187627",
@@ -497,6 +529,7 @@
     const submitOrderBtn = document.getElementById("submit-order-btn");
     const newOrderBtn = document.getElementById("new-order-btn");
     const logoutBtn = document.getElementById("logout-btn");
+    const onlineOrdersBtn = document.getElementById("online-orders-btn");
     const receiptSection = document.getElementById("receipt-section");
     const receiptContent = document.getElementById("receipt-content");
     const customAlert = document.getElementById("custom-alert");
@@ -519,6 +552,7 @@
         window.location.href = 'login.html';
       } else {
         console.log("Authenticated user:", user.uid);
+        loadOnlineOrdersCount(user.uid);
       }
     });
 
@@ -548,11 +582,32 @@
 
     document.querySelector(".custom-alert .close-btn").addEventListener("click", hideAlert);
 
+    // Load online orders count
+    function loadOnlineOrdersCount(userId) {
+      const onlineOrdersRef = ref(db, 'onlineOrders');
+      onValue(onlineOrdersRef, (snapshot) => {
+        const onlineOrders = snapshot.val() || {};
+        const newOrdersCount = Object.values(onlineOrders).filter(order => order.status === 'new').length;
+        onlineOrdersBtn.setAttribute('data-count', newOrdersCount);
+        console.log(`New online orders: ${newOrdersCount}`);
+      }, (error) => {
+        console.error("Error loading online orders count:", error);
+        showAlert("Failed to load online orders count: " + error.message, true);
+      });
+    }
+
+    // Online orders button click
+    onlineOrdersBtn.addEventListener("click", () => {
+      onlineOrdersBtn.classList.add("tap-active");
+      setTimeout(() => onlineOrdersBtn.classList.remove("tap-active"), 100);
+      window.location.href = 'online-orders.html';
+    });
+
     // Toggle cash tendered input based on payment method
     paymentMethodSelect.addEventListener('change', () => {
       cashTenderedGroup.style.display = paymentMethodSelect.value === 'cash' ? 'block' : 'none';
       changeSection.style.display = paymentMethodSelect.value === 'cash' ? 'block' : 'none';
-      updateCart(); // Reset change display when switching payment methods
+      updateCart();
     });
 
     function loadMenuItems() {
@@ -658,7 +713,6 @@
       subtotalSpan.textContent = subtotal.toFixed(2);
       totalSpan.textContent = total.toFixed(2);
 
-      // Update change for cash payments
       if (paymentMethodSelect.value === 'cash') {
         const cashTendered = parseFloat(cashTenderedInput.value) || 0;
         const change = cashTendered - total;
@@ -724,7 +778,6 @@
 
       showSpinner();
       try {
-        // Validate stock for items and ingredients
         for (const cartItem of cart) {
           const item = menuItems[cartItem.itemId];
           if (!item) {
@@ -753,7 +806,6 @@
           }
         }
 
-        // Update stock
         for (const cartItem of cart) {
           const item = menuItems[cartItem.itemId];
           const itemRef = ref(db, `menu/${cartItem.itemId}`);
@@ -771,7 +823,6 @@
           await logHistory(cartItem.itemId, "order", -cartItem.quantity, `Customer order #${orderNumber}`);
         }
 
-        // Save order
         const subtotal = cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
         const total = subtotal * (1 - discount / 100);
         const orderRef = ref(db, 'orders');
@@ -789,7 +840,6 @@
           status: "pending"
         });
 
-        // Display receipt
         receiptContent.innerHTML = `
           <p class="font-semibold">Order #${orderNumber}</p>
           <p>Timestamp: ${new Date().toLocaleString()}</p>
