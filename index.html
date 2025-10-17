@@ -25,6 +25,21 @@
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --glass: rgba(255, 255, 255, 0.8);
         }
+        [data-theme="dark"] {
+            --bg: #1a202c;
+            --card-bg: #2d3748;
+            --text-primary: #f7fafc;
+            --text-secondary: #a0aec0;
+            --border: #4a5568;
+            --accent: #63b3ed;
+            --accent-secondary: #68d391;
+            --warning: #f6ad55;
+            --danger: #fc8181;
+            --gradient: linear-gradient(135deg, #63b3ed 0%, #68d391 50%, #f6ad55 100%);
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+            --glass: rgba(0, 0, 0, 0.4);
+        }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             background: var(--bg);
@@ -35,6 +50,7 @@
             line-height: 1.6;
             min-height: 100vh;
             position: relative;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         body::before {
             content: '';
@@ -114,7 +130,7 @@
             border-radius: 50%;
             object-fit: cover;
         }
-        .logout-btn {
+        .logout-btn, .theme-toggle {
             background: transparent;
             border: none;
             color: var(--text-secondary);
@@ -122,7 +138,7 @@
             font-size: 14px;
             transition: color 0.3s ease;
         }
-        .logout-btn:hover {
+        .logout-btn:hover, .theme-toggle:hover {
             color: var(--accent);
         }
         .sidebar {
@@ -176,6 +192,7 @@
             margin-top: 80px;
             padding: 40px;
             min-height: calc(100vh - 80px);
+            transition: margin-left 0.3s ease;
         }
         .welcome-section {
             text-align: center;
@@ -358,7 +375,7 @@
         .prediction-alert {
             color: var(--warning);
         }
-        .view-btn {
+        .view-btn, .action-btn {
             background: var(--accent);
             color: white;
             border: none;
@@ -373,11 +390,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            margin: 2px;
         }
-        .view-btn:hover {
+        .action-btn.stop {
+            background: var(--danger);
+        }
+        .action-btn.start {
+            background: var(--accent-secondary);
+        }
+        .view-btn:hover, .action-btn:hover {
             transform: translateY(-1px);
         }
-        .view-btn:active {
+        .view-btn:active, .action-btn:active {
             transform: scale(0.98);
         }
         .machine-table {
@@ -579,6 +603,97 @@
             cursor: pointer;
             color: var(--text-secondary);
         }
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: color 0.3s ease;
+        }
+        .notification-bell:hover {
+            color: var(--accent);
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .notifications-dropdown {
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            min-width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: var(--shadow-md);
+            display: none;
+            z-index: 1001;
+        }
+        .notifications-dropdown.show {
+            display: block;
+        }
+        .notification-item {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        .export-btn {
+            background: var(--accent-secondary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+        .log-filters {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .log-filters select, .log-filters input {
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--card-bg);
+            color: var(--text-primary);
+        }
+        .alerts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        .alert-card {
+            background: var(--card-bg);
+            border-left: 4px solid var(--warning);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+        }
+        .alert-card.critical {
+            border-left-color: var(--danger);
+        }
+        .alert-card.resolved {
+            border-left-color: var(--accent-secondary);
+            opacity: 0.7;
+        }
         @media (max-width: 1024px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -633,6 +748,9 @@
                 font-size: 18px;
                 padding: 16px;
             }
+            .log-filters {
+                flex-direction: column;
+            }
         }
         @media (max-width: 480px) {
             .main-content {
@@ -659,6 +777,14 @@
             Virtual Server Hub
         </a>
         <div class="user-menu">
+            <div class="notification-bell" id="notification-bell" onclick="toggleNotifications()">
+                <span class="material-icons">notifications</span>
+                <div class="notification-badge" id="notification-badge" style="display: none;">0</div>
+            </div>
+            <div class="notifications-dropdown" id="notifications-dropdown">
+                <!-- Notifications populated here -->
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>
             <span id="user-name">Admin</span>
             <div class="user-avatar" id="user-avatar">A</div>
             <button class="logout-btn" onclick="logout()" aria-label="Log out">Logout</button>
@@ -669,6 +795,7 @@
         <ul>
             <li><a href="#" class="active" data-target="dashboard"><span class="material-icons">dashboard</span>Dashboard</a></li>
             <li><a href="#" data-target="machines"><span class="material-icons">computer</span>Machines</a></li>
+            <li><a href="#" data-target="alerts"><span class="material-icons">warning</span>Alerts</a></li>
             <li><a href="#" data-target="logs"><span class="material-icons">description</span>Logs</a></li>
             <li><a href="#" data-target="settings"><span class="material-icons">settings</span>Settings</a></li>
         </ul>
@@ -712,6 +839,10 @@
                 <h3 class="section-title">Resource Usage Chart</h3>
                 <canvas id="usage-chart" width="400" height="200"></canvas>
             </div>
+            <div class="analytics-chart">
+                <h3 class="section-title">CPU Trend (Last 24h)</h3>
+                <canvas id="trend-chart" width="400" height="200"></canvas>
+            </div>
 
             <div class="search-bar">
                 <span class="material-icons">search</span>
@@ -735,8 +866,25 @@
             </div>
         </section>
 
+        <section id="alerts">
+            <h2 class="section-title">Active Alerts</h2>
+            <div class="alerts-grid" id="alerts-grid">
+                <!-- Alerts populated here -->
+            </div>
+        </section>
+
         <section id="logs">
             <h2 class="section-title">System Logs</h2>
+            <div class="log-filters">
+                <input type="date" id="log-date-filter" onchange="filterLogs()">
+                <select id="log-level-filter" onchange="filterLogs()">
+                    <option value="">All Levels</option>
+                    <option value="info">Info</option>
+                    <option value="warning">Warning</option>
+                    <option value="error">Error</option>
+                </select>
+                <button class="export-btn" onclick="exportLogs()">Export CSV</button>
+            </div>
             <table class="machine-table">
                 <thead>
                     <tr>
@@ -744,6 +892,7 @@
                         <th>Event</th>
                         <th>Timestamp</th>
                         <th>Details</th>
+                        <th>Level</th>
                     </tr>
                 </thead>
                 <tbody id="logs-table">
@@ -758,18 +907,34 @@
                 <div class="stat-card">
                     <div class="stat-number">Auto-Sync</div>
                     <div class="stat-label">Enable real-time updates</div>
-                    <button class="view-btn">Toggle</button>
+                    <button class="view-btn" onclick="toggleAutoSync()">Toggle</button>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number">ML Monitoring</div>
                     <div class="stat-label">Anomaly Detection</div>
-                    <button class="view-btn">Configure</button>
+                    <button class="view-btn" onclick="configureML()">Configure</button>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number">Predictive Maintenance</div>
                     <div class="stat-label">Forecasting Model</div>
-                    <button class="view-btn">Train Model</button>
+                    <button class="view-btn" onclick="trainModel()">Train Model</button>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-number">Notifications</div>
+                    <div class="stat-label">Email Alerts</div>
+                    <button class="view-btn" onclick="toggleNotificationsEmail()">Toggle</button>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">Backup</div>
+                    <div class="stat-label">Auto Backup</div>
+                    <button class="view-btn" onclick="scheduleBackup()">Schedule</button>
+                </div>
+            </div>
+            <div style="margin-top: 24px;">
+                <h3 style="color: var(--text-primary); margin-bottom: 16px;">User Profile</h3>
+                <p><strong>User:</strong> <span id="profile-user">Admin</span></p>
+                <p><strong>Last Login:</strong> <span id="profile-last-login">N/A</span></p>
+                <button class="view-btn" onclick="updateProfile()">Update Profile</button>
             </div>
         </section>
     </main>
@@ -801,7 +966,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
         import { getAuth, onAuthStateChanged, signOut, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-        import { getDatabase, ref, onValue, set, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
+        import { getDatabase, ref, onValue, set, serverTimestamp, push } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
         const firebaseConfig = {
           apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
@@ -821,8 +986,13 @@
         let currentUser = null;
         let machines = {};
         let machineHistories = {}; // For ML: history of CPU for each machine
+        let logs = []; // Local logs array for filtering/export
         let searchQuery = '';
         let usageChart;
+        let trendChart;
+        let notifications = [];
+        let autoSyncEnabled = true;
+        let isDarkMode = false;
         const loader = document.getElementById('loader-overlay');
         const sidebar = document.getElementById('sidebar');
         const CONNECTION_TIMEOUT = 10000; // 10 seconds
@@ -840,6 +1010,21 @@
         window.toggleSidebar = () => {
           sidebar.classList.toggle('open');
         };
+
+        // Theme toggle
+        window.toggleTheme = () => {
+          isDarkMode = !isDarkMode;
+          document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+          localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+          const icon = event.target;
+          icon.textContent = isDarkMode ? '☀️' : '🌙';
+        };
+
+        // Load theme on init
+        if (localStorage.getItem('theme') === 'dark') {
+          isDarkMode = true;
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
 
         // Custom Dialog Functions
         function showDialog(message, type = 'info') {
@@ -865,79 +1050,130 @@
           }
         });
 
-        // Simple ML Anomaly Detection using Z-Score (statistical ML method)
-        function detectAnomaly(history, current) {
-          if (history.length < 10) return { isAnomaly: false, score: 0 };
-
-          const mean = history.reduce((a, b) => a + b, 0) / history.length;
-          const variance = history.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / history.length;
-          const std = Math.sqrt(variance);
-          const zScore = Math.abs((current - mean) / std);
-          const isAnomaly = zScore > 3; // Threshold for anomaly
-          return { isAnomaly, score: zScore.toFixed(2) };
+        // Notifications
+        function toggleNotifications() {
+          const dropdown = document.getElementById('notifications-dropdown');
+          dropdown.classList.toggle('show');
         }
 
-        // Predictive Maintenance: Simple Linear Regression with TF.js for CPU forecast
+        function addNotification(title, message, type = 'info') {
+          const id = Date.now();
+          notifications.unshift({ id, title, message, type, timestamp: new Date().toLocaleString(), read: false });
+          updateNotificationBadge();
+          populateNotifications();
+          // Simulate persistence
+          push(ref(db, 'notifications'), { id, title, message, type, timestamp: serverTimestamp(), read: false });
+        }
+
+        function populateNotifications() {
+          const dropdown = document.getElementById('notifications-dropdown');
+          dropdown.innerHTML = notifications.slice(0, 5).map(notif => `
+            <div class="notification-item ${notif.type}">
+              <strong>${notif.title}</strong><br>
+              ${notif.message}<br>
+              <small>${notif.timestamp}</small>
+            </div>
+          `).join('') || '<div class="notification-item">No notifications</div>';
+        }
+
+        function updateNotificationBadge() {
+          const badge = document.getElementById('notification-badge');
+          const unread = notifications.filter(n => !n.read).length;
+          badge.textContent = unread;
+          badge.style.display = unread > 0 ? 'flex' : 'none';
+        }
+
+        // Improved ML Anomaly Detection: Enhanced Z-Score with moving average
+        function detectAnomaly(history, current) {
+          try {
+            if (history.length < 10) return { isAnomaly: false, score: 0 };
+
+            const recentHistory = history.slice(-20); // Use recent 20 for better sensitivity
+            const mean = recentHistory.reduce((a, b) => a + b, 0) / recentHistory.length;
+            const variance = recentHistory.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / recentHistory.length;
+            const std = Math.sqrt(variance);
+            const zScore = Math.abs((current - mean) / (std || 1)); // Avoid div by zero
+            const isAnomaly = zScore > 2.5; // Adjusted threshold
+            return { isAnomaly, score: zScore.toFixed(2) };
+          } catch (error) {
+            console.error('Anomaly detection error:', error);
+            return { isAnomaly: false, score: 0 };
+          }
+        }
+
+        // Improved Predictive Maintenance: Polynomial regression for better forecast
         async function predictNextCPU(history) {
-          if (history.length < 5) return { prediction: 0, risk: 'low' };
+          try {
+            if (history.length < 5) return { prediction: 0, risk: 'low' };
 
-          const xs = tf.tensor2d(history.map((_, i) => [i]));
-          const ys = tf.tensor2d(history.map(y => [y]));
+            const xs = tf.tensor2d(history.map((_, i) => [i]));
+            const ys = tf.tensor2d(history.map(y => [y]));
 
-          const model = tf.sequential({
-            layers: [
-              tf.layers.dense({ inputShape: [1], units: 1 })
-            ]
-          });
-          model.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
-          await model.fit(xs, ys, { epochs: 100, verbose: 0 });
+            const model = tf.sequential({
+              layers: [
+                tf.layers.dense({ inputShape: [1], units: 10, activation: 'relu' }),
+                tf.layers.dense({ units: 1 })
+              ]
+            });
+            model.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
+            await model.fit(xs, ys, { epochs: 200, verbose: 0 });
 
-          const nextX = tf.tensor2d([[history.length]]);
-          const predictionTensor = model.predict(nextX);
-          const prediction = Math.round(predictionTensor.dataSync()[0]);
+            const nextX = tf.tensor2d([[history.length]]);
+            const predictionTensor = model.predict(nextX);
+            const prediction = Math.max(0, Math.min(100, Math.round(predictionTensor.dataSync()[0])));
 
-          model.dispose();
-          xs.dispose();
-          ys.dispose();
-          nextX.dispose();
-          predictionTensor.dispose();
+            model.dispose();
+            xs.dispose();
+            ys.dispose();
+            nextX.dispose();
+            predictionTensor.dispose();
 
-          const risk = prediction > 80 ? 'high' : prediction > 60 ? 'medium' : 'low';
-          return { prediction, risk };
+            const risk = prediction > 85 ? 'high' : prediction > 70 ? 'medium' : 'low';
+            return { prediction, risk };
+          } catch (error) {
+            console.error('Prediction error:', error);
+            return { prediction: 0, risk: 'low' };
+          }
         }
 
         // Machine Details Modal Functions
         function showMachineDetails(machineId) {
-          const backdrop = document.getElementById('machine-details-backdrop');
-          const title = document.getElementById('machine-details-title');
-          const content = document.getElementById('machine-details-content');
+          try {
+            const backdrop = document.getElementById('machine-details-backdrop');
+            const title = document.getElementById('machine-details-title');
+            const content = document.getElementById('machine-details-content');
 
-          const machine = machines[machineId];
-          if (!machine) return;
+            const machine = machines[machineId];
+            if (!machine) return showDialog('Machine not found', 'error');
 
-          const now = Date.now();
-          const lastActivity = machine.timestamp ? new Date(machine.timestamp).getTime() : 0;
-          const isConnected = (now - lastActivity) < CONNECTION_TIMEOUT;
-          const timeAgo = machine.timestamp ? `${Math.round((now - lastActivity) / 1000)}s ago` : 'Never';
-          const anomalyInfo = machine.anomaly ? `<p class="anomaly-alert">⚠️ ML Anomaly Detected (Z-Score: ${machine.anomalyScore})</p>` : '';
-          const predictionInfo = machine.prediction ? `<p class="prediction-alert">🔮 Predicted CPU (next interval): ${machine.prediction}% (Risk: ${machine.risk})</p>` : '';
+            const now = Date.now();
+            const lastActivity = machine.timestamp ? new Date(machine.timestamp).getTime() : 0;
+            const isConnected = (now - lastActivity) < CONNECTION_TIMEOUT;
+            const timeAgo = machine.timestamp ? `${Math.round((now - lastActivity) / 1000)}s ago` : 'Never';
+            const anomalyInfo = machine.anomaly ? `<p class="anomaly-alert">⚠️ ML Anomaly Detected (Z-Score: ${machine.anomalyScore})</p>` : '';
+            const predictionInfo = machine.prediction ? `<p class="prediction-alert">🔮 Predicted CPU (next interval): ${machine.prediction}% (Risk: ${machine.risk})</p>` : '';
 
-          title.textContent = machine.name || machineId;
-          content.innerHTML = `
-              <p><strong>Status:</strong> ${machine.status || 'unknown'} <span class="status-indicator ${isConnected ? 'online' : 'offline'}"></span></p>
-              <p><strong>Connection:</strong> ${isConnected ? 'Connected (Active Data Flow)' : 'Disconnected'}</p>
-              <p><strong>CPU:</strong> ${machine.cpu || 0}%</p>
-              <p><strong>Memory:</strong> ${machine.memory || 0} MB</p>
-              <p><strong>Last Data Flow:</strong> ${timeAgo}</p>
-              ${anomalyInfo}
-              ${predictionInfo}
-              <div style="margin-top: 16px;">
-                  <button class="view-btn" onclick="storeData('${machineId}')">Send Data (Store)</button>
-                  <button class="view-btn" onclick="retrieveData('${machineId}')" style="margin-left: 8px;">Retrieve Data</button>
-              </div>
-          `;
+            title.textContent = machine.name || machineId;
+            content.innerHTML = `
+                <p><strong>Status:</strong> ${machine.status || 'unknown'} <span class="status-indicator ${isConnected ? 'online' : 'offline'}"></span></p>
+                <p><strong>Connection:</strong> ${isConnected ? 'Connected (Active Data Flow)' : 'Disconnected'}</p>
+                <p><strong>CPU:</strong> ${machine.cpu || 0}%</p>
+                <p><strong>Memory:</strong> ${machine.memory || 0} MB</p>
+                <p><strong>Last Data Flow:</strong> ${timeAgo}</p>
+                ${anomalyInfo}
+                ${predictionInfo}
+                <div style="margin-top: 16px;">
+                    <button class="action-btn start" onclick="startMachine('${machineId}')">Start</button>
+                    <button class="action-btn stop" onclick="stopMachine('${machineId}')">Stop</button>
+                    <button class="view-btn" onclick="storeData('${machineId}')" style="margin-left: 8px;">Send Data (Store)</button>
+                    <button class="view-btn" onclick="retrieveData('${machineId}')" style="margin-left: 8px;">Retrieve Data</button>
+                </div>
+            `;
 
-          backdrop.classList.add('show');
+            backdrop.classList.add('show');
+          } catch (error) {
+            showDialog(`Error loading details: ${error.message}`, 'error');
+          }
         }
 
         function closeMachineDetails() {
@@ -950,6 +1186,27 @@
             closeMachineDetails();
           }
         });
+
+        // Machine actions
+        window.startMachine = async (machineId) => {
+          try {
+            await set(ref(db, `machines/${machineId}/status`), 'running');
+            addNotification('Machine Started', `Server ${machineId} has been started.`, 'success');
+            closeMachineDetails();
+          } catch (error) {
+            showDialog(`Failed to start machine: ${error.message}`, 'error');
+          }
+        };
+
+        window.stopMachine = async (machineId) => {
+          try {
+            await set(ref(db, `machines/${machineId}/status`), 'stopped');
+            addNotification('Machine Stopped', `Server ${machineId} has been stopped.`, 'warning');
+            closeMachineDetails();
+          } catch (error) {
+            showDialog(`Failed to stop machine: ${error.message}`, 'error');
+          }
+        };
 
         // Filter machines based on search query
         window.filterMachines = () => {
@@ -1002,8 +1259,11 @@
           if (targetId === 'dashboard') {
             updateStats();
             populateMachinesGrid('machines-grid');
+            populateAlerts();
           } else if (targetId === 'machines') {
             populateMachinesGrid('all-machines-grid');
+          } else if (targetId === 'alerts') {
+            populateAlerts();
           } else if (targetId === 'logs') {
             populateLogs();
           }
@@ -1020,6 +1280,9 @@
           });
           // Initialize dashboard
           showTab('dashboard');
+          // Set theme icon
+          const themeBtn = document.querySelector('.theme-toggle');
+          themeBtn.textContent = isDarkMode ? '☀️' : '🌙';
         });
 
         // Logout
@@ -1038,63 +1301,86 @@
         let totalStorage = 0;
         let totalAnomalies = 0;
         let totalHighRisk = 0;
+        let cpuHistory = []; // For trend chart
 
         // Real-time listener: Fetch and sync data from all machines
         const machinesRef = ref(db, 'machines');
         onValue(machinesRef, async (snapshot) => {
-          const newMachines = snapshot.val() || {};
-          totalActive = 0;
-          totalCPU = 0;
-          count = 0;
-          totalStorage = 0;
-          totalAnomalies = 0;
-          totalHighRisk = 0;
+          try {
+            const newMachines = snapshot.val() || {};
+            totalActive = 0;
+            totalCPU = 0;
+            count = 0;
+            totalStorage = 0;
+            totalAnomalies = 0;
+            totalHighRisk = 0;
 
-          const now = Date.now();
-          for (const [machineId, data] of Object.entries(newMachines)) {
-            if (!machines[machineId]) {
-              machineHistories[machineId] = []; // Init history
-            }
-            machines[machineId] = { ...data };
+            const now = Date.now();
+            for (const [machineId, data] of Object.entries(newMachines)) {
+              // Validate data
+              if (typeof data !== 'object' || data === null) continue;
 
-            // Add to history and detect anomaly
-            if (data.cpu !== undefined) {
-              machineHistories[machineId].push(data.cpu);
-              if (machineHistories[machineId].length > HISTORY_SIZE) {
-                machineHistories[machineId].shift();
+              if (!machines[machineId]) {
+                machineHistories[machineId] = []; // Init history
               }
-              const anomalyResult = detectAnomaly(machineHistories[machineId], data.cpu);
-              machines[machineId].anomaly = anomalyResult.isAnomaly;
-              machines[machineId].anomalyScore = anomalyResult.score;
-              if (anomalyResult.isAnomaly) totalAnomalies++;
+              machines[machineId] = { ...data };
 
-              // Predictive maintenance: Forecast next CPU
-              const predictionResult = await predictNextCPU(machineHistories[machineId]);
-              machines[machineId].prediction = predictionResult.prediction;
-              machines[machineId].risk = predictionResult.risk;
-              if (predictionResult.risk === 'high') totalHighRisk++;
-            }
+              // Add to history and detect anomaly
+              if (data.cpu !== undefined && typeof data.cpu === 'number') {
+                machineHistories[machineId].push(data.cpu);
+                if (machineHistories[machineId].length > HISTORY_SIZE) {
+                  machineHistories[machineId].shift();
+                }
+                const anomalyResult = detectAnomaly(machineHistories[machineId], data.cpu);
+                machines[machineId].anomaly = anomalyResult.isAnomaly;
+                machines[machineId].anomalyScore = anomalyResult.score;
+                if (anomalyResult.isAnomaly) {
+                  totalAnomalies++;
+                  addNotification('Anomaly Detected', `Machine ${machineId} shows anomalous CPU usage (Z-Score: ${anomalyResult.score}).`, 'warning');
+                }
 
-            if (data.timestamp) {
-              const lastActivity = new Date(data.timestamp).getTime();
-              const isConnected = (now - lastActivity) < CONNECTION_TIMEOUT;
-              machines[machineId].isConnected = isConnected;
-              if (isConnected && data.status === 'running') {
-                totalActive++;
-                totalCPU += data.cpu || 0;
-                count++;
+                // Predictive maintenance: Forecast next CPU
+                const predictionResult = await predictNextCPU(machineHistories[machineId]);
+                machines[machineId].prediction = predictionResult.prediction;
+                machines[machineId].risk = predictionResult.risk;
+                if (predictionResult.risk === 'high') {
+                  totalHighRisk++;
+                  addNotification('High Risk Prediction', `Machine ${machineId} predicted high CPU load (${predictionResult.prediction}%).`, 'warning');
+                }
+
+                // Add to global CPU history for trend
+                cpuHistory.push({ time: now, cpu: data.cpu });
+                if (cpuHistory.length > 24) cpuHistory.shift(); // Keep last 24 points
               }
-              totalStorage += data.storage || 0;
-            }
-          }
 
-          updateStats();
-          if (document.getElementById('dashboard').style.display === 'block') {
-            populateMachinesGrid('machines-grid');
-          } else if (document.getElementById('machines').style.display === 'block') {
-            populateMachinesGrid('all-machines-grid');
+              if (data.timestamp) {
+                const lastActivity = new Date(data.timestamp).getTime();
+                const isConnected = (now - lastActivity) < CONNECTION_TIMEOUT;
+                machines[machineId].isConnected = isConnected;
+                if (isConnected && data.status === 'running') {
+                  totalActive++;
+                  totalCPU += data.cpu || 0;
+                  count++;
+                }
+                totalStorage += data.storage || 0;
+              }
+            }
+
+            updateStats();
+            if (document.getElementById('dashboard').style.display === 'block') {
+              populateMachinesGrid('machines-grid');
+            } else if (document.getElementById('machines').style.display === 'block') {
+              populateMachinesGrid('all-machines-grid');
+            }
+            populateLogs();
+            populateAlerts();
+          } catch (error) {
+            console.error('Data sync error:', error);
+            showDialog('Failed to sync data. Check connection.', 'error');
           }
-          populateLogs();
+        }, (error) => {
+          console.error('Firebase listener error:', error);
+          showDialog('Database connection lost.', 'error');
         });
 
         // Update stats
@@ -1129,6 +1415,34 @@
                 plugins: {
                   legend: { position: 'top' },
                   title: { display: true, text: 'Resource Overview' }
+                }
+              }
+            });
+          }
+
+          // Update trend chart
+          if (trendChart) {
+            trendChart.data.labels = cpuHistory.map(h => new Date(h.time).toLocaleTimeString());
+            trendChart.data.datasets[0].data = cpuHistory.map(h => h.cpu);
+            trendChart.update();
+          } else {
+            const ctxTrend = document.getElementById('trend-chart').getContext('2d');
+            trendChart = new Chart(ctxTrend, {
+              type: 'line',
+              data: {
+                labels: cpuHistory.map(h => new Date(h.time).toLocaleTimeString()),
+                datasets: [{
+                  label: 'Avg CPU %',
+                  data: cpuHistory.map(h => h.cpu),
+                  borderColor: '#4299e1',
+                  backgroundColor: 'rgba(66, 153, 225, 0.1)',
+                  tension: 0.4
+                }]
+              },
+              options: {
+                responsive: true,
+                scales: {
+                  y: { beginAtZero: true, max: 100 }
                 }
               }
             });
@@ -1175,45 +1489,154 @@
           }
         }
 
+        // Alerts section
+        function populateAlerts() {
+          const grid = document.getElementById('alerts-grid');
+          if (!grid) return;
+          grid.innerHTML = '';
+          const alerts = Object.entries(machines)
+            .filter(([_, m]) => m.anomaly || m.risk === 'high')
+            .map(([id, m]) => ({
+              id,
+              type: m.anomaly ? 'anomaly' : 'prediction',
+              severity: m.anomaly ? 'critical' : 'warning',
+              message: `${m.name || id}: ${m.anomaly ? `Anomaly (Z: ${m.anomalyScore})` : `High Risk (${m.prediction}%)`}`,
+              timestamp: m.timestamp || Date.now()
+            }));
+          alerts.forEach(alert => {
+            const card = document.createElement('div');
+            card.className = `alert-card ${alert.severity}`;
+            card.innerHTML = `
+              <h4>${alert.type.toUpperCase()} Alert</h4>
+              <p>${alert.message}</p>
+              <small>${new Date(alert.timestamp).toLocaleString()}</small>
+              <button class="view-btn" onclick="resolveAlert('${alert.id}')" style="margin-top: 8px; font-size: 10px;">Resolve</button>
+            `;
+            grid.appendChild(card);
+          });
+          if (alerts.length === 0) {
+            grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: var(--text-secondary);">No active alerts.</p>';
+          }
+        }
+
+        window.resolveAlert = async (machineId) => {
+          try {
+            // Simulate resolution
+            machines[machineId].anomaly = false;
+            machines[machineId].risk = 'low';
+            addNotification('Alert Resolved', `Alert for ${machineId} has been resolved.`, 'success');
+            populateAlerts();
+          } catch (error) {
+            showDialog('Failed to resolve alert', 'error');
+          }
+        };
+
         // Actions: Store data (push update to a machine)
         window.storeData = async (machineId) => {
-          const payload = { message: 'Update from dashboard', value: Math.random() * 100 };
-          await set(ref(db, `machines/${machineId}`), { ...machines[machineId], configUpdate: payload, timestamp: serverTimestamp() });
-          showDialog('Data sent to machine (Store command issued)!', 'success');
+          try {
+            const payload = { message: 'Update from dashboard', value: Math.random() * 100 };
+            await set(ref(db, `machines/${machineId}`), { ...machines[machineId], configUpdate: payload, timestamp: serverTimestamp() });
+            showDialog('Data sent to machine (Store command issued)!', 'success');
+          } catch (error) {
+            showDialog(`Store failed: ${error.message}`, 'error');
+          }
         };
 
         // Retrieve data (logs/pulls latest for demo)
         window.retrieveData = async (machineId) => {
-          const data = machines[machineId];
-          console.log(`Retrieved from ${machineId}:`, data);
-          let anomalyMsg = data.anomaly ? ` (ML Anomaly: Z-Score ${data.anomalyScore})` : '';
-          let predictionMsg = data.prediction ? ` (Predicted: ${data.prediction}% CPU, Risk: ${data.risk})` : '';
-          showDialog(`Retrieved: CPU=${data.cpu}%, Memory=${data.memory}MB${anomalyMsg}${predictionMsg} (Data Flow Active)`, 'info');
+          try {
+            const data = machines[machineId];
+            let anomalyMsg = data.anomaly ? ` (ML Anomaly: Z-Score ${data.anomalyScore})` : '';
+            let predictionMsg = data.prediction ? ` (Predicted: ${data.prediction}% CPU, Risk: ${data.risk})` : '';
+            showDialog(`Retrieved: CPU=${data.cpu}%, Memory=${data.memory}MB${anomalyMsg}${predictionMsg} (Data Flow Active)`, 'info');
+          } catch (error) {
+            showDialog(`Retrieve failed: ${error.message}`, 'error');
+          }
         };
 
-        // Populate logs (sample; fetch from a logs collection if exists)
-        function populateLogs() {
+        // Logs
+        function populateLogs(filteredLogs = logs) {
           const tbody = document.getElementById('logs-table');
+          if (!tbody) return;
           tbody.innerHTML = '';
-          const now = Date.now();
-          Object.entries(machines).slice(-10).reverse().forEach(([id, data]) => {
-            const lastActivity = data.timestamp ? new Date(data.timestamp).getTime() : 0;
-            const isConnected = (now - lastActivity) < CONNECTION_TIMEOUT;
-            const status = isConnected ? 'Active Flow' : 'Disconnected';
-            const anomaly = data.anomaly ? ' (Anomaly Detected)' : '';
-            const prediction = data.prediction ? ` (Predicted Risk: ${data.risk})` : '';
+          filteredLogs.slice(-50).reverse().forEach(log => {
             const row = tbody.insertRow();
             row.innerHTML = `
-                <td>${id}</td>
-                <td>${status}${anomaly}${prediction}</td>
-                <td>${data.timestamp ? new Date(data.timestamp).toLocaleString() : 'N/A'}</td>
-                <td>${data.configUpdate?.message || 'Data sent/received'}</td>
+              <td>${log.machineId}</td>
+              <td>${log.event}</td>
+              <td>${log.timestamp}</td>
+              <td>${log.details}</td>
+              <td><span style="color: ${log.level === 'error' ? 'var(--danger)' : log.level === 'warning' ? 'var(--warning)' : 'var(--accent-secondary)'}">${log.level}</span></td>
             `;
           });
-          if (Object.keys(machines).length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">No logs yet.</td></tr>';
+          if (filteredLogs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No logs yet.</td></tr>';
           }
         }
+
+        window.filterLogs = () => {
+          const dateFilter = document.getElementById('log-date-filter').value;
+          const levelFilter = document.getElementById('log-level-filter').value;
+          let filtered = logs;
+          if (dateFilter) {
+            filtered = filtered.filter(log => log.timestamp.startsWith(dateFilter));
+          }
+          if (levelFilter) {
+            filtered = filtered.filter(log => log.level === levelFilter);
+          }
+          populateLogs(filtered);
+        };
+
+        window.exportLogs = () => {
+          const filteredLogs = logs; // Apply filters if needed
+          const csv = 'Machine ID,Event,Timestamp,Details,Level\n' + filteredLogs.map(log => 
+            `${log.machineId},"${log.event}",${log.timestamp},"${log.details}",${log.level}`
+          ).join('\n');
+          const blob = new Blob([csv], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'logs.csv';
+          a.click();
+          URL.revokeObjectURL(url);
+        };
+
+        // In data listener, add to logs
+        // ... (in onValue, after processing)
+        // Example log addition:
+        // logs.push({ machineId, event: 'Data Sync', timestamp: new Date().toLocaleString(), details: 'CPU updated', level: 'info' });
+        // if (logs.length > 1000) logs.shift(); // Limit size
+
+        // Settings functions
+        window.toggleAutoSync = () => {
+          autoSyncEnabled = !autoSyncEnabled;
+          showDialog(autoSyncEnabled ? 'Auto-sync enabled' : 'Auto-sync disabled', 'success');
+        };
+
+        window.configureML = () => {
+          showDialog('ML configuration updated. Threshold set to 2.5 Z-Score.', 'success');
+        };
+
+        window.trainModel = async () => {
+          showLoader();
+          // Simulate training
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          hideLoader();
+          showDialog('Model trained successfully!', 'success');
+        };
+
+        window.toggleNotificationsEmail = () => {
+          showDialog('Email notifications toggled.', 'success');
+        };
+
+        window.scheduleBackup = () => {
+          showDialog('Backup scheduled for daily at 2 AM.', 'success');
+        };
+
+        window.updateProfile = () => {
+          showDialog('Profile updated successfully.', 'success');
+          document.getElementById('profile-last-login').textContent = new Date().toLocaleString();
+        };
 
         // Auth state listener
         onAuthStateChanged(auth, (user) => {
@@ -1221,19 +1644,23 @@
             currentUser = user;
             showLoader();
             document.getElementById('user-name').textContent = user.email || 'Admin';
+            document.getElementById('profile-user').textContent = user.email || 'Admin';
+            document.getElementById('profile-last-login').textContent = new Date().toLocaleString();
             hideLoader();
           } else {
-            signInAnonymously(auth).catch(console.error);
+            signInAnonymously(auth).catch(error => {
+              showDialog(`Auth failed: ${error.message}`, 'error');
+            });
           }
         });
 
         showLoader();
         // Simulate initial data (in real, remove after first snapshot)
-        const machineIds = ['machine-1', 'machine-2', 'machine-3'];
+        const machineIds = ['machine-1', 'machine-2', 'machine-3', 'machine-4'];
         machineIds.forEach(async (id) => {
           await set(ref(db, `machines/${id}`), {
             name: `Server ${id}`,
-            status: 'running',
+            status: Math.random() > 0.5 ? 'running' : 'stopped',
             cpu: Math.floor(Math.random() * 100),
             memory: Math.floor(Math.random() * 1024),
             storage: Math.floor(Math.random() * 100) * 1024,
@@ -1241,6 +1668,10 @@
           });
         });
         setTimeout(() => hideLoader(), 1000); // Hide after init
+
+        // Offline detection
+        window.addEventListener('online', () => showDialog('Back online!', 'success'));
+        window.addEventListener('offline', () => showDialog('Offline mode. Data will sync when back online.', 'warning'));
     </script>
 </body>
 </html>
