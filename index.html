@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virtual Server Dashboard</title>
+    <title>Virtual Server Dashboard with ML Monitoring</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <style>
         :root {
             --bg: #f8f9fa;
@@ -277,6 +278,10 @@
             cursor: pointer;
             position: relative;
         }
+        .machine-card.anomaly {
+            border-color: #e53e3e;
+            box-shadow: 0 0 0 1px #e53e3e;
+        }
         .machine-card:hover {
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
@@ -313,6 +318,36 @@
             align-items: center;
             font-size: 14px;
             color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-indicator.online {
+            background: var(--accent-secondary);
+            animation: pulse 2s infinite;
+        }
+        .status-indicator.offline {
+            background: #e53e3e;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .data-flow {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .anomaly-alert {
+            color: #e53e3e;
+            font-weight: 600;
+            font-size: 12px;
         }
         .view-btn {
             background: var(--accent);
@@ -634,7 +669,7 @@
         <section id="dashboard">
             <div class="welcome-section">
                 <h1 class="welcome-title">Virtual Server Dashboard</h1>
-                <p class="welcome-subtitle">Manage and monitor your virtual machines across devices.</p>
+                <p class="welcome-subtitle">Manage and monitor your virtual machines with ML-powered anomaly detection.</p>
             </div>
 
             <div class="stats-grid">
@@ -651,8 +686,8 @@
                     <div class="stat-label">Avg CPU Usage</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number" id="totalStorage">0 GB</div>
-                    <div class="stat-label">Total Storage</div>
+                    <div class="stat-number" id="anomalies">0</div>
+                    <div class="stat-label">ML Anomalies Detected</div>
                 </div>
             </div>
 
@@ -709,8 +744,8 @@
                     <button class="view-btn">Toggle</button>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">Backup</div>
-                    <div class="stat-label">Schedule backups</div>
+                    <div class="stat-number">ML Monitoring</div>
+                    <div class="stat-label">Anomaly Detection</div>
                     <button class="view-btn">Configure</button>
                 </div>
             </div>
@@ -763,10 +798,13 @@
 
         let currentUser = null;
         let machines = {};
+        let machineHistories = {}; // For ML: history of CPU for each machine
         let searchQuery = '';
         let usageChart;
         const loader = document.getElementById('loader-overlay');
         const sidebar = document.getElementById('sidebar');
+        const CONNECTION_TIMEOUT = 10000; // 10 seconds
+        const HISTORY_SIZE = 50; // Keep last 50 metrics for anomaly detection
 
         function showLoader() {
           loader.classList.add('show');
@@ -805,6 +843,18 @@
           }
         });
 
+        // Simple ML Anomaly Detection using Z-Score (statistical ML method)
+        function detectAnomaly(history, current) {
+          if (history.length < 10) return { isAnomaly: false, score: 0 };
+
+          const mean = history.reduce((a, b) => a + b, 0) / history.length;
+          const variance = history.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / history.length;
+          const std = Math.sqrt(variance);
+          const zScore = Math.abs((current - mean) / std);
+          const isAnomaly = zScore > 3; // Threshold for anomaly
+          return { isAnomaly, score: zScore.toFixed(2) };
+        }
+
         // Machine Details Modal Functions
         function showMachineDetails(machineId) {
           const backdrop = document.getElementById('machine-details-backdrop');
@@ -814,14 +864,22 @@
           const machine = machines[machineId];
           if (!machine) return;
 
+          const now = Date.now();
+          const lastActivity = machine.timestamp ? new Date(machine.timestamp).getTime() : 0;
+          const isConnected = (now - lastActivity) < CONNECTION_TIMEOUT;
+          const timeAgo = machine.timestamp ? `${Math.round((now - lastActivity) / 1000)}s ago` : 'Never';
+          const anomalyInfo = machine.anomaly ? `<p class="anomaly-alert">⚠️ ML Anomaly Detected (Z-Score: ${machine.anomalyScore})</p>` : '';
+
           title.textContent = machine.name || machineId;
           content.innerHTML = `
-              <p><strong>Status:</strong> ${machine.status || 'unknown'}</p>
+              <p><strong>Status:</strong> ${machine.status || 'unknown'} <span class="status-indicator ${isConnected ? 'online' : 'offline'}"></span></p>
+              <p><strong>Connection:</strong> ${isConnected ? 'Connected (Active Data Flow)' : 'Disconnected'}</p>
               <p><strong>CPU:</strong> ${machine.cpu || 0}%</p>
               <p><strong>Memory:</strong> ${machine.memory || 0} MB</p>
-              <p><strong>Last Update:</strong> ${machine.timestamp ? new Date(machine.timestamp).toLocaleString() : 'N/A'}</p>
+              <p><strong>Last Data Flow:</strong> ${timeAgo}</p>
+              ${anomalyInfo}
               <div style="margin-top: 16px;">
-                  <button class="view-btn" onclick="storeData('${machineId}')">Store Data</button>
+                  <button class="view-btn" onclick="storeData('${machineId}')">Send Data (Store)</button>
                   <button class="view-btn" onclick="retrieveData('${machineId}')" style="margin-left: 8px;">Retrieve Data</button>
               </div>
           `;
@@ -925,23 +983,48 @@
         let totalCPU = 0;
         let count = 0;
         let totalStorage = 0;
+        let totalAnomalies = 0;
 
         // Real-time listener: Fetch and sync data from all machines
         const machinesRef = ref(db, 'machines');
         onValue(machinesRef, (snapshot) => {
-          machines = snapshot.val() || {};
+          const newMachines = snapshot.val() || {};
           totalActive = 0;
           totalCPU = 0;
           count = 0;
           totalStorage = 0;
+          totalAnomalies = 0;
 
-          Object.entries(machines).forEach(([machineId, data]) => {
-            if (data.status === 'running') {
-              totalActive++;
-              totalCPU += data.cpu || 0;
-              count++;
+          const now = Date.now();
+          Object.entries(newMachines).forEach(([machineId, data]) => {
+            if (!machines[machineId]) {
+              machineHistories[machineId] = []; // Init history
             }
-            totalStorage += data.storage || 0;
+            machines[machineId] = { ...data };
+
+            // Add to history and detect anomaly
+            if (data.cpu !== undefined) {
+              machineHistories[machineId].push(data.cpu);
+              if (machineHistories[machineId].length > HISTORY_SIZE) {
+                machineHistories[machineId].shift();
+              }
+              const anomalyResult = detectAnomaly(machineHistories[machineId], data.cpu);
+              machines[machineId].anomaly = anomalyResult.isAnomaly;
+              machines[machineId].anomalyScore = anomalyResult.score;
+              if (anomalyResult.isAnomaly) totalAnomalies++;
+            }
+
+            if (data.timestamp) {
+              const lastActivity = new Date(data.timestamp).getTime();
+              const isConnected = (now - lastActivity) < CONNECTION_TIMEOUT;
+              machines[machineId].isConnected = isConnected;
+              if (isConnected && data.status === 'running') {
+                totalActive++;
+                totalCPU += data.cpu || 0;
+                count++;
+              }
+              totalStorage += data.storage || 0;
+            }
           });
 
           updateStats();
@@ -959,6 +1042,7 @@
           document.getElementById('activeVMs').textContent = totalActive;
           document.getElementById('avgCPU').textContent = count > 0 ? Math.round(totalCPU / count) + '%' : '0%';
           document.getElementById('totalStorage').textContent = (totalStorage / 1024).toFixed(1) + ' GB';
+          document.getElementById('anomalies').textContent = totalAnomalies;
 
           // Update usage chart
           const labels = ['CPU', 'Memory', 'Storage'];
@@ -998,17 +1082,24 @@
             return searchTerm.includes(searchQuery);
           });
           filtered.slice(0, gridId === 'machines-grid' ? 6 : undefined).forEach(([machineId, machine]) => {
+            const now = Date.now();
+            const lastActivity = machine.timestamp ? new Date(machine.timestamp).getTime() : 0;
+            const isConnected = machine.isConnected || (now - lastActivity) < CONNECTION_TIMEOUT;
+            const timeAgo = machine.timestamp ? `${Math.round((now - lastActivity) / 1000)}s ago` : 'Never';
+            const anomalyAlert = machine.anomaly ? '<span class="anomaly-alert">⚠️ Anomaly Detected</span>' : '';
+
             const card = document.createElement('div');
-            card.className = 'machine-card';
+            card.className = `machine-card ${machine.anomaly ? 'anomaly' : ''}`;
             card.onclick = () => showMachineDetails(machineId);
             card.innerHTML = `
                 <div class="machine-thumbnail">🖥️</div>
                 <div class="machine-content">
                     <h3 class="machine-title">${machine.name || machineId}</h3>
                     <div class="machine-meta">
-                        <span>${machine.status || 'unknown'} • CPU: ${machine.cpu || 0}%</span>
+                        <span><span class="status-indicator ${isConnected ? 'online' : 'offline'}"></span>${machine.status || 'unknown'} • CPU: ${machine.cpu || 0}%</span>
                         <button class="view-btn" onclick="event.stopPropagation(); showMachineDetails('${machineId}')">View</button>
                     </div>
+                    <div class="data-flow">Last Data Flow: ${timeAgo} ${isConnected ? '(Active Send/Receive)' : '(No Flow)'} ${anomalyAlert}</div>
                 </div>
             `;
             grid.appendChild(card);
@@ -1022,27 +1113,33 @@
         window.storeData = async (machineId) => {
           const payload = { message: 'Update from dashboard', value: Math.random() * 100 };
           await set(ref(db, `machines/${machineId}`), { ...machines[machineId], configUpdate: payload, timestamp: serverTimestamp() });
-          showDialog('Data stored successfully!', 'success');
+          showDialog('Data sent to machine (Store command issued)!', 'success');
         };
 
         // Retrieve data (logs/pulls latest for demo)
         window.retrieveData = async (machineId) => {
           const data = machines[machineId];
           console.log(`Retrieved from ${machineId}:`, data);
-          showDialog(`Retrieved: CPU=${data.cpu}%, Memory=${data.memory}MB`, 'info');
+          const anomalyMsg = data.anomaly ? ` (ML Anomaly: Z-Score ${data.anomalyScore})` : '';
+          showDialog(`Retrieved: CPU=${data.cpu}%, Memory=${data.memory}MB${anomalyMsg} (Data Flow Active)`, 'info');
         };
 
         // Populate logs (sample; fetch from a logs collection if exists)
         function populateLogs() {
           const tbody = document.getElementById('logs-table');
           tbody.innerHTML = '';
+          const now = Date.now();
           Object.entries(machines).slice(-10).reverse().forEach(([id, data]) => {
+            const lastActivity = data.timestamp ? new Date(data.timestamp).getTime() : 0;
+            const isConnected = (now - lastActivity) < CONNECTION_TIMEOUT;
+            const status = isConnected ? 'Active Flow' : 'Disconnected';
+            const anomaly = data.anomaly ? ' (Anomaly Detected)' : '';
             const row = tbody.insertRow();
             row.innerHTML = `
                 <td>${id}</td>
-                <td>${data.status || 'Status update'}</td>
+                <td>${status}${anomaly}</td>
                 <td>${data.timestamp ? new Date(data.timestamp).toLocaleString() : 'N/A'}</td>
-                <td>${data.configUpdate?.message || 'N/A'}</td>
+                <td>${data.configUpdate?.message || 'Data sent/received'}</td>
             `;
           });
           if (Object.keys(machines).length === 0) {
