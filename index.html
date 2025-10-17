@@ -1,977 +1,1081 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>McDonald's POS</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    :root {
-      --mcd-yellow: #FFB81C;
-      --mcd-red: #C8102E;
-      --text-dark: #0F1419;
-      --text-light: #536471;
-      --border: #D8D9DB;
-      --white: #FFFFFF;
-      --background: #FFFFFF;
-      --background-dark: #15202B;
-      --text-dark-dark: #FFFFFF;
-      --text-light-dark: #8899A6;
-      --border-dark: #2F3336;
-      --white-dark: #1C2526;
-      --gradient-bg: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
-    }
-
-    [data-theme="dark"] {
-      --background: var(--background-dark);
-      --text-dark: var(--text-dark-dark);
-      --text-light: var(--text-light-dark);
-      --border: var(--border-dark);
-      --white: var(--white-dark);
-      --gradient-bg: linear-gradient(135deg, #1c2526 0%, #15202b 100%);
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      background: var(--background);
-      min-height: 100vh;
-      margin: 0;
-      padding: 0;
-      transition: background 0.3s ease;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 1rem;
-      display: flex;
-      gap: 1rem;
-      min-height: calc(100vh - 2rem);
-    }
-
-    .left-panel {
-      flex: 2;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem;
-      background: var(--white);
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .logo {
-      font-size: 1.5rem;
-      font-weight: 800;
-      color: var(--mcd-yellow);
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .logo svg {
-      width: 24px;
-      height: 24px;
-      fill: var(--mcd-red);
-    }
-
-    .category-tabs {
-      display: flex;
-      gap: 0.5rem;
-      padding: 1rem;
-      background: var(--white);
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      overflow-x: auto;
-    }
-
-    .category-tab {
-      padding: 0.5rem 1rem;
-      background: var(--white);
-      color: var(--text-dark);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.2s ease, color 0.2s ease;
-    }
-
-    .category-tab.active, .category-tab:hover {
-      background: var(--mcd-yellow);
-      color: var(--text-dark);
-    }
-
-    .menu-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 1rem;
-      padding: 1rem;
-      background: var(--white);
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      flex: 1;
-      overflow-y: auto;
-    }
-
-    .menu-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 1rem;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      cursor: pointer;
-      transition: transform 0.2s ease, background 0.2s ease;
-    }
-
-    .menu-item:hover {
-      background: var(--mcd-yellow);
-      transform: scale(1.05);
-    }
-
-    .menu-item img {
-      width: 80px;
-      height: 80px;
-      object-fit: cover;
-      border-radius: 8px;
-      margin-bottom: 0.5rem;
-    }
-
-    .menu-item p {
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: var(--text-dark);
-      text-align: center;
-    }
-
-    .cart-section {
-      flex: 1;
-      padding: 1rem;
-      background: var(--white);
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      display: flex;
-      flex-direction: column;
-    }
-
-    .cart-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.5rem 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .cart-item:last-child {
-      border-bottom: none;
-    }
-
-    .input-group {
-      margin-bottom: 1rem;
-      text-align: left;
-    }
-
-    .input-group label {
-      display: block;
-      font-size: 0.95rem;
-      font-weight: 500;
-      color: var(--text-dark);
-      margin-bottom: 0.5rem;
-    }
-
-    .input-group input, .input-group select {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-      background: var(--white);
-    }
-
-    .input-group input:focus, .input-group select:focus {
-      border-color: var(--mcd-yellow);
-      box-shadow: 0 0 0 3px rgba(255, 184, 28, 0.1);
-    }
-
-    .action-btn {
-      padding: 0.75rem 1.5rem;
-      background: var(--mcd-yellow);
-      color: var(--text-dark);
-      border: none;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s ease, transform 0.2s ease;
-    }
-
-    .action-btn:hover {
-      background: #e6a518;
-      transform: scale(1.05);
-    }
-
-    .action-btn.tap-active {
-      transform: scale(0.98);
-    }
-
-    .clear-btn {
-      background: var(--mcd-red);
-      color: var(--white);
-    }
-
-    .clear-btn:hover {
-      background: #b00e28;
-    }
-
-    .badge {
-      position: relative;
-    }
-
-    .badge::after {
-      content: attr(data-count);
-      position: absolute;
-      top: -8px;
-      right: -8px;
-      background: var(--mcd-red);
-      color: var(--white);
-      border-radius: 50%;
-      padding: 0.25rem 0.5rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      display: none;
-    }
-
-    .badge[data-count]:not([data-count="0"])::after {
-      display: block;
-    }
-
-    .custom-alert {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: var(--white);
-      padding: 1.5rem 2rem;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      z-index: 1000;
-      color: var(--text-dark);
-      font-weight: 500;
-      text-align: center;
-      max-width: 90%;
-      width: 400px;
-      animation: fadeIn 0.3s ease-out forwards;
-      border: 1px solid var(--border);
-    }
-
-    .custom-alert.active {
-      display: block;
-    }
-
-    .custom-alert .close-btn {
-      position: absolute;
-      top: 0.75rem;
-      right: 0.75rem;
-      width: 24px;
-      height: 24px;
-      background: none;
-      border: none;
-      color: var(--mcd-yellow);
-      cursor: pointer;
-      transition: transform 0.2s ease, color 0.2s ease;
-    }
-
-    .custom-alert .close-btn:hover {
-      transform: scale(1.2);
-      color: #e6a518;
-    }
-
-    .custom-alert .close-btn svg {
-      width: 100%;
-      height: 100%;
-    }
-
-    .spinner-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.3);
-      z-index: 999;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .spinner-overlay.active {
-      display: flex;
-    }
-
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid var(--mcd-yellow);
-      border-top: 4px solid transparent;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    .toast {
-      display: none;
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: var(--mcd-yellow);
-      color: var(--text-dark);
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      z-index: 1000;
-      font-weight: 500;
-      animation: slideIn 0.3s ease-out forwards;
-    }
-
-    .toast.active {
-      display: block;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    @keyframes fadeIn {
-      0% { opacity: 0; }
-      100% { opacity: 1; }
-    }
-
-    @keyframes slideIn {
-      0% { transform: translateX(100%); opacity: 0; }
-      100% { transform: translateX(0); opacity: 1; }
-    }
-
-    @media (max-width: 768px) {
-      .container {
-        flex-direction: column;
-        margin: 0.5rem;
-        padding: 0.5rem;
-      }
-
-      .menu-grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      }
-
-      .menu-item img {
-        width: 60px;
-        height: 60px;
-      }
-
-      .menu-item p {
-        font-size: 0.85rem;
-      }
-
-      .category-tab {
-        font-size: 0.85rem;
-        padding: 0.5rem;
-      }
-
-      .input-group label {
-        font-size: 0.9rem;
-      }
-
-      .input-group input, .input-group select {
-        padding: 0.5rem;
-        font-size: 0.9rem;
-      }
-
-      .action-btn {
-        padding: 0.5rem 1rem;
-        font-size: 0.9rem;
-      }
-
-      .custom-alert {
-        width: 85%;
-        padding: 1rem;
-      }
-
-      .toast {
-        right: 10px;
-        max-width: 80%;
-      }
-
-      .badge::after {
-        top: -6px;
-        right: -6px;
-        padding: 0.2rem 0.4rem;
-        font-size: 0.65rem;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Server Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-primary: #1a202c;
+            --text-secondary: #718096;
+            --border: #e2e8f0;
+            --accent: #4299e1;
+            --accent-secondary: #48bb78;
+            --gradient: linear-gradient(135deg, #4299e1 0%, #48bb78 50%, #ed8936 100%);
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --glass: rgba(255, 255, 255, 0.8);
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            line-height: 1.6;
+            min-height: 100vh;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 80%, rgba(66, 153, 225, 0.05) 0%, transparent 50%), 
+                        radial-gradient(circle at 80% 20%, rgba(72, 187, 120, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            padding: 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+        .navbar.scrolled {
+            padding: 12px 40px;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .user-avatar:hover {
+            transform: scale(1.05);
+        }
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .logout-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+        .logout-btn:hover {
+            color: var(--accent);
+        }
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 80px;
+            bottom: 0;
+            width: 280px;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            overflow-y: auto;
+            z-index: 900;
+            transition: transform 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar li {
+            margin: 0;
+        }
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 24px;
+            margin: 4px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            border-radius: 50px;
+            min-height: 48px;
+        }
+        .sidebar a:hover,
+        .sidebar a.active {
+            color: var(--accent);
+            background: rgba(66, 153, 225, 0.05);
+            border-left-color: var(--accent);
+        }
+        .sidebar .material-icons {
+            font-size: 24px;
+            min-width: 24px;
+        }
+        .main-content {
+            margin-left: 280px;
+            margin-top: 80px;
+            padding: 40px;
+            min-height: calc(100vh - 80px);
+        }
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        .welcome-title {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+        .welcome-subtitle {
+            font-size: 20px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .stat-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+        .stat-label {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .analytics-chart {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+        .section-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+        }
+        .search-bar {
+            position: relative;
+            max-width: 400px;
+            margin-bottom: 24px;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 12px 16px 12px 40px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .search-bar .material-icons {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 20px;
+        }
+        .machines-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        .machine-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            position: relative;
+        }
+        .machine-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .machine-card:active {
+            transform: scale(0.98);
+        }
+        .machine-thumbnail {
+            height: 160px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .machine-card:hover .machine-thumbnail {
+            transform: scale(1.02);
+        }
+        .machine-content {
+            padding: 24px;
+        }
+        .machine-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+        .machine-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .view-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            min-height: 36px;
+            min-width: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .view-btn:hover {
+            transform: translateY(-1px);
+        }
+        .view-btn:active {
+            transform: scale(0.98);
+        }
+        .machine-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+        .machine-table th, .machine-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .machine-table th {
+            background: rgba(66, 153, 225, 0.05);
+            font-weight: 600;
+        }
+        section {
+            display: none;
+        }
+        #dashboard {
+            display: block;
+        }
+        .dialog-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .dialog-backdrop.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .dialog {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .dialog-backdrop.show .dialog {
+            transform: scale(1) translateY(0);
+        }
+        .dialog-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+        .dialog-message {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        .dialog-close {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        .dialog-close:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        .dialog.success .dialog-title {
+            color: var(--accent-secondary);
+        }
+        .dialog.error .dialog-title {
+            color: #e53e3e;
+        }
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .loader-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .spinner {
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            z-index: 1001;
+            transition: all 0.3s ease;
+        }
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-md), 0 0 20px rgba(66, 153, 225, 0.3);
+        }
+        .fab .material-icons {
+            font-size: 30px;
+        }
+        .machine-details-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2001;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .machine-details-backdrop.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .machine-details {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-md);
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .machine-details-backdrop.show .machine-details {
+            transform: scale(1) translateY(0);
+        }
+        .machine-details-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+        }
+        .close-details {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .machines-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 768px) {
+            .navbar { 
+                display: none; 
+            }
+            .main-content { 
+                padding: 20px; 
+                margin-top: 0; 
+            }
+            .welcome-title { 
+                font-size: 36px; 
+            }
+            .welcome-subtitle {
+                font-size: 16px;
+            }
+            .section-title {
+                font-size: 24px;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            .fab {
+                display: flex;
+            }
+            .sidebar {
+                top: 0;
+                height: 100vh;
+                width: 80%;
+                max-width: 300px;
+            }
+            .machine-card {
+                min-height: 200px;
+            }
+            .search-bar input {
+                font-size: 18px;
+                padding: 16px;
+            }
+        }
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 16px;
+            }
+            .stat-card {
+                padding: 24px 16px;
+            }
+            .machine-content {
+                padding: 16px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div class="left-panel">
-      <div class="header">
-        <div class="logo">
-          <svg viewBox="0 0 24 24">
-            <path d="M19.5 3C17.65 3 16.5 4.79 16.5 6.38v5.44c0 1.59 1.15 2.88 2.5 2.88V6.38c0-.52.39-1.13 1-1.13s1 .61 1 1.13v8.32c1.35 0 2.5-1.29 2.5-2.88V6.38C24.5 4.79 23.35 3 21.5 3h-2zM2.5 3C.65 3-.5 4.79-.5 6.38v5.44c0 1.59 1.15 2.88 2.5 2.88V6.38c0-.52.39-1.13 1-1.13s1 .61 1 1.13v8.32c1.35 0 2.5-1.29 2.5-2.88V6.38C8.5 4.79 7.35 3 5.5 3h-3z"></path>
-          </svg>
-          McDonald's POS
-        </div>
-        <div class="flex gap-2">
-          <button class="action-btn badge" id="online-orders-btn" aria-label="View online orders" data-count="0">Online Orders</button>
-          <button class="action-btn" id="logout-btn" aria-label="Logout">Logout</button>
-        </div>
-      </div>
-      <div class="category-tabs" id="category-tabs">
-        <button class="category-tab active" data-category="all">All</button>
-      </div>
-      <div class="menu-grid" id="menu-grid"></div>
+    <!-- Overlay Spinner -->
+    <div class="loader-overlay" id="loader-overlay">
+        <div class="spinner"></div>
     </div>
-    <div class="cart-section">
-      <h2 class="text-lg font-semibold mb-4">Order #<span id="order-number">1</span></h2>
-      <div id="cart-items" class="mb-4"></div>
-      <div class="input-group">
-        <label for="discount">Discount (%)</label>
-        <input type="number" id="discount" placeholder="Enter discount (0-100)" min="0" max="100" step="1" aria-label="Enter discount percentage">
-      </div>
-      <div class="input-group">
-        <label for="payment-method">Payment Method</label>
-        <select id="payment-method" aria-label="Select payment method">
-          <option value="cash">Cash</option>
-          <option value="card">Card</option>
-          <option value="mobile">Mobile Payment</option>
-        </select>
-      </div>
-      <div class="input-group" id="cash-tendered-group" style="display: none;">
-        <label for="cash-tendered">Cash Tendered (R)</label>
-        <input type="number" id="cash-tendered" placeholder="Enter cash amount" min="0" step="0.01" aria-label="Enter cash amount">
-      </div>
-      <div class="flex justify-between mb-4">
-        <p class="font-semibold">Subtotal: R<span id="subtotal">0.00</span></p>
-        <p class="font-semibold">Total: R<span id="total">0.00</span></p>
-      </div>
-      <div class="flex justify-between mb-4" id="change-section" style="display: none;">
-        <p class="font-semibold">Change: R<span id="change">0.00</span></p>
-      </div>
-      <div class="flex gap-2">
-        <button class="action-btn clear-btn" id="clear-cart-btn" aria-label="Clear cart">Clear</button>
-        <button class="action-btn" id="submit-order-btn" aria-label="Submit order">Submit Order</button>
-      </div>
-      <div class="mt-4 hidden" id="receipt-section">
-        <h3 class="text-md font-semibold mb-2">Receipt</h3>
-        <div id="receipt-content" class="p-2 border rounded"></div>
-        <button class="action-btn mt-2" id="new-order-btn" aria-label="Start new order">New Order</button>
-      </div>
+
+    <nav class="navbar" id="navbar">
+        <a class="logo" id="logo-link">
+            <div class="logo-icon">V</div>
+            Virtual Server Hub
+        </a>
+        <div class="user-menu">
+            <span id="user-name">Admin</span>
+            <div class="user-avatar" id="user-avatar">A</div>
+            <button class="logout-btn" onclick="logout()" aria-label="Log out">Logout</button>
+        </div>
+    </nav>
+
+    <aside class="sidebar" id="sidebar">
+        <ul>
+            <li><a href="#" class="active" data-target="dashboard"><span class="material-icons">dashboard</span>Dashboard</a></li>
+            <li><a href="#" data-target="machines"><span class="material-icons">computer</span>Machines</a></li>
+            <li><a href="#" data-target="logs"><span class="material-icons">description</span>Logs</a></li>
+            <li><a href="#" data-target="settings"><span class="material-icons">settings</span>Settings</a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <section id="dashboard">
+            <div class="welcome-section">
+                <h1 class="welcome-title">Virtual Server Dashboard</h1>
+                <p class="welcome-subtitle">Manage and monitor your virtual machines across devices.</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalMachines">0</div>
+                    <div class="stat-label">Total Machines</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="activeVMs">0</div>
+                    <div class="stat-label">Active VMs</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="avgCPU">0%</div>
+                    <div class="stat-label">Avg CPU Usage</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalStorage">0 GB</div>
+                    <div class="stat-label">Total Storage</div>
+                </div>
+            </div>
+
+            <div class="analytics-chart">
+                <h3 class="section-title">Resource Usage Chart</h3>
+                <canvas id="usage-chart" width="400" height="200"></canvas>
+            </div>
+
+            <div class="search-bar">
+                <span class="material-icons">search</span>
+                <input type="text" id="machine-search" placeholder="Search machines..." oninput="filterMachines()" aria-label="Search machines">
+            </div>
+
+            <h2 class="section-title">Recent Machines</h2>
+            <div class="machines-grid" id="machines-grid">
+                <!-- Machines will be populated here -->
+            </div>
+        </section>
+
+        <section id="machines">
+            <h2 class="section-title">All Machines</h2>
+            <div class="search-bar">
+                <span class="material-icons">search</span>
+                <input type="text" id="all-machines-search" placeholder="Search all machines..." oninput="filterMachines()" aria-label="Search all machines">
+            </div>
+            <div class="machines-grid" id="all-machines-grid">
+                <!-- All machines populated here -->
+            </div>
+        </section>
+
+        <section id="logs">
+            <h2 class="section-title">System Logs</h2>
+            <table class="machine-table">
+                <thead>
+                    <tr>
+                        <th>Machine ID</th>
+                        <th>Event</th>
+                        <th>Timestamp</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody id="logs-table">
+                    <!-- Logs populated here -->
+                </tbody>
+            </table>
+        </section>
+
+        <section id="settings">
+            <h2 class="section-title">Settings</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">Auto-Sync</div>
+                    <div class="stat-label">Enable real-time updates</div>
+                    <button class="view-btn">Toggle</button>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">Backup</div>
+                    <div class="stat-label">Schedule backups</div>
+                    <button class="view-btn">Configure</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Floating Action Button for Sidebar -->
+    <div class="fab" onclick="toggleSidebar()">
+        <span class="material-icons">menu</span>
     </div>
-  </div>
 
-  <div id="custom-alert" class="custom-alert">
-    <button class="close-btn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-      </svg>
-    </button>
-    <p id="alert-message">An error occurred. Please try again.</p>
-  </div>
+    <!-- Custom Dialog -->
+    <div class="dialog-backdrop" id="dialog-backdrop">
+        <div class="dialog" id="dialog">
+            <button class="absolute top-4 right-4 text-gray-500" onclick="closeDialog()" aria-label="Close dialog">✕</button>
+            <div class="dialog-title" id="dialog-title">Info</div>
+            <div class="dialog-message" id="dialog-message"></div>
+            <button class="dialog-close" onclick="closeDialog()">OK</button>
+        </div>
+    </div>
 
-  <div class="spinner-overlay" id="spinner">
-    <div class="spinner"></div>
-  </div>
+    <!-- Machine Details Modal -->
+    <div class="machine-details-backdrop" id="machine-details-backdrop">
+        <div class="machine-details" id="machine-details">
+            <button class="close-details" onclick="closeMachineDetails()">✕</button>
+            <div class="machine-details-title" id="machine-details-title"></div>
+            <div id="machine-details-content"></div>
+        </div>
+    </div>
 
-  <div class="toast" id="toast">
-    <p id="toast-message"></p>
-  </div>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+        import { getDatabase, ref, onValue, set, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-    import { getDatabase, ref, onValue, get, update, push, set, remove } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+        const firebaseConfig = {
+          apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
+          authDomain: "fire-b-a8878.firebaseapp.com",
+          databaseURL: "https://fire-b-a8878.firebaseio.com",
+          projectId: "fire-b-a8878",
+          storageBucket: "fire-b-a8878.firebasestorage.app",
+          messagingSenderId: "658673187627",
+          appId: "1:658673187627:web:6e4c29af661785f0afa36e",
+          measurementId: "G-V4W97VMSKL"
+        };
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
-      authDomain: "fire-b-a8878.firebaseapp.com",
-      databaseURL: "https://fire-b-a8878.firebaseio.com",
-      projectId: "fire-b-a8878",
-      storageBucket: "fire-b-a8878.firebasestorage.app",
-      messagingSenderId: "658673187627",
-      appId: "1:658673187627:web:6e4c29af661785f0afa36e",
-      measurementId: "G-V4W97VMSKL"
-    };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
+        let currentUser = null;
+        let machines = {};
+        let searchQuery = '';
+        let usageChart;
+        const loader = document.getElementById('loader-overlay');
+        const sidebar = document.getElementById('sidebar');
 
-    const menuGrid = document.getElementById("menu-grid");
-    const categoryTabs = document.getElementById("category-tabs");
-    const cartItemsDiv = document.getElementById("cart-items");
-    const discountInput = document.getElementById("discount");
-    const paymentMethodSelect = document.getElementById("payment-method");
-    const cashTenderedInput = document.getElementById("cash-tendered");
-    const subtotalSpan = document.getElementById("subtotal");
-    const totalSpan = document.getElementById("total");
-    const changeSpan = document.getElementById("change");
-    const orderNumberSpan = document.getElementById("order-number");
-    const clearCartBtn = document.getElementById("clear-cart-btn");
-    const submitOrderBtn = document.getElementById("submit-order-btn");
-    const newOrderBtn = document.getElementById("new-order-btn");
-    const logoutBtn = document.getElementById("logout-btn");
-    const onlineOrdersBtn = document.getElementById("online-orders-btn");
-    const receiptSection = document.getElementById("receipt-section");
-    const receiptContent = document.getElementById("receipt-content");
-    const customAlert = document.getElementById("custom-alert");
-    const alertMessage = document.getElementById("alert-message");
-    const spinner = document.getElementById("spinner");
-    const toast = document.getElementById("toast");
-    const toastMessage = document.getElementById("toast-message");
-    const cashTenderedGroup = document.getElementById("cash-tendered-group");
-    const changeSection = document.getElementById("change-section");
-
-    let menuItems = {};
-    let cart = [];
-    let orderNumber = 1;
-    let categories = new Set(['all']);
-
-    // Check authentication
-    auth.onAuthStateChanged(user => {
-      if (!user) {
-        console.log("No user authenticated, redirecting to login.html");
-        window.location.href = 'login.html';
-      } else {
-        console.log("Authenticated user:", user.uid);
-        loadOnlineOrdersCount(user.uid);
-      }
-    });
-
-    function showAlert(message, autoHide = true) {
-      alertMessage.textContent = message;
-      customAlert.classList.add("active");
-      if (autoHide) setTimeout(hideAlert, 5000);
-    }
-
-    function hideAlert() {
-      customAlert.classList.remove("active");
-    }
-
-    function showSpinner() {
-      spinner.classList.add("active");
-    }
-
-    function hideSpinner() {
-      spinner.classList.remove("active");
-    }
-
-    function showToast(message) {
-      toastMessage.textContent = message;
-      toast.classList.add("active");
-      setTimeout(() => toast.classList.remove("active"), 3000);
-    }
-
-    document.querySelector(".custom-alert .close-btn").addEventListener("click", hideAlert);
-
-    // Load online orders count
-    function loadOnlineOrdersCount(userId) {
-      const onlineOrdersRef = ref(db, 'onlineOrders');
-      onValue(onlineOrdersRef, (snapshot) => {
-        const onlineOrders = snapshot.val() || {};
-        const newOrdersCount = Object.values(onlineOrders).filter(order => order.status === 'new').length;
-        onlineOrdersBtn.setAttribute('data-count', newOrdersCount);
-        console.log(`New online orders: ${newOrdersCount}`);
-      }, (error) => {
-        console.error("Error loading online orders count:", error);
-        showAlert("Failed to load online orders count: " + error.message, true);
-      });
-    }
-
-    // Online orders button click
-    onlineOrdersBtn.addEventListener("click", () => {
-      onlineOrdersBtn.classList.add("tap-active");
-      setTimeout(() => onlineOrdersBtn.classList.remove("tap-active"), 100);
-      window.location.href = 'online-orders.html';
-    });
-
-    // Toggle cash tendered input based on payment method
-    paymentMethodSelect.addEventListener('change', () => {
-      cashTenderedGroup.style.display = paymentMethodSelect.value === 'cash' ? 'block' : 'none';
-      changeSection.style.display = paymentMethodSelect.value === 'cash' ? 'block' : 'none';
-      updateCart();
-    });
-
-    function loadMenuItems() {
-      const menuRef = ref(db, 'menu');
-      onValue(menuRef, (snapshot) => {
-        menuItems = snapshot.val() || {};
-        console.log("Fetched menu items:", menuItems);
-        categories = new Set(['all']);
-        Object.values(menuItems).forEach(item => {
-          if (item.category && item.available && item.stock > 0) {
-            categories.add(item.category);
-          }
-        });
-        console.log("Available categories:", [...categories]);
-        if (Object.keys(menuItems).length === 0) {
-          showAlert("No menu items available. Please add items in the management dashboard.", true);
+        function showLoader() {
+          loader.classList.add('show');
         }
 
-        categoryTabs.innerHTML = '';
-        categories.forEach(category => {
-          const tab = document.createElement('button');
-          tab.className = `category-tab ${category === 'all' ? 'active' : ''}`;
-          tab.dataset.category = category;
-          tab.textContent = category.charAt(0).toUpperCase() + category.slice(1);
-          tab.addEventListener('click', () => {
-            document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            displayMenuItems(category);
+        function hideLoader() {
+          loader.classList.remove('show');
+        }
+
+        // Toggle sidebar
+        window.toggleSidebar = () => {
+          sidebar.classList.toggle('open');
+        };
+
+        // Custom Dialog Functions
+        function showDialog(message, type = 'info') {
+          const backdrop = document.getElementById('dialog-backdrop');
+          const title = document.getElementById('dialog-title');
+          const msg = document.getElementById('dialog-message');
+          const dialog = document.getElementById('dialog');
+
+          msg.textContent = message;
+          title.textContent = type === 'success' ? 'Success!' : type === 'error' ? 'Error!' : 'Info';
+          dialog.className = `dialog ${type}`;
+          backdrop.classList.add('show');
+        }
+
+        function closeDialog() {
+          document.getElementById('dialog-backdrop').classList.remove('show');
+        }
+
+        // Close dialog on backdrop click
+        document.getElementById('dialog-backdrop').addEventListener('click', (e) => {
+          if (e.target.id === 'dialog-backdrop') {
+            closeDialog();
+          }
+        });
+
+        // Machine Details Modal Functions
+        function showMachineDetails(machineId) {
+          const backdrop = document.getElementById('machine-details-backdrop');
+          const title = document.getElementById('machine-details-title');
+          const content = document.getElementById('machine-details-content');
+
+          const machine = machines[machineId];
+          if (!machine) return;
+
+          title.textContent = machine.name || machineId;
+          content.innerHTML = `
+              <p><strong>Status:</strong> ${machine.status || 'unknown'}</p>
+              <p><strong>CPU:</strong> ${machine.cpu || 0}%</p>
+              <p><strong>Memory:</strong> ${machine.memory || 0} MB</p>
+              <p><strong>Last Update:</strong> ${machine.timestamp ? new Date(machine.timestamp).toLocaleString() : 'N/A'}</p>
+              <div style="margin-top: 16px;">
+                  <button class="view-btn" onclick="storeData('${machineId}')">Store Data</button>
+                  <button class="view-btn" onclick="retrieveData('${machineId}')" style="margin-left: 8px;">Retrieve Data</button>
+              </div>
+          `;
+
+          backdrop.classList.add('show');
+        }
+
+        function closeMachineDetails() {
+          document.getElementById('machine-details-backdrop').classList.remove('show');
+        }
+
+        // Close machine details on backdrop click
+        document.getElementById('machine-details-backdrop').addEventListener('click', (e) => {
+          if (e.target.id === 'machine-details-backdrop') {
+            closeMachineDetails();
+          }
+        });
+
+        // Filter machines based on search query
+        window.filterMachines = () => {
+          const input = document.getElementById('machine-search') || document.getElementById('all-machines-search');
+          if (!input) return;
+          searchQuery = input.value.toLowerCase();
+          if (document.getElementById('dashboard').style.display === 'block') {
+            populateMachinesGrid('machines-grid');
+          } else if (document.getElementById('machines').style.display === 'block') {
+            populateMachinesGrid('all-machines-grid');
+          }
+        };
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+          const navbar = document.getElementById('navbar');
+          if (window.scrollY > 50) {
+            navbar.classList.add('scrolled');
+          } else {
+            navbar.classList.remove('scrolled');
+          }
+        });
+
+        // Sidebar toggle for mobile via logo (fallback)
+        const logoLink = document.getElementById('logo-link');
+        logoLink.addEventListener('click', (e) => {
+          if (window.innerWidth <= 1024) {
+            e.preventDefault();
+            toggleSidebar();
+          }
+        });
+
+        // Tab switching function
+        function showTab(targetId) {
+          document.querySelectorAll('section').forEach(section => {
+            section.style.display = 'none';
           });
-          categoryTabs.appendChild(tab);
-        });
-
-        displayMenuItems('all');
-      }, (error) => {
-        console.error("Error loading menu items:", error);
-        showAlert("Failed to load menu items: " + error.message, true);
-      });
-    }
-
-    function displayMenuItems(category) {
-      menuGrid.innerHTML = '';
-      Object.entries(menuItems).forEach(([id, item]) => {
-        if (!item.available || item.stock <= 0) return;
-        if (category !== 'all' && item.category !== category) return;
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'menu-item';
-        itemDiv.dataset.id = id;
-        itemDiv.innerHTML = `
-          ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.name}" />` : ''}
-          <p>${item.name}</p>
-          <p>R${item.price.toFixed(2)}</p>
-        `;
-        itemDiv.addEventListener('click', () => addToCart(id));
-        menuGrid.appendChild(itemDiv);
-      });
-    }
-
-    function addToCart(itemId) {
-      const item = menuItems[itemId];
-      if (!item || item.stock <= 0) {
-        showAlert(`${item.name} is out of stock.`, true);
-        return;
-      }
-      const cartItem = cart.find(i => i.itemId === itemId);
-      if (cartItem) {
-        if (item.stock < cartItem.quantity + 1) {
-          showAlert(`Not enough stock for ${item.name}.`, true);
-          return;
-        }
-        cartItem.quantity += 1;
-      } else {
-        cart.push({ itemId, quantity: 1, price: item.price });
-      }
-      updateCart();
-      showToast(`${item.name} added to cart`);
-    }
-
-    function updateCart() {
-      cartItemsDiv.innerHTML = '';
-      let subtotal = 0;
-      cart.forEach((cartItem, index) => {
-        const item = menuItems[cartItem.itemId];
-        const itemTotal = cartItem.quantity * cartItem.price;
-        subtotal += itemTotal;
-        const cartItemDiv = document.createElement('div');
-        cartItemDiv.className = 'cart-item';
-        cartItemDiv.innerHTML = `
-          <div>
-            <p class="font-semibold">${item.name}</p>
-            <p>R${cartItem.price.toFixed(2)} x ${cartItem.quantity} = R${itemTotal.toFixed(2)}</p>
-          </div>
-          <div class="flex gap-2">
-            <button class="action-btn" data-index="${index}" data-action="increase" aria-label="Increase quantity">+</button>
-            <button class="action-btn clear-btn" data-index="${index}" data-action="decrease" aria-label="Decrease quantity">-</button>
-            <button class="action-btn clear-btn" data-index="${index}" data-action="remove" aria-label="Remove item">Remove</button>
-          </div>
-        `;
-        cartItemsDiv.appendChild(cartItemDiv);
-      });
-
-      const discount = parseFloat(discountInput.value) || 0;
-      const total = subtotal * (1 - discount / 100);
-      subtotalSpan.textContent = subtotal.toFixed(2);
-      totalSpan.textContent = total.toFixed(2);
-
-      if (paymentMethodSelect.value === 'cash') {
-        const cashTendered = parseFloat(cashTenderedInput.value) || 0;
-        const change = cashTendered - total;
-        changeSpan.textContent = change >= 0 ? change.toFixed(2) : '0.00';
-      } else {
-        changeSpan.textContent = '0.00';
-      }
-
-      document.querySelectorAll('.cart-item button').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const index = parseInt(btn.dataset.index);
-          const action = btn.dataset.action;
-          const item = menuItems[cart[index].itemId];
-          if (action === 'increase') {
-            if (item.stock < cart[index].quantity + 1) {
-              showAlert(`Not enough stock for ${item.name}.`, true);
-              return;
-            }
-            cart[index].quantity += 1;
-          } else if (action === 'decrease') {
-            if (cart[index].quantity > 1) {
-              cart[index].quantity -= 1;
-            } else {
-              cart.splice(index, 1);
-            }
-          } else if (action === 'remove') {
-            cart.splice(index, 1);
+          const targetSection = document.getElementById(targetId);
+          if (targetSection) {
+            targetSection.style.display = 'block';
           }
-          updateCart();
-        });
-      });
-    }
-
-    async function submitOrder() {
-      if (cart.length === 0) {
-        showAlert("Cart is empty.", true);
-        return;
-      }
-
-      const discount = parseFloat(discountInput.value) || 0;
-      const paymentMethod = paymentMethodSelect.value;
-      let cashTendered = null;
-      let change = null;
-
-      if (discount < 0 || discount > 100) {
-        showAlert("Discount must be between 0 and 100.", true);
-        return;
-      }
-      if (!paymentMethod) {
-        showAlert("Please select a payment method.", true);
-        return;
-      }
-      if (paymentMethod === 'cash') {
-        cashTendered = parseFloat(cashTenderedInput.value) || 0;
-        const subtotal = cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
-        const total = subtotal * (1 - discount / 100);
-        change = cashTendered - total;
-        if (cashTendered < total) {
-          showAlert("Cash tendered is less than the total amount.", true);
-          return;
-        }
-      }
-
-      showSpinner();
-      try {
-        for (const cartItem of cart) {
-          const item = menuItems[cartItem.itemId];
-          if (!item) {
-            showAlert(`Item with ID ${cartItem.itemId} not found.`, true);
-            return;
+          // Update active classes
+          document.querySelectorAll('a[data-target]').forEach(a => a.classList.remove('active'));
+          document.querySelectorAll(`a[data-target="${targetId}"]`).forEach(a => a.classList.add('active'));
+          // Close sidebar on mobile after selection
+          if (window.innerWidth <= 1024) {
+            sidebar.classList.remove('open');
           }
-          if (item.stock < cartItem.quantity) {
-            showAlert(`Not enough stock for ${item.name}.`, true);
-            return;
-          }
-          if (item.ingredients && item.ingredients.length > 0) {
-            for (const { itemId: ingId, quantity: ingQuantity } of item.ingredients) {
-              const ingredientRef = ref(db, `menu/${ingId}`);
-              const ingSnapshot = await get(ingredientRef);
-              const ingredient = ingSnapshot.val();
-              if (!ingredient) {
-                showAlert(`Ingredient with ID ${ingId} not found.`, true);
-                return;
-              }
-              const required = cartItem.quantity * ingQuantity;
-              if (ingredient.stock < required) {
-                showAlert(`Not enough stock for ingredient ${ingredient.name}.`, true);
-                return;
-              }
-            }
+          // Populate section-specific data
+          if (targetId === 'dashboard') {
+            updateStats();
+            populateMachinesGrid('machines-grid');
+          } else if (targetId === 'machines') {
+            populateMachinesGrid('all-machines-grid');
+          } else if (targetId === 'logs') {
+            populateLogs();
           }
         }
 
-        for (const cartItem of cart) {
-          const item = menuItems[cartItem.itemId];
-          const itemRef = ref(db, `menu/${cartItem.itemId}`);
-          await update(itemRef, { stock: item.stock - cartItem.quantity });
-          if (item.ingredients && item.ingredients.length > 0) {
-            for (const { itemId: ingId, quantity: ingQuantity } of item.ingredients) {
-              const ingredientRef = ref(db, `menu/${ingId}`);
-              const ingSnapshot = await get(ingredientRef);
-              const ingredient = ingSnapshot.val();
-              const required = cartItem.quantity * ingQuantity;
-              await update(ingredientRef, { stock: ingredient.stock - required });
-              await logHistory(ingId, "order", -required, `Used for ${item.name} in order #${orderNumber}`);
-            }
-          }
-          await logHistory(cartItem.itemId, "order", -cartItem.quantity, `Customer order #${orderNumber}`);
-        }
-
-        const subtotal = cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
-        const total = subtotal * (1 - discount / 100);
-        const orderRef = ref(db, 'orders');
-        const newOrderRef = push(orderRef);
-        await set(newOrderRef, {
-          items: cart,
-          total,
-          discount,
-          paymentMethod,
-          cashTendered: paymentMethod === 'cash' ? cashTendered : null,
-          change: paymentMethod === 'cash' ? change : null,
-          timestamp: Date.now(),
-          userId: auth.currentUser?.uid || "anonymous",
-          orderNumber,
-          status: "pending"
+        // Navigation handling
+        document.addEventListener('DOMContentLoaded', () => {
+          document.querySelectorAll('a[data-target]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+              e.preventDefault();
+              const target = this.getAttribute('data-target');
+              showTab(target);
+            });
+          });
+          // Initialize dashboard
+          showTab('dashboard');
         });
 
-        receiptContent.innerHTML = `
-          <p class="font-semibold">Order #${orderNumber}</p>
-          <p>Timestamp: ${new Date().toLocaleString()}</p>
-          <p>Items:</p>
-          <ul class="list-disc list-inside">
-            ${cart.map(item => `<li>${menuItems[item.itemId].name} x${item.quantity} - R${(item.quantity * item.price).toFixed(2)}</li>`).join('')}
-          </ul>
-          <p>Subtotal: R${subtotal.toFixed(2)}</p>
-          <p>Discount: ${discount}%</p>
-          <p>Total: R${total.toFixed(2)}</p>
-          <p>Payment Method: ${paymentMethod.charAt(0).toUpperCase() + paymentMethod.slice(1)}</p>
-          ${paymentMethod === 'cash' ? `<p>Cash Tendered: R${cashTendered.toFixed(2)}</p><p>Change: R${change.toFixed(2)}</p>` : ''}
-        `;
-        receiptSection.classList.remove('hidden');
-        menuGrid.classList.add('opacity-50', 'pointer-events-none');
-        categoryTabs.classList.add('opacity-50', 'pointer-events-none');
-        submitOrderBtn.classList.add('hidden');
-        clearCartBtn.classList.add('hidden');
-        discountInput.disabled = true;
-        paymentMethodSelect.disabled = true;
-        cashTenderedInput.disabled = true;
-
-        cart = [];
-        discountInput.value = '';
-        cashTenderedInput.value = '';
-        updateCart();
-        orderNumber += 1;
-        orderNumberSpan.textContent = orderNumber;
-        showToast(`Order #${orderNumber - 1} submitted successfully`);
-      } catch (error) {
-        console.error("Error submitting order:", error);
-        showAlert("Failed to submit order: " + error.message, true);
-      } finally {
-        hideSpinner();
-      }
-    }
-
-    async function logHistory(itemId, type, quantity, reason) {
-      try {
-        const historyRef = ref(db, 'inventoryHistory');
-        const newHistoryRef = push(historyRef);
-        await set(newHistoryRef, {
-          itemId,
-          type,
-          quantity,
-          reason,
-          timestamp: Date.now(),
-          userId: auth.currentUser?.uid || "anonymous"
-        });
-      } catch (error) {
-        console.error("Error logging history:", error);
-        showAlert("Failed to log inventory history: " + error.message, true);
-      }
-    }
-
-    function clearCart() {
-      cart = [];
-      discountInput.value = '';
-      cashTenderedInput.value = '';
-      updateCart();
-      showToast("Cart cleared");
-    }
-
-    function startNewOrder() {
-      receiptSection.classList.add('hidden');
-      menuGrid.classList.remove('opacity-50', 'pointer-events-none');
-      categoryTabs.classList.remove('opacity-50', 'pointer-events-none');
-      submitOrderBtn.classList.remove('hidden');
-      clearCartBtn.classList.remove('hidden');
-      discountInput.disabled = false;
-      paymentMethodSelect.disabled = false;
-      cashTenderedInput.disabled = false;
-      updateCart();
-    }
-
-    function setupListeners() {
-      if (clearCartBtn) {
-        clearCartBtn.addEventListener("click", () => {
-          clearCart();
-          clearCartBtn.classList.add("tap-active");
-          setTimeout(() => clearCartBtn.classList.remove("tap-active"), 100);
-        });
-      }
-      if (submitOrderBtn) {
-        submitOrderBtn.addEventListener("click", () => {
-          submitOrder();
-          submitOrderBtn.classList.add("tap-active");
-          setTimeout(() => submitOrderBtn.classList.remove("tap-active"), 100);
-        });
-      }
-      if (newOrderBtn) {
-        newOrderBtn.addEventListener("click", () => {
-          startNewOrder();
-          newOrderBtn.classList.add("tap-active");
-          setTimeout(() => newOrderBtn.classList.remove("tap-active"), 100);
-        });
-      }
-      if (logoutBtn) {
-        logoutBtn.addEventListener("click", async () => {
+        // Logout
+        window.logout = async () => {
           try {
             await signOut(auth);
-            window.location.href = 'login.html';
+            window.location.href = 'login.html'; // Adjust as needed
           } catch (error) {
-            console.error("Error logging out:", error);
-            showAlert("Failed to logout: " + error.message, true);
+            showDialog(`Logout failed: ${error.message}`, 'error');
+          }
+        };
+
+        let totalActive = 0;
+        let totalCPU = 0;
+        let count = 0;
+        let totalStorage = 0;
+
+        // Real-time listener: Fetch and sync data from all machines
+        const machinesRef = ref(db, 'machines');
+        onValue(machinesRef, (snapshot) => {
+          machines = snapshot.val() || {};
+          totalActive = 0;
+          totalCPU = 0;
+          count = 0;
+          totalStorage = 0;
+
+          Object.entries(machines).forEach(([machineId, data]) => {
+            if (data.status === 'running') {
+              totalActive++;
+              totalCPU += data.cpu || 0;
+              count++;
+            }
+            totalStorage += data.storage || 0;
+          });
+
+          updateStats();
+          if (document.getElementById('dashboard').style.display === 'block') {
+            populateMachinesGrid('machines-grid');
+          } else if (document.getElementById('machines').style.display === 'block') {
+            populateMachinesGrid('all-machines-grid');
+          }
+          populateLogs();
+        });
+
+        // Update stats
+        function updateStats() {
+          document.getElementById('totalMachines').textContent = Object.keys(machines).length;
+          document.getElementById('activeVMs').textContent = totalActive;
+          document.getElementById('avgCPU').textContent = count > 0 ? Math.round(totalCPU / count) + '%' : '0%';
+          document.getElementById('totalStorage').textContent = (totalStorage / 1024).toFixed(1) + ' GB';
+
+          // Update usage chart
+          const labels = ['CPU', 'Memory', 'Storage'];
+          const data = [totalCPU / count || 0, 50, totalStorage / 1024]; // Sample data; adjust as needed
+          if (usageChart) {
+            usageChart.data.labels = labels;
+            usageChart.data.datasets[0].data = data;
+            usageChart.update();
+          } else {
+            const ctx = document.getElementById('usage-chart').getContext('2d');
+            usageChart = new Chart(ctx, {
+              type: 'doughnut',
+              data: {
+                labels: labels,
+                datasets: [{
+                  data: data,
+                  backgroundColor: ['#4299e1', '#48bb78', '#ed8936']
+                }]
+              },
+              options: {
+                responsive: true,
+                plugins: {
+                  legend: { position: 'top' },
+                  title: { display: true, text: 'Resource Overview' }
+                }
+              }
+            });
+          }
+        }
+
+        // Populate machines grid
+        function populateMachinesGrid(gridId) {
+          const grid = document.getElementById(gridId);
+          grid.innerHTML = '';
+          let filtered = Object.entries(machines).filter(([id, machine]) => {
+            const searchTerm = (machine.name || id).toLowerCase();
+            return searchTerm.includes(searchQuery);
+          });
+          filtered.slice(0, gridId === 'machines-grid' ? 6 : undefined).forEach(([machineId, machine]) => {
+            const card = document.createElement('div');
+            card.className = 'machine-card';
+            card.onclick = () => showMachineDetails(machineId);
+            card.innerHTML = `
+                <div class="machine-thumbnail">🖥️</div>
+                <div class="machine-content">
+                    <h3 class="machine-title">${machine.name || machineId}</h3>
+                    <div class="machine-meta">
+                        <span>${machine.status || 'unknown'} • CPU: ${machine.cpu || 0}%</span>
+                        <button class="view-btn" onclick="event.stopPropagation(); showMachineDetails('${machineId}')">View</button>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+          });
+          if (filtered.length === 0) {
+            grid.innerHTML = `<p class="text-center" style="color: var(--text-secondary); grid-column: 1 / -1;">${searchQuery ? `No machines match "${searchQuery}".` : 'No machines yet.'}</p>`;
+          }
+        }
+
+        // Actions: Store data (push update to a machine)
+        window.storeData = async (machineId) => {
+          const payload = { message: 'Update from dashboard', value: Math.random() * 100 };
+          await set(ref(db, `machines/${machineId}`), { ...machines[machineId], configUpdate: payload, timestamp: serverTimestamp() });
+          showDialog('Data stored successfully!', 'success');
+        };
+
+        // Retrieve data (logs/pulls latest for demo)
+        window.retrieveData = async (machineId) => {
+          const data = machines[machineId];
+          console.log(`Retrieved from ${machineId}:`, data);
+          showDialog(`Retrieved: CPU=${data.cpu}%, Memory=${data.memory}MB`, 'info');
+        };
+
+        // Populate logs (sample; fetch from a logs collection if exists)
+        function populateLogs() {
+          const tbody = document.getElementById('logs-table');
+          tbody.innerHTML = '';
+          Object.entries(machines).slice(-10).reverse().forEach(([id, data]) => {
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td>${id}</td>
+                <td>${data.status || 'Status update'}</td>
+                <td>${data.timestamp ? new Date(data.timestamp).toLocaleString() : 'N/A'}</td>
+                <td>${data.configUpdate?.message || 'N/A'}</td>
+            `;
+          });
+          if (Object.keys(machines).length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">No logs yet.</td></tr>';
+          }
+        }
+
+        // Auth state listener
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            currentUser = user;
+            showLoader();
+            document.getElementById('user-name').textContent = user.email || 'Admin';
+            hideLoader();
+          } else {
+            signInAnonymously(auth).catch(console.error);
           }
         });
-      }
-      if (discountInput) {
-        discountInput.addEventListener("input", updateCart);
-        discountInput.addEventListener("keypress", (e) => {
-          if (e.key === "Enter") submitOrder();
-        });
-      }
-      if (cashTenderedInput) {
-        cashTenderedInput.addEventListener("input", updateCart);
-        cashTenderedInput.addEventListener("keypress", (e) => {
-          if (e.key === "Enter" && paymentMethodSelect.value === 'cash') submitOrder();
-        });
-      }
-    }
 
-    function applyTheme() {
-      const theme = localStorage.getItem("theme") || "light";
-      document.documentElement.setAttribute("data-theme", theme);
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      applyTheme();
-      setupListeners();
-      loadMenuItems();
-    });
-  </script>
+        showLoader();
+        // Simulate initial data (in real, remove after first snapshot)
+        const machineIds = ['machine-1', 'machine-2', 'machine-3'];
+        machineIds.forEach(async (id) => {
+          await set(ref(db, `machines/${id}`), {
+            name: `Server ${id}`,
+            status: 'running',
+            cpu: Math.floor(Math.random() * 100),
+            memory: Math.floor(Math.random() * 1024),
+            storage: Math.floor(Math.random() * 100) * 1024,
+            timestamp: serverTimestamp()
+          });
+        });
+        setTimeout(() => hideLoader(), 1000); // Hide after init
+    </script>
 </body>
 </html>
