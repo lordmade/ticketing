@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virtual Server Dashboard with ML Monitoring</title>
+    <title>Virtual Server Dashboard with Predictive Maintenance</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -18,6 +18,8 @@
             --border: #e2e8f0;
             --accent: #4299e1;
             --accent-secondary: #48bb78;
+            --warning: #ed8936;
+            --danger: #e53e3e;
             --gradient: linear-gradient(135deg, #4299e1 0%, #48bb78 50%, #ed8936 100%);
             --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -279,8 +281,12 @@
             position: relative;
         }
         .machine-card.anomaly {
-            border-color: #e53e3e;
-            box-shadow: 0 0 0 1px #e53e3e;
+            border-color: var(--danger);
+            box-shadow: 0 0 0 1px var(--danger);
+        }
+        .machine-card.prediction-high {
+            border-color: var(--warning);
+            box-shadow: 0 0 0 1px var(--warning);
         }
         .machine-card:hover {
             transform: translateY(-2px);
@@ -332,7 +338,7 @@
             animation: pulse 2s infinite;
         }
         .status-indicator.offline {
-            background: #e53e3e;
+            background: var(--danger);
         }
         @keyframes pulse {
             0% { opacity: 1; }
@@ -344,10 +350,13 @@
             color: var(--text-secondary);
             margin-top: 4px;
         }
-        .anomaly-alert {
-            color: #e53e3e;
+        .anomaly-alert, .prediction-alert {
+            color: var(--danger);
             font-weight: 600;
             font-size: 12px;
+        }
+        .prediction-alert {
+            color: var(--warning);
         }
         .view-btn {
             background: var(--accent);
@@ -461,7 +470,7 @@
             color: var(--accent-secondary);
         }
         .dialog.error .dialog-title {
-            color: #e53e3e;
+            color: var(--danger);
         }
         .loader-overlay {
             position: fixed;
@@ -669,7 +678,7 @@
         <section id="dashboard">
             <div class="welcome-section">
                 <h1 class="welcome-title">Virtual Server Dashboard</h1>
-                <p class="welcome-subtitle">Manage and monitor your virtual machines with ML-powered anomaly detection.</p>
+                <p class="welcome-subtitle">Manage and monitor your virtual machines with ML-powered anomaly detection and predictive maintenance.</p>
             </div>
 
             <div class="stats-grid">
@@ -688,6 +697,14 @@
                 <div class="stat-card">
                     <div class="stat-number" id="anomalies">0</div>
                     <div class="stat-label">ML Anomalies Detected</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="predictions">0</div>
+                    <div class="stat-label">High-Risk Predictions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalStorage">0 GB</div>
+                    <div class="stat-label">Total Storage</div>
                 </div>
             </div>
 
@@ -748,6 +765,11 @@
                     <div class="stat-label">Anomaly Detection</div>
                     <button class="view-btn">Configure</button>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-number">Predictive Maintenance</div>
+                    <div class="stat-label">Forecasting Model</div>
+                    <button class="view-btn">Train Model</button>
+                </div>
             </div>
         </section>
     </main>
@@ -804,7 +826,7 @@
         const loader = document.getElementById('loader-overlay');
         const sidebar = document.getElementById('sidebar');
         const CONNECTION_TIMEOUT = 10000; // 10 seconds
-        const HISTORY_SIZE = 50; // Keep last 50 metrics for anomaly detection
+        const HISTORY_SIZE = 50; // Keep last 50 metrics for anomaly detection and prediction
 
         function showLoader() {
           loader.classList.add('show');
@@ -855,6 +877,35 @@
           return { isAnomaly, score: zScore.toFixed(2) };
         }
 
+        // Predictive Maintenance: Simple Linear Regression with TF.js for CPU forecast
+        async function predictNextCPU(history) {
+          if (history.length < 5) return { prediction: 0, risk: 'low' };
+
+          const xs = tf.tensor2d(history.map((_, i) => [i]));
+          const ys = tf.tensor2d(history.map(y => [y]));
+
+          const model = tf.sequential({
+            layers: [
+              tf.layers.dense({ inputShape: [1], units: 1 })
+            ]
+          });
+          model.compile({ optimizer: 'sgd', loss: 'meanSquaredError' });
+          await model.fit(xs, ys, { epochs: 100, verbose: 0 });
+
+          const nextX = tf.tensor2d([[history.length]]);
+          const predictionTensor = model.predict(nextX);
+          const prediction = Math.round(predictionTensor.dataSync()[0]);
+
+          model.dispose();
+          xs.dispose();
+          ys.dispose();
+          nextX.dispose();
+          predictionTensor.dispose();
+
+          const risk = prediction > 80 ? 'high' : prediction > 60 ? 'medium' : 'low';
+          return { prediction, risk };
+        }
+
         // Machine Details Modal Functions
         function showMachineDetails(machineId) {
           const backdrop = document.getElementById('machine-details-backdrop');
@@ -869,6 +920,7 @@
           const isConnected = (now - lastActivity) < CONNECTION_TIMEOUT;
           const timeAgo = machine.timestamp ? `${Math.round((now - lastActivity) / 1000)}s ago` : 'Never';
           const anomalyInfo = machine.anomaly ? `<p class="anomaly-alert">⚠️ ML Anomaly Detected (Z-Score: ${machine.anomalyScore})</p>` : '';
+          const predictionInfo = machine.prediction ? `<p class="prediction-alert">🔮 Predicted CPU (next interval): ${machine.prediction}% (Risk: ${machine.risk})</p>` : '';
 
           title.textContent = machine.name || machineId;
           content.innerHTML = `
@@ -878,6 +930,7 @@
               <p><strong>Memory:</strong> ${machine.memory || 0} MB</p>
               <p><strong>Last Data Flow:</strong> ${timeAgo}</p>
               ${anomalyInfo}
+              ${predictionInfo}
               <div style="margin-top: 16px;">
                   <button class="view-btn" onclick="storeData('${machineId}')">Send Data (Store)</button>
                   <button class="view-btn" onclick="retrieveData('${machineId}')" style="margin-left: 8px;">Retrieve Data</button>
@@ -984,19 +1037,21 @@
         let count = 0;
         let totalStorage = 0;
         let totalAnomalies = 0;
+        let totalHighRisk = 0;
 
         // Real-time listener: Fetch and sync data from all machines
         const machinesRef = ref(db, 'machines');
-        onValue(machinesRef, (snapshot) => {
+        onValue(machinesRef, async (snapshot) => {
           const newMachines = snapshot.val() || {};
           totalActive = 0;
           totalCPU = 0;
           count = 0;
           totalStorage = 0;
           totalAnomalies = 0;
+          totalHighRisk = 0;
 
           const now = Date.now();
-          Object.entries(newMachines).forEach(([machineId, data]) => {
+          for (const [machineId, data] of Object.entries(newMachines)) {
             if (!machines[machineId]) {
               machineHistories[machineId] = []; // Init history
             }
@@ -1012,6 +1067,12 @@
               machines[machineId].anomaly = anomalyResult.isAnomaly;
               machines[machineId].anomalyScore = anomalyResult.score;
               if (anomalyResult.isAnomaly) totalAnomalies++;
+
+              // Predictive maintenance: Forecast next CPU
+              const predictionResult = await predictNextCPU(machineHistories[machineId]);
+              machines[machineId].prediction = predictionResult.prediction;
+              machines[machineId].risk = predictionResult.risk;
+              if (predictionResult.risk === 'high') totalHighRisk++;
             }
 
             if (data.timestamp) {
@@ -1025,7 +1086,7 @@
               }
               totalStorage += data.storage || 0;
             }
-          });
+          }
 
           updateStats();
           if (document.getElementById('dashboard').style.display === 'block') {
@@ -1043,6 +1104,7 @@
           document.getElementById('avgCPU').textContent = count > 0 ? Math.round(totalCPU / count) + '%' : '0%';
           document.getElementById('totalStorage').textContent = (totalStorage / 1024).toFixed(1) + ' GB';
           document.getElementById('anomalies').textContent = totalAnomalies;
+          document.getElementById('predictions').textContent = totalHighRisk;
 
           // Update usage chart
           const labels = ['CPU', 'Memory', 'Storage'];
@@ -1087,9 +1149,13 @@
             const isConnected = machine.isConnected || (now - lastActivity) < CONNECTION_TIMEOUT;
             const timeAgo = machine.timestamp ? `${Math.round((now - lastActivity) / 1000)}s ago` : 'Never';
             const anomalyAlert = machine.anomaly ? '<span class="anomaly-alert">⚠️ Anomaly Detected</span>' : '';
+            const predictionAlert = machine.risk === 'high' ? `<span class="prediction-alert">🔮 High Risk Prediction (${machine.prediction}% CPU)</span>` : '';
 
             const card = document.createElement('div');
-            card.className = `machine-card ${machine.anomaly ? 'anomaly' : ''}`;
+            let cardClass = 'machine-card';
+            if (machine.anomaly) cardClass += ' anomaly';
+            if (machine.risk === 'high') cardClass += ' prediction-high';
+            card.className = cardClass;
             card.onclick = () => showMachineDetails(machineId);
             card.innerHTML = `
                 <div class="machine-thumbnail">🖥️</div>
@@ -1099,7 +1165,7 @@
                         <span><span class="status-indicator ${isConnected ? 'online' : 'offline'}"></span>${machine.status || 'unknown'} • CPU: ${machine.cpu || 0}%</span>
                         <button class="view-btn" onclick="event.stopPropagation(); showMachineDetails('${machineId}')">View</button>
                     </div>
-                    <div class="data-flow">Last Data Flow: ${timeAgo} ${isConnected ? '(Active Send/Receive)' : '(No Flow)'} ${anomalyAlert}</div>
+                    <div class="data-flow">Last Data Flow: ${timeAgo} ${isConnected ? '(Active Send/Receive)' : '(No Flow)'} ${anomalyAlert} ${predictionAlert}</div>
                 </div>
             `;
             grid.appendChild(card);
@@ -1120,8 +1186,9 @@
         window.retrieveData = async (machineId) => {
           const data = machines[machineId];
           console.log(`Retrieved from ${machineId}:`, data);
-          const anomalyMsg = data.anomaly ? ` (ML Anomaly: Z-Score ${data.anomalyScore})` : '';
-          showDialog(`Retrieved: CPU=${data.cpu}%, Memory=${data.memory}MB${anomalyMsg} (Data Flow Active)`, 'info');
+          let anomalyMsg = data.anomaly ? ` (ML Anomaly: Z-Score ${data.anomalyScore})` : '';
+          let predictionMsg = data.prediction ? ` (Predicted: ${data.prediction}% CPU, Risk: ${data.risk})` : '';
+          showDialog(`Retrieved: CPU=${data.cpu}%, Memory=${data.memory}MB${anomalyMsg}${predictionMsg} (Data Flow Active)`, 'info');
         };
 
         // Populate logs (sample; fetch from a logs collection if exists)
@@ -1134,10 +1201,11 @@
             const isConnected = (now - lastActivity) < CONNECTION_TIMEOUT;
             const status = isConnected ? 'Active Flow' : 'Disconnected';
             const anomaly = data.anomaly ? ' (Anomaly Detected)' : '';
+            const prediction = data.prediction ? ` (Predicted Risk: ${data.risk})` : '';
             const row = tbody.insertRow();
             row.innerHTML = `
                 <td>${id}</td>
-                <td>${status}${anomaly}</td>
+                <td>${status}${anomaly}${prediction}</td>
                 <td>${data.timestamp ? new Date(data.timestamp).toLocaleString() : 'N/A'}</td>
                 <td>${data.configUpdate?.message || 'Data sent/received'}</td>
             `;
