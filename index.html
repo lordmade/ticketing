@@ -3,35 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BanterBox CRM | Unsigned Upload Fix</title>
-    
+    <title>BanterBox CRM | Fast Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
-
     <style>
         .section { display: none; }
         .section.active { display: block; }
         #loginModal { transition: opacity 0.3s ease-in-out; }
         .hidden-modal { opacity: 0; pointer-events: none; }
-        /* Loader Animation */
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #4f46e5; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-gray-50 flex h-screen overflow-hidden font-sans">
+<body class="bg-slate-50 flex h-screen overflow-hidden font-sans text-slate-900">
 
     <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 bg-opacity-95 backdrop-blur-sm">
         <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-sm text-center">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">BanterBox</h1>
-            <p class="text-gray-500 mb-8">CRM Login</p>
-            <button onclick="loginWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-white border hover:bg-gray-50 text-gray-700 font-medium py-3 px-4 rounded-lg shadow-sm transition-all">
+            <h1 class="text-3xl font-bold mb-2">BanterBox</h1>
+            <p class="text-slate-500 mb-8 text-sm uppercase tracking-widest">Business Operations</p>
+            <button onclick="loginWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-white border hover:bg-slate-50 font-medium py-3 px-4 rounded-lg shadow-sm transition-all">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5">
                 Sign in with Google
             </button>
-            <p id="loginError" class="text-red-500 text-xs mt-4 hidden"></p>
         </div>
     </div>
 
@@ -42,48 +35,46 @@
             <nav class="flex-1 p-4 space-y-2">
                 <button onclick="showSection('dashboard')" class="w-full text-left p-3 rounded hover:bg-slate-800 flex gap-3">📊 Dashboard</button>
                 <button onclick="showSection('employees')" class="w-full text-left p-3 rounded hover:bg-slate-800 flex gap-3">👥 Employees</button>
-                <button onclick="showSection('tasks')" class="w-full text-left p-3 rounded hover:bg-slate-800 flex gap-3">📋 Task Tracker</button>
+                <button onclick="showSection('tasks')" class="w-full text-left p-3 rounded hover:bg-slate-800 flex gap-3">📋 Tasks</button>
             </nav>
-            <button onclick="logout()" class="p-4 text-red-400 hover:text-red-300 text-sm border-t border-slate-800">Sign Out</button>
+            <button onclick="logout()" class="p-4 text-slate-400 hover:text-white text-sm border-t border-slate-800">Sign Out</button>
         </aside>
 
-        <main class="flex-1 flex flex-col overflow-y-auto bg-slate-50">
+        <main class="flex-1 flex flex-col overflow-y-auto">
             
             <section id="dashboard" class="section active p-8">
-                <h2 class="text-3xl font-bold text-slate-800 mb-6">Overview</h2>
-                <div id="statsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10"></div>
+                <h2 class="text-3xl font-bold mb-6">Company Overview</h2>
+                <div id="statsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10"></div>
                 <div id="employeeGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             </section>
 
             <section id="employees" class="section p-8">
-                <h2 class="text-3xl font-bold text-slate-800 mb-6">Add New Staff</h2>
-                <div class="bg-white p-8 rounded-2xl shadow-sm border max-w-2xl">
+                <h2 class="text-3xl font-bold mb-6">Add New Staff</h2>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border max-w-md">
                     <div class="space-y-4">
-                        <input type="text" id="empName" placeholder="Full Name" class="w-full border p-3 rounded-lg">
-                        <input type="text" id="empRole" placeholder="Role (e.g. Designer)" class="w-full border p-3 rounded-lg">
-                        
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-2">Photo (Required)</label>
-                            <input type="file" id="empPhoto" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Full Name</label>
+                            <input type="text" id="empName" placeholder="John Doe" class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
                         </div>
-
-                        <button onclick="addEmployee()" id="addBtn" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition flex justify-center items-center gap-2">
-                            <span>Register Employee</span>
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Position</label>
+                            <input type="text" id="empRole" placeholder="Manager" class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <button onclick="addEmployee()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition">
+                            Save Employee
                         </button>
-                        
-                        <div id="statusMsg" class="text-center text-sm font-medium mt-2"></div>
                     </div>
                 </div>
             </section>
 
             <section id="tasks" class="section p-8">
-                <h2 class="text-3xl font-bold text-slate-800 mb-6">Tasks</h2>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border max-w-3xl mb-8 flex gap-4">
-                    <select id="taskEmpSelect" class="border p-3 rounded-lg flex-1"><option value="">Select Staff...</option></select>
-                    <input type="text" id="taskName" placeholder="Task..." class="border p-3 rounded-lg flex-[2]">
-                    <button onclick="addTask()" class="bg-green-600 text-white px-6 rounded-lg font-bold hover:bg-green-700">Assign</button>
+                <h2 class="text-3xl font-bold mb-6">Operations Hub</h2>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border max-w-2xl mb-8 flex flex-wrap gap-4">
+                    <select id="taskEmpSelect" class="border p-3 rounded-lg flex-1 bg-white"></select>
+                    <input type="text" id="taskName" placeholder="New Task Description..." class="border p-3 rounded-lg flex-[2]">
+                    <button onclick="addTask()" class="bg-emerald-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-emerald-700">Assign</button>
                 </div>
-                <div id="taskList" class="space-y-3 max-w-3xl"></div>
+                <div id="taskList" class="space-y-3 max-w-2xl"></div>
             </section>
 
         </main>
@@ -97,12 +88,6 @@
             projectId: "fire-b-a8878",
             databaseURL: "https://fire-b-a8878-default-rtdb.firebaseio.com",
             appId: "1:658673187627:web:6e4c29af661785f0afa36e"
-        };
-
-        // ⚠️ ENSURE 'banter_box' IS SET TO "UNSIGNED" IN CLOUDINARY SETTINGS
-        const CLOUDINARY_CONFIG = {
-            cloudName: 'dqkujefxj',
-            uploadPreset: 'banter_box' 
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -124,127 +109,85 @@
             }
         });
 
-        function loginWithGoogle() {
-            auth.signInWithPopup(provider).catch(e => alert(e.message));
-        }
+        function loginWithGoogle() { auth.signInWithPopup(provider); }
         function logout() { auth.signOut(); }
 
-        // --- NAVIGATION ---
+        // --- UTILS ---
+        function getAvatarColor(name) {
+            const colors = ['#4F46E5', '#059669', '#DC2626', '#D97706', '#7C3AED', '#2563EB'];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            return colors[Math.abs(hash) % colors.length];
+        }
+
         function showSection(id) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
         }
 
-        // --- ☁️ CLOUDINARY UNSIGNED UPLOAD FUNCTION ☁️ ---
-        async function uploadImage(file) {
-            const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/upload`;
-            
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset); // Must be Unsigned!
-
-            const response = await fetch(url, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                const errData = await response.json();
-                console.error("Cloudinary Error:", errData);
-                throw new Error(errData.error.message || "Image upload failed");
-            }
-
-            const data = await response.json();
-            return data.secure_url;
-        }
-
-        // --- ADD EMPLOYEE LOGIC ---
+        // --- CORE CRM LOGIC ---
         async function addEmployee() {
             const name = document.getElementById('empName').value;
             const role = document.getElementById('empRole').value;
-            const file = document.getElementById('empPhoto').files[0];
-            const btn = document.getElementById('addBtn');
-            const statusMsg = document.getElementById('statusMsg');
-
-            if (!name || !file) return alert("Please fill name and select a photo.");
-
-            // UI Update
-            btn.disabled = true;
-            btn.innerHTML = `<div class="loader"></div> Uploading to Cloudinary...`;
-            statusMsg.innerText = "Please wait, sending image to cloud...";
-            statusMsg.className = "text-center text-sm font-medium mt-2 text-indigo-600";
+            
+            if (!name || !role) return alert("Fill all fields");
 
             try {
-                // 1. Upload
-                console.log("Starting upload...");
-                const photoUrl = await uploadImage(file);
-                console.log("Upload success:", photoUrl);
-
-                // 2. Save DB
-                btn.innerHTML = `<div class="loader"></div> Saving to Database...`;
                 await db.ref('employees').push({
                     name, 
                     role, 
-                    photoUrl, 
                     progress: 0, 
                     taskCount: 0, 
                     completedCount: 0,
-                    addedBy: auth.currentUser.email
+                    createdAt: Date.now()
                 });
-
-                // 3. Success
-                alert("Employee Added!");
                 document.getElementById('empName').value = '';
                 document.getElementById('empRole').value = '';
-                document.getElementById('empPhoto').value = '';
                 showSection('dashboard');
-
-            } catch (error) {
-                console.error(error);
-                alert("FAILED: " + error.message);
-                statusMsg.innerText = "Error: " + error.message;
-                statusMsg.className = "text-center text-sm font-medium mt-2 text-red-600";
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = "Register Employee";
-            }
+            } catch (e) { alert(e.message); }
         }
 
-        // --- TASK & DATA SYNC ---
         function initApp() {
-            // Employees Sync
+            // Employee Sync
             db.ref('employees').on('value', snap => {
                 const data = snap.val() || {};
                 const grid = document.getElementById('employeeGrid');
                 const select = document.getElementById('taskEmpSelect');
                 
                 grid.innerHTML = '';
-                select.innerHTML = '<option value="">Select Staff...</option>';
-                let total = 0, sumProgress = 0;
+                select.innerHTML = '<option value="">Choose Employee...</option>';
+                let total = 0, sumProg = 0;
 
                 Object.keys(data).forEach(id => {
                     const emp = data[id];
-                    total++; sumProgress += (emp.progress || 0);
+                    total++; sumProg += emp.progress;
                     select.innerHTML += `<option value="${id}">${emp.name}</option>`;
                     
+                    const initial = emp.name.charAt(0).toUpperCase();
+                    const color = getAvatarColor(emp.name);
+
                     grid.innerHTML += `
-                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center">
-                            <img src="${emp.photoUrl}" class="w-20 h-20 rounded-full mb-3 object-cover border-4 border-slate-50 shadow-sm">
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
+                            <div class="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-3 shadow-inner" style="background-color: ${color}">
+                                ${initial}
+                            </div>
                             <h3 class="font-bold text-lg">${emp.name}</h3>
                             <p class="text-slate-400 text-sm mb-4">${emp.role}</p>
-                            <div class="w-full bg-slate-100 rounded-full h-2 mb-2"><div class="bg-indigo-500 h-2 rounded-full" style="width: ${emp.progress}%"></div></div>
-                            <span class="text-xs font-bold text-slate-500">${emp.progress}% Completed</span>
+                            <div class="w-full bg-slate-100 rounded-full h-2 mb-2">
+                                <div class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: ${emp.progress}%"></div>
+                            </div>
+                            <span class="text-xs font-bold text-slate-500">${emp.progress}% Done</span>
                         </div>
                     `;
                 });
 
                 document.getElementById('statsGrid').innerHTML = `
-                    <div class="bg-white p-6 rounded-xl border shadow-sm"><p class="text-slate-400 text-sm">Staff</p><p class="text-3xl font-bold">${total}</p></div>
-                    <div class="bg-white p-6 rounded-xl border shadow-sm"><p class="text-slate-400 text-sm">Avg Perf</p><p class="text-3xl font-bold text-indigo-600">${total ? Math.round(sumProgress/total) : 0}%</p></div>
+                    <div class="bg-white p-6 rounded-xl border"><p class="text-slate-400 text-sm font-bold uppercase">Headcount</p><p class="text-4xl font-black">${total}</p></div>
+                    <div class="bg-white p-6 rounded-xl border"><p class="text-slate-400 text-sm font-bold uppercase">Efficiency</p><p class="text-4xl font-black text-indigo-600">${total ? Math.round(sumProg/total) : 0}%</p></div>
                 `;
             });
 
-            // Task Sync
+            // Tasks Sync
             db.ref('tasks').on('value', snap => {
                 const tasks = snap.val() || {};
                 const list = document.getElementById('taskList');
@@ -252,9 +195,14 @@
                 Object.entries(tasks).reverse().forEach(([id, t]) => {
                     const isDone = t.status === 'completed';
                     list.innerHTML += `
-                        <div class="flex justify-between bg-white p-4 rounded-xl border ${isDone ? 'opacity-50' : ''}">
-                            <div><p class="font-bold ${isDone ? 'line-through' : ''}">${t.taskName}</p><span class="text-xs text-slate-400">ID: ...${t.empId.slice(-4)}</span></div>
-                            <button onclick="toggleTask('${id}', '${t.empId}', '${t.status}')" class="text-sm px-3 py-1 rounded bg-slate-100 hover:bg-slate-200">${isDone ? 'Undo' : 'Done'}</button>
+                        <div class="flex items-center justify-between bg-white p-4 rounded-xl border ${isDone ? 'opacity-40' : ''} shadow-sm">
+                            <div class="flex items-center gap-4">
+                                <div class="w-2 h-2 rounded-full ${isDone ? 'bg-slate-300' : 'bg-emerald-500'}"></div>
+                                <p class="font-medium ${isDone ? 'line-through' : ''}">${t.taskName}</p>
+                            </div>
+                            <button onclick="toggleTask('${id}', '${t.empId}', '${t.status}')" class="text-xs font-bold px-3 py-2 rounded-lg ${isDone ? 'bg-slate-100' : 'bg-slate-900 text-white'} transition">
+                                ${isDone ? 'Undo' : 'Complete'}
+                            </button>
                         </div>`;
                 });
             });
@@ -271,7 +219,7 @@
 
         function toggleTask(tid, eid, stat) {
             db.ref(`tasks/${tid}/status`).set(stat === 'pending' ? 'completed' : 'pending');
-            setTimeout(() => updateStats(eid), 200);
+            setTimeout(() => updateStats(eid), 100);
         }
 
         function updateStats(eid) {
