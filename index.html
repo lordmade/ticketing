@@ -3,69 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BanterBox Business CRM</title>
+    <title>BanterBox CRM | Secure</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
+
     <style>
         .section { display: none; }
         .section.active { display: block; }
+        /* Smooth fade for the modal */
+        #loginModal { transition: opacity 0.3s ease-in-out; }
+        .hidden-modal { opacity: 0; pointer-events: none; }
     </style>
 </head>
-<body class="bg-gray-50 flex h-screen overflow-hidden">
+<body class="bg-gray-50 flex h-screen overflow-hidden font-sans">
 
-    <aside class="w-64 bg-indigo-900 text-white flex flex-col">
-        <div class="p-6 text-2xl font-bold border-b border-indigo-800">BanterBox</div>
-        <nav class="flex-1 p-4 space-y-2">
-            <button onclick="showSection('dashboard')" class="w-full text-left p-3 rounded hover:bg-indigo-800 transition">📊 Dashboard</button>
-            <button onclick="showSection('employees')" class="w-full text-left p-3 rounded hover:bg-indigo-800 transition">👥 Employees</button>
-            <button onclick="showSection('tasks')" class="w-full text-left p-3 rounded hover:bg-indigo-800 transition">📋 Task Tracker</button>
-        </nav>
-        <div class="p-4 text-xs text-indigo-300">CRM v1.0 • Connected to Firebase</div>
-    </aside>
+    <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 bg-opacity-95 backdrop-blur-sm">
+        <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-sm text-center">
+            <div class="mb-8">
+                <div class="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800">BanterBox</h1>
+                <p class="text-gray-500 mt-2">Enterprise CRM Login</p>
+            </div>
 
-    <main class="flex-1 flex flex-col overflow-y-auto">
+            <button onclick="loginWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md">
+                <svg class="w-5 h-5" viewBox="0 0 24 24">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Sign in with Google
+            </button>
+            
+            <p id="loginError" class="text-red-500 text-xs mt-4 hidden"></p>
+        </div>
+    </div>
+
+    <div id="appContent" class="flex-1 flex h-screen overflow-hidden filter blur-sm transition-all duration-500">
         
-        <section id="dashboard" class="section active p-8">
-            <h2 class="text-3xl font-bold text-gray-800 mb-6">Company Overview</h2>
-            <div id="statsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-xl z-10">
+            <div class="p-6 text-2xl font-bold border-b border-slate-800 tracking-tight">BanterBox</div>
+            
+            <div id="sidebarProfile" class="p-4 border-b border-slate-800 flex items-center gap-3 hidden">
+                <img id="userAvatar" src="" class="w-8 h-8 rounded-full border border-slate-600">
+                <div class="overflow-hidden">
+                    <p id="userName" class="text-sm font-semibold truncate">User</p>
+                    <p class="text-xs text-slate-400">Admin</p>
                 </div>
-            <div id="employeeGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                </div>
-        </section>
-
-        <section id="employees" class="section p-8">
-            <h2 class="text-3xl font-bold text-gray-800 mb-6">Staff Registration</h2>
-            <div class="bg-white p-6 rounded-xl shadow-sm border max-w-2xl">
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="empName" placeholder="Employee Name" class="border p-3 rounded-lg w-full">
-                    <input type="text" id="empRole" placeholder="Role (e.g. Sales)" class="border p-3 rounded-lg w-full">
-                </div>
-                <div class="mt-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
-                    <input type="file" id="empPhoto" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                </div>
-                <button onclick="addEmployee()" id="addBtn" class="mt-6 bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition">Register Employee</button>
             </div>
-        </section>
 
-        <section id="tasks" class="section p-8">
-            <h2 class="text-3xl font-bold text-gray-800 mb-6">Task Management</h2>
-            <div class="bg-white p-6 rounded-xl shadow-sm border max-w-2xl mb-8">
-                <select id="taskEmpSelect" class="border p-3 rounded-lg w-full mb-4">
-                    <option value="">Select Employee to Assign</option>
-                </select>
-                <input type="text" id="taskName" placeholder="Task Description" class="border p-3 rounded-lg w-full mb-4">
-                <button onclick="addTask()" class="bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition">Assign Task</button>
+            <nav class="flex-1 p-4 space-y-2">
+                <button onclick="showSection('dashboard')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
+                    <span>📊</span> Dashboard
+                </button>
+                <button onclick="showSection('employees')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
+                    <span>👥</span> Employees
+                </button>
+                <button onclick="showSection('tasks')" class="w-full text-left p-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3">
+                    <span>📋</span> Task Tracker
+                </button>
+            </nav>
+            <div class="p-4 bg-slate-950">
+                <button onclick="logout()" class="w-full text-center py-2 text-red-400 hover:text-red-300 text-sm font-medium border border-slate-800 rounded hover:bg-slate-800 transition">
+                    Sign Out
+                </button>
             </div>
-            <div id="taskList" class="space-y-3">
-                </div>
-        </section>
+        </aside>
 
-    </main>
+        <main class="flex-1 flex flex-col overflow-y-auto bg-slate-50">
+            
+            <section id="dashboard" class="section active p-8">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-3xl font-bold text-slate-800">Company Overview</h2>
+                    <span class="text-sm text-slate-500 bg-white px-3 py-1 rounded-full border shadow-sm" id="dateDisplay"></span>
+                </div>
+                
+                <div id="statsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                    </div>
+
+                <h3 class="text-xl font-bold text-slate-700 mb-4">Team Performance</h3>
+                <div id="employeeGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    </div>
+            </section>
+
+            <section id="employees" class="section p-8">
+                <h2 class="text-3xl font-bold text-slate-800 mb-6">Staff Registration</h2>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 max-w-2xl">
+                    <div class="grid grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Full Name</label>
+                            <input type="text" id="empName" placeholder="e.g. Sarah Connor" class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Role / Position</label>
+                            <input type="text" id="empRole" placeholder="e.g. Sales Lead" class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Profile Photo</label>
+                        <div class="flex items-center gap-4">
+                            <input type="file" id="empPhoto" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                        </div>
+                    </div>
+                    <button onclick="addEmployee()" id="addBtn" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
+                        Register New Employee
+                    </button>
+                </div>
+            </section>
+
+            <section id="tasks" class="section p-8">
+                <h2 class="text-3xl font-bold text-slate-800 mb-6">Task Management</h2>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-3xl mb-8">
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <select id="taskEmpSelect" class="border p-3 rounded-lg flex-1 bg-white outline-none focus:ring-2 focus:ring-green-500">
+                            <option value="">Select Employee...</option>
+                        </select>
+                        <input type="text" id="taskName" placeholder="Task description..." class="border p-3 rounded-lg flex-[2] outline-none focus:ring-2 focus:ring-green-500">
+                        <button onclick="addTask()" class="bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition whitespace-nowrap">
+                            Assign +
+                        </button>
+                    </div>
+                </div>
+                <div id="taskList" class="space-y-3 max-w-3xl">
+                    </div>
+            </section>
+
+        </main>
+    </div>
 
     <script>
-        // --- CONFIGURATION ---
+        // 1. CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
             authDomain: "fire-b-a8878.firebaseapp.com",
@@ -81,153 +154,264 @@
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
         const db = firebase.database();
+        const provider = new firebase.auth.GoogleAuthProvider();
 
-        // --- CORE FUNCTIONS ---
+        // 2. AUTHENTICATION LOGIC
+        
+        // Listen for auth state changes
+        auth.onAuthStateChanged(user => {
+            const modal = document.getElementById('loginModal');
+            const app = document.getElementById('appContent');
+            const profile = document.getElementById('sidebarProfile');
 
-        // 1. Navigation
+            if (user) {
+                // User is signed in
+                modal.classList.add('hidden-modal'); // Hide modal
+                app.classList.remove('blur-sm');     // Unblur app
+                
+                // Set User Profile in Sidebar
+                document.getElementById('userAvatar').src = user.photoURL;
+                document.getElementById('userName').innerText = user.displayName;
+                profile.classList.remove('hidden');
+
+                initApp(); // Load data
+            } else {
+                // User is signed out
+                modal.classList.remove('hidden-modal'); // Show modal
+                app.classList.add('blur-sm');           // Blur app
+                profile.classList.add('hidden');
+            }
+        });
+
+        function loginWithGoogle() {
+            auth.signInWithPopup(provider)
+                .catch(error => {
+                    document.getElementById('loginError').innerText = error.message;
+                    document.getElementById('loginError').classList.remove('hidden');
+                });
+        }
+
+        function logout() {
+            auth.signOut();
+        }
+
+        // 3. APP LOGIC (Only runs if authenticated)
+        function initApp() {
+            document.getElementById('dateDisplay').innerText = new Date().toLocaleDateString();
+            setupListeners();
+        }
+
         function showSection(id) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
         }
 
-        // 2. Cloudinary Upload
+        // --- CLOUDINARY UPLOAD ---
         async function uploadImage(file) {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/upload`, {
-                method: 'POST',
-                body: formData
-            });
-            const data = await res.json();
-            return data.secure_url;
+            
+            try {
+                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                return data.secure_url;
+            } catch (err) {
+                console.error("Upload failed", err);
+                throw err;
+            }
         }
 
-        // 3. Add Employee
+        // --- EMPLOYEE MANAGEMENT ---
         async function addEmployee() {
             const name = document.getElementById('empName').value;
             const role = document.getElementById('empRole').value;
             const file = document.getElementById('empPhoto').files[0];
             const btn = document.getElementById('addBtn');
 
-            if (!name || !file) return alert("Missing info");
+            if (!name || !file) return alert("Please fill all fields");
 
-            btn.innerText = "Uploading...";
+            btn.innerText = "Uploading Image...";
             btn.disabled = true;
+            btn.classList.add('opacity-50');
 
             try {
                 const url = await uploadImage(file);
+                
+                btn.innerText = "Saving Data...";
                 await db.ref('employees').push({
-                    name, role, photoUrl: url, progress: 0, taskCount: 0, completedCount: 0
+                    name, 
+                    role, 
+                    photoUrl: url, 
+                    progress: 0, 
+                    taskCount: 0, 
+                    completedCount: 0,
+                    addedBy: auth.currentUser.email // Audit trail
                 });
-                alert("Employee added successfully!");
+
+                alert("Success!");
                 document.getElementById('empName').value = '';
+                document.getElementById('empRole').value = '';
+                document.getElementById('empPhoto').value = '';
                 showSection('dashboard');
             } catch (e) {
-                console.error(e);
+                alert("Error: " + e.message);
             } finally {
-                btn.innerText = "Register Employee";
+                btn.innerText = "Register New Employee";
                 btn.disabled = false;
+                btn.classList.remove('opacity-50');
             }
         }
 
-        // 4. Task Management
+        // --- TASK MANAGEMENT ---
         async function addTask() {
             const empId = document.getElementById('taskEmpSelect').value;
             const taskName = document.getElementById('taskName').value;
-            if (!empId || !taskName) return;
+            if (!empId || !taskName) return alert("Select an employee and enter a task");
 
             const taskRef = db.ref('tasks').push();
-            await taskRef.set({ empId, taskName, status: 'pending' });
-            
-            // Update counts
-            const empRef = db.ref(`employees/${empId}`);
-            empRef.transaction(emp => {
-                if (emp) {
-                    emp.taskCount = (emp.taskCount || 0) + 1;
-                    emp.progress = Math.round((emp.completedCount / emp.taskCount) * 100);
-                }
-                return emp;
+            await taskRef.set({ 
+                empId, 
+                taskName, 
+                status: 'pending',
+                timestamp: Date.now()
             });
+            
+            // Update stats
+            updateEmployeeStats(empId);
             document.getElementById('taskName').value = '';
         }
 
         function toggleTask(taskId, empId, currentStatus) {
             const newStatus = currentStatus === 'pending' ? 'completed' : 'pending';
             db.ref(`tasks/${taskId}/status`).set(newStatus);
-            
-            const empRef = db.ref(`employees/${empId}`);
-            empRef.transaction(emp => {
-                if (emp) {
-                    emp.completedCount = newStatus === 'completed' ? emp.completedCount + 1 : emp.completedCount - 1;
-                    emp.progress = Math.round((emp.completedCount / emp.taskCount) * 100);
-                }
-                return emp;
+            // We wait slightly to ensure DB write before recalculating, 
+            // though standard Firebase triggers handle this better in cloud functions.
+            // For frontend-only, we trigger the recalc manually.
+            setTimeout(() => updateEmployeeStats(empId), 200);
+        }
+
+        function updateEmployeeStats(empId) {
+            // Fetch all tasks for this employee to recalculate accurately
+            db.ref('tasks').orderByChild('empId').equalTo(empId).once('value', snapshot => {
+                const tasks = snapshot.val() || {};
+                let total = 0;
+                let completed = 0;
+
+                Object.values(tasks).forEach(t => {
+                    total++;
+                    if (t.status === 'completed') completed++;
+                });
+
+                const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+                db.ref(`employees/${empId}`).update({
+                    taskCount: total,
+                    completedCount: completed,
+                    progress: progress
+                });
             });
         }
 
         // --- REALTIME LISTENERS ---
+        function setupListeners() {
+            // Sync Dashboard & Employees
+            db.ref('employees').on('value', snap => {
+                const data = snap.val() || {};
+                const grid = document.getElementById('employeeGrid');
+                const select = document.getElementById('taskEmpSelect');
+                
+                grid.innerHTML = '';
+                // Keep the default option
+                select.innerHTML = '<option value="">Select Employee...</option>';
 
-        // Sync Dashboard & Dropdowns
-        db.ref('employees').on('value', snap => {
-            const data = snap.val() || {};
-            const grid = document.getElementById('employeeGrid');
-            const select = document.getElementById('taskEmpSelect');
-            
-            grid.innerHTML = '';
-            select.innerHTML = '<option value="">Select Employee to Assign</option>';
+                let totalEmployees = 0;
+                let companyProgress = 0;
 
-            Object.keys(data).forEach(id => {
-                const emp = data[id];
-                // Update Select
-                select.innerHTML += `<option value="${id}">${emp.name}</option>`;
-                // Update Cards
-                grid.innerHTML += `
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center">
-                        <img src="${emp.photoUrl}" class="w-20 h-20 rounded-full mx-auto mb-4 object-cover border-4 border-indigo-50">
-                        <h3 class="font-bold text-lg">${emp.name}</h3>
-                        <p class="text-gray-500 text-sm mb-4">${emp.role}</p>
-                        <div class="w-full bg-gray-100 rounded-full h-2 mb-1">
-                            <div class="bg-indigo-500 h-2 rounded-full transition-all duration-500" style="width: ${emp.progress}%"></div>
+                Object.keys(data).forEach(id => {
+                    const emp = data[id];
+                    totalEmployees++;
+                    companyProgress += (emp.progress || 0);
+
+                    // Dropdown
+                    select.innerHTML += `<option value="${id}">${emp.name}</option>`;
+
+                    // Employee Card
+                    const color = emp.progress === 100 ? 'bg-green-500' : 'bg-indigo-500';
+                    grid.innerHTML += `
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center relative overflow-hidden group hover:shadow-md transition">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-600"></div>
+                            <img src="${emp.photoUrl}" class="w-20 h-20 rounded-full mb-3 object-cover border-4 border-slate-50 shadow-sm">
+                            <h3 class="font-bold text-lg text-slate-800">${emp.name}</h3>
+                            <p class="text-slate-400 text-sm mb-4">${emp.role}</p>
+                            
+                            <div class="w-full bg-slate-100 rounded-full h-2.5 mb-2 overflow-hidden">
+                                <div class="${color} h-2.5 rounded-full transition-all duration-700" style="width: ${emp.progress}%"></div>
+                            </div>
+                            <div class="flex justify-between w-full text-xs font-semibold text-slate-500 mt-1">
+                                <span>${emp.completedCount}/${emp.taskCount} Tasks</span>
+                                <span>${emp.progress}%</span>
+                            </div>
                         </div>
-                        <span class="text-xs font-semibold text-indigo-600">${emp.progress}% Performance</span>
+                    `;
+                });
+
+                // Dashboard Stats
+                const avgProgress = totalEmployees === 0 ? 0 : Math.round(companyProgress / totalEmployees);
+                document.getElementById('statsGrid').innerHTML = `
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <p class="text-slate-400 text-sm font-medium uppercase tracking-wider">Total Staff</p>
+                        <p class="text-3xl font-extrabold text-slate-800 mt-1">${totalEmployees}</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <p class="text-slate-400 text-sm font-medium uppercase tracking-wider">Avg Performance</p>
+                        <p class="text-3xl font-extrabold text-indigo-600 mt-1">${avgProgress}%</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <p class="text-slate-400 text-sm font-medium uppercase tracking-wider">System Status</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+                            <span class="text-slate-600 font-medium">Live Sync</span>
+                        </div>
                     </div>
                 `;
             });
 
-            // Update Stats
-            document.getElementById('statsGrid').innerHTML = `
-                <div class="bg-white p-6 rounded-xl border">
-                    <p class="text-gray-500 text-sm">Total Staff</p>
-                    <p class="text-3xl font-bold">${Object.keys(data).length}</p>
-                </div>
-            `;
-        });
+            // Sync Tasks
+            db.ref('tasks').on('value', snap => {
+                const tasks = snap.val() || {};
+                const list = document.getElementById('taskList');
+                list.innerHTML = '';
+                
+                // Convert to array and reverse to show newest first
+                const taskArray = Object.entries(tasks).reverse();
 
-        // Sync Task List
-        db.ref('tasks').on('value', snap => {
-            const tasks = snap.val() || {};
-            const list = document.getElementById('taskList');
-            list.innerHTML = '';
-            
-            Object.keys(tasks).forEach(id => {
-                const t = tasks[id];
-                const isDone = t.status === 'completed';
-                list.innerHTML += `
-                    <div class="flex items-center justify-between bg-white p-4 rounded-lg border ${isDone ? 'opacity-50' : ''}">
-                        <div>
-                            <p class="font-medium ${isDone ? 'line-through' : ''}">${t.taskName}</p>
-                            <span class="text-xs text-gray-400">ID: ${t.empId.substring(0,5)}</span>
+                taskArray.forEach(([id, t]) => {
+                    const isDone = t.status === 'completed';
+                    list.innerHTML += `
+                        <div class="flex items-center justify-between bg-white p-4 rounded-xl border ${isDone ? 'border-slate-100 bg-slate-50' : 'border-l-4 border-l-yellow-400 border-y-slate-100 border-r-slate-100'} shadow-sm">
+                            <div class="flex items-center gap-4">
+                                <div class="bg-slate-100 p-2 rounded-lg text-slate-500">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-slate-800 ${isDone ? 'line-through text-slate-400' : ''}">${t.taskName}</p>
+                                    <span class="text-xs text-slate-400">Assigned to ID: ...${t.empId.slice(-4)}</span>
+                                </div>
+                            </div>
+                            <button onclick="toggleTask('${id}', '${t.empId}', '${t.status}')" class="px-4 py-2 rounded-lg text-sm font-semibold transition ${isDone ? 'bg-slate-200 text-slate-600 hover:bg-slate-300' : 'bg-green-100 text-green-700 hover:bg-green-200'}">
+                                ${isDone ? 'Undo' : 'Complete'}
+                            </button>
                         </div>
-                        <button onclick="toggleTask('${id}', '${t.empId}', '${t.status}')" class="px-4 py-1 rounded-full text-sm ${isDone ? 'bg-gray-200 text-gray-700' : 'bg-green-100 text-green-700'}">
-                            ${isDone ? 'Undo' : 'Complete'}
-                        </button>
-                    </div>
-                `;
+                    `;
+                });
             });
-        });
-
+        }
     </script>
 </body>
 </html>
