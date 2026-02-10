@@ -1,1677 +1,233 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virtual Server Dashboard with Predictive Maintenance</title>
+    <title>BanterBox Business CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <style>
-        :root {
-            --bg: #f8f9fa;
-            --card-bg: #ffffff;
-            --text-primary: #1a202c;
-            --text-secondary: #718096;
-            --border: #e2e8f0;
-            --accent: #4299e1;
-            --accent-secondary: #48bb78;
-            --warning: #ed8936;
-            --danger: #e53e3e;
-            --gradient: linear-gradient(135deg, #4299e1 0%, #48bb78 50%, #ed8936 100%);
-            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --glass: rgba(255, 255, 255, 0.8);
-        }
-        [data-theme="dark"] {
-            --bg: #1a202c;
-            --card-bg: #2d3748;
-            --text-primary: #f7fafc;
-            --text-secondary: #a0aec0;
-            --border: #4a5568;
-            --accent: #63b3ed;
-            --accent-secondary: #68d391;
-            --warning: #f6ad55;
-            --danger: #fc8181;
-            --gradient: linear-gradient(135deg, #63b3ed 0%, #68d391 50%, #f6ad55 100%);
-            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-            --glass: rgba(0, 0, 0, 0.4);
-        }
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background: var(--bg);
-            color: var(--text-primary);
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-            line-height: 1.6;
-            min-height: 100vh;
-            position: relative;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at 20% 80%, rgba(66, 153, 225, 0.05) 0%, transparent 50%), 
-                        radial-gradient(circle at 80% 20%, rgba(72, 187, 120, 0.05) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: -1;
-        }
-        .navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: var(--card-bg);
-            border-bottom: 1px solid var(--border);
-            z-index: 1000;
-            padding: 16px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-sm);
-        }
-        .navbar.scrolled {
-            padding: 12px 40px;
-        }
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--accent);
-            text-decoration: none;
-        }
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--accent);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .user-menu {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: var(--gradient);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .user-avatar:hover {
-            transform: scale(1.05);
-        }
-        .user-avatar img {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-        .logout-btn, .theme-toggle {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 14px;
-            transition: color 0.3s ease;
-        }
-        .logout-btn:hover, .theme-toggle:hover {
-            color: var(--accent);
-        }
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: 80px;
-            bottom: 0;
-            width: 280px;
-            background: var(--card-bg);
-            border-right: 1px solid var(--border);
-            padding: 24px 0;
-            overflow-y: auto;
-            z-index: 900;
-            transition: transform 0.3s ease;
-            box-shadow: var(--shadow-sm);
-        }
-        .sidebar ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .sidebar li {
-            margin: 0;
-        }
-        .sidebar a {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 24px;
-            margin: 4px 16px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            border-left: 3px solid transparent;
-            border-radius: 50px;
-            min-height: 48px;
-        }
-        .sidebar a:hover,
-        .sidebar a.active {
-            color: var(--accent);
-            background: rgba(66, 153, 225, 0.05);
-            border-left-color: var(--accent);
-        }
-        .sidebar .material-icons {
-            font-size: 24px;
-            min-width: 24px;
-        }
-        .main-content {
-            margin-left: 280px;
-            margin-top: 80px;
-            padding: 40px;
-            min-height: calc(100vh - 80px);
-            transition: margin-left 0.3s ease;
-        }
-        .welcome-section {
-            text-align: center;
-            margin-bottom: 48px;
-        }
-        .welcome-title {
-            font-size: 48px;
-            font-weight: 800;
-            margin-bottom: 8px;
-            color: var(--text-primary);
-            line-height: 1.2;
-        }
-        .welcome-subtitle {
-            font-size: 20px;
-            color: var(--text-secondary);
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 24px;
-            margin-bottom: 48px;
-        }
-        .stat-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 32px;
-            text-align: center;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-sm);
-        }
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-        .stat-number {
-            font-size: 36px;
-            font-weight: 800;
-            color: var(--accent);
-            margin-bottom: 8px;
-        }
-        .stat-label {
-            font-size: 16px;
-            color: var(--text-secondary);
-            font-weight: 600;
-        }
-        .analytics-chart {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: var(--shadow-sm);
-        }
-        .section-title {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 24px;
-            color: var(--text-primary);
-        }
-        .search-bar {
-            position: relative;
-            max-width: 400px;
-            margin-bottom: 24px;
-        }
-        .search-bar input {
-            width: 100%;
-            padding: 12px 16px 12px 40px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            background: var(--card-bg);
-            color: var(--text-primary);
-            font-size: 16px;
-            transition: border-color 0.3s ease;
-        }
-        .search-bar input:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-        .search-bar .material-icons {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-secondary);
-            font-size: 20px;
-        }
-        .machines-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
-        }
-        .machine-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-sm);
-            cursor: pointer;
-            position: relative;
-        }
-        .machine-card.anomaly {
-            border-color: var(--danger);
-            box-shadow: 0 0 0 1px var(--danger);
-        }
-        .machine-card.prediction-high {
-            border-color: var(--warning);
-            box-shadow: 0 0 0 1px var(--warning);
-        }
-        .machine-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-        .machine-card:active {
-            transform: scale(0.98);
-        }
-        .machine-thumbnail {
-            height: 160px;
-            background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            color: white;
-            position: relative;
-            overflow: hidden;
-        }
-        .machine-card:hover .machine-thumbnail {
-            transform: scale(1.02);
-        }
-        .machine-content {
-            padding: 24px;
-        }
-        .machine-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: var(--text-primary);
-        }
-        .machine-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-        }
-        .status-indicator.online {
-            background: var(--accent-secondary);
-            animation: pulse 2s infinite;
-        }
-        .status-indicator.offline {
-            background: var(--danger);
-        }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-        .data-flow {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-        .anomaly-alert, .prediction-alert {
-            color: var(--danger);
-            font-weight: 600;
-            font-size: 12px;
-        }
-        .prediction-alert {
-            color: var(--warning);
-        }
-        .view-btn, .action-btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s ease;
-            min-height: 36px;
-            min-width: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 2px;
-        }
-        .action-btn.stop {
-            background: var(--danger);
-        }
-        .action-btn.start {
-            background: var(--accent-secondary);
-        }
-        .view-btn:hover, .action-btn:hover {
-            transform: translateY(-1px);
-        }
-        .view-btn:active, .action-btn:active {
-            transform: scale(0.98);
-        }
-        .machine-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--card-bg);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: var(--shadow-sm);
-        }
-        .machine-table th, .machine-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-        .machine-table th {
-            background: rgba(66, 153, 225, 0.05);
-            font-weight: 600;
-        }
-        section {
-            display: none;
-        }
-        #dashboard {
-            display: block;
-        }
-        .dialog-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-        .dialog-backdrop.show {
-            opacity: 1;
-            visibility: visible;
-        }
-        .dialog {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 32px;
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-            box-shadow: var(--shadow-md);
-            transform: scale(0.9) translateY(20px);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        .dialog-backdrop.show .dialog {
-            transform: scale(1) translateY(0);
-        }
-        .dialog-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            color: var(--text-primary);
-        }
-        .dialog-message {
-            font-size: 16px;
-            color: var(--text-secondary);
-            margin-bottom: 24px;
-            line-height: 1.5;
-        }
-        .dialog-close {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-        .dialog-close:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-        .dialog.success .dialog-title {
-            color: var(--accent-secondary);
-        }
-        .dialog.error .dialog-title {
-            color: var(--danger);
-        }
-        .loader-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-        .loader-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
-        .spinner {
-            border: 4px solid var(--border);
-            border-top: 4px solid var(--accent);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .fab {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            width: 60px;
-            height: 60px;
-            background: var(--accent);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            cursor: pointer;
-            box-shadow: var(--shadow-md);
-            z-index: 1001;
-            transition: all 0.3s ease;
-        }
-        .fab:hover {
-            transform: scale(1.1);
-            box-shadow: var(--shadow-md), 0 0 20px rgba(66, 153, 225, 0.3);
-        }
-        .fab .material-icons {
-            font-size: 30px;
-        }
-        .machine-details-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2001;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-        }
-        .machine-details-backdrop.show {
-            opacity: 1;
-            visibility: visible;
-        }
-        .machine-details {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 32px;
-            max-width: 800px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: var(--shadow-md);
-            transform: scale(0.9) translateY(20px);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        .machine-details-backdrop.show .machine-details {
-            transform: scale(1) translateY(0);
-        }
-        .machine-details-title {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 24px;
-            color: var(--text-primary);
-        }
-        .close-details {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--text-secondary);
-        }
-        .notification-bell {
-            position: relative;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: color 0.3s ease;
-        }
-        .notification-bell:hover {
-            color: var(--accent);
-        }
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--danger);
-            color: white;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-        .notifications-dropdown {
-            position: absolute;
-            top: 40px;
-            right: 0;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px;
-            min-width: 300px;
-            max-height: 400px;
-            overflow-y: auto;
-            box-shadow: var(--shadow-md);
-            display: none;
-            z-index: 1001;
-        }
-        .notifications-dropdown.show {
-            display: block;
-        }
-        .notification-item {
-            padding: 8px 0;
-            border-bottom: 1px solid var(--border);
-            color: var(--text-primary);
-        }
-        .notification-item:last-child {
-            border-bottom: none;
-        }
-        .export-btn {
-            background: var(--accent-secondary);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 16px;
-        }
-        .log-filters {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
-        .log-filters select, .log-filters input {
-            padding: 8px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            background: var(--card-bg);
-            color: var(--text-primary);
-        }
-        .alerts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
-        }
-        .alert-card {
-            background: var(--card-bg);
-            border-left: 4px solid var(--warning);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: var(--shadow-sm);
-        }
-        .alert-card.critical {
-            border-left-color: var(--danger);
-        }
-        .alert-card.resolved {
-            border-left-color: var(--accent-secondary);
-            opacity: 0.7;
-        }
-        @media (max-width: 1024px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            .main-content {
-                margin-left: 0;
-            }
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            .machines-grid {
-                grid-template-columns: 1fr;
-            }
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        @media (max-width: 768px) {
-            .navbar { 
-                display: none; 
-            }
-            .main-content { 
-                padding: 20px; 
-                margin-top: 0; 
-            }
-            .welcome-title { 
-                font-size: 36px; 
-            }
-            .welcome-subtitle {
-                font-size: 16px;
-            }
-            .section-title {
-                font-size: 24px;
-            }
-            .stats-grid {
-                grid-template-columns: 1fr;
-                gap: 16px;
-            }
-            .fab {
-                display: flex;
-            }
-            .sidebar {
-                top: 0;
-                height: 100vh;
-                width: 80%;
-                max-width: 300px;
-            }
-            .machine-card {
-                min-height: 200px;
-            }
-            .search-bar input {
-                font-size: 18px;
-                padding: 16px;
-            }
-            .log-filters {
-                flex-direction: column;
-            }
-        }
-        @media (max-width: 480px) {
-            .main-content {
-                padding: 16px;
-            }
-            .stat-card {
-                padding: 24px 16px;
-            }
-            .machine-content {
-                padding: 16px;
-            }
-        }
+        .section { display: none; }
+        .section.active { display: block; }
     </style>
 </head>
-<body>
-    <!-- Overlay Spinner -->
-    <div class="loader-overlay" id="loader-overlay">
-        <div class="spinner"></div>
-    </div>
+<body class="bg-gray-50 flex h-screen overflow-hidden">
 
-    <nav class="navbar" id="navbar">
-        <a class="logo" id="logo-link">
-            <div class="logo-icon">V</div>
-            Virtual Server Hub
-        </a>
-        <div class="user-menu">
-            <div class="notification-bell" id="notification-bell" onclick="toggleNotifications()">
-                <span class="material-icons">notifications</span>
-                <div class="notification-badge" id="notification-badge" style="display: none;">0</div>
-            </div>
-            <div class="notifications-dropdown" id="notifications-dropdown">
-                <!-- Notifications populated here -->
-            </div>
-            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">🌙</button>
-            <span id="user-name">Admin</span>
-            <div class="user-avatar" id="user-avatar">A</div>
-            <button class="logout-btn" onclick="logout()" aria-label="Log out">Logout</button>
-        </div>
-    </nav>
-
-    <aside class="sidebar" id="sidebar">
-        <ul>
-            <li><a href="#" class="active" data-target="dashboard"><span class="material-icons">dashboard</span>Dashboard</a></li>
-            <li><a href="#" data-target="machines"><span class="material-icons">computer</span>Machines</a></li>
-            <li><a href="#" data-target="alerts"><span class="material-icons">warning</span>Alerts</a></li>
-            <li><a href="#" data-target="logs"><span class="material-icons">description</span>Logs</a></li>
-            <li><a href="#" data-target="settings"><span class="material-icons">settings</span>Settings</a></li>
-        </ul>
+    <aside class="w-64 bg-indigo-900 text-white flex flex-col">
+        <div class="p-6 text-2xl font-bold border-b border-indigo-800">BanterBox</div>
+        <nav class="flex-1 p-4 space-y-2">
+            <button onclick="showSection('dashboard')" class="w-full text-left p-3 rounded hover:bg-indigo-800 transition">📊 Dashboard</button>
+            <button onclick="showSection('employees')" class="w-full text-left p-3 rounded hover:bg-indigo-800 transition">👥 Employees</button>
+            <button onclick="showSection('tasks')" class="w-full text-left p-3 rounded hover:bg-indigo-800 transition">📋 Task Tracker</button>
+        </nav>
+        <div class="p-4 text-xs text-indigo-300">CRM v1.0 • Connected to Firebase</div>
     </aside>
 
-    <main class="main-content">
-        <section id="dashboard">
-            <div class="welcome-section">
-                <h1 class="welcome-title">Virtual Server Dashboard</h1>
-                <p class="welcome-subtitle">Manage and monitor your virtual machines with ML-powered anomaly detection and predictive maintenance.</p>
-            </div>
+    <main class="flex-1 flex flex-col overflow-y-auto">
+        
+        <section id="dashboard" class="section active p-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Company Overview</h2>
+            <div id="statsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                </div>
+            <div id="employeeGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                </div>
+        </section>
 
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number" id="totalMachines">0</div>
-                    <div class="stat-label">Total Machines</div>
+        <section id="employees" class="section p-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Staff Registration</h2>
+            <div class="bg-white p-6 rounded-xl shadow-sm border max-w-2xl">
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" id="empName" placeholder="Employee Name" class="border p-3 rounded-lg w-full">
+                    <input type="text" id="empRole" placeholder="Role (e.g. Sales)" class="border p-3 rounded-lg w-full">
                 </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="activeVMs">0</div>
-                    <div class="stat-label">Active VMs</div>
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
+                    <input type="file" id="empPhoto" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
                 </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="avgCPU">0%</div>
-                    <div class="stat-label">Avg CPU Usage</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="anomalies">0</div>
-                    <div class="stat-label">ML Anomalies Detected</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="predictions">0</div>
-                    <div class="stat-label">High-Risk Predictions</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="totalStorage">0 GB</div>
-                    <div class="stat-label">Total Storage</div>
-                </div>
-            </div>
-
-            <div class="analytics-chart">
-                <h3 class="section-title">Resource Usage Chart</h3>
-                <canvas id="usage-chart" width="400" height="200"></canvas>
-            </div>
-            <div class="analytics-chart">
-                <h3 class="section-title">CPU Trend (Last 24h)</h3>
-                <canvas id="trend-chart" width="400" height="200"></canvas>
-            </div>
-
-            <div class="search-bar">
-                <span class="material-icons">search</span>
-                <input type="text" id="machine-search" placeholder="Search machines..." oninput="filterMachines()" aria-label="Search machines">
-            </div>
-
-            <h2 class="section-title">Recent Machines</h2>
-            <div class="machines-grid" id="machines-grid">
-                <!-- Machines will be populated here -->
+                <button onclick="addEmployee()" id="addBtn" class="mt-6 bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition">Register Employee</button>
             </div>
         </section>
 
-        <section id="machines">
-            <h2 class="section-title">All Machines</h2>
-            <div class="search-bar">
-                <span class="material-icons">search</span>
-                <input type="text" id="all-machines-search" placeholder="Search all machines..." oninput="filterMachines()" aria-label="Search all machines">
-            </div>
-            <div class="machines-grid" id="all-machines-grid">
-                <!-- All machines populated here -->
-            </div>
-        </section>
-
-        <section id="alerts">
-            <h2 class="section-title">Active Alerts</h2>
-            <div class="alerts-grid" id="alerts-grid">
-                <!-- Alerts populated here -->
-            </div>
-        </section>
-
-        <section id="logs">
-            <h2 class="section-title">System Logs</h2>
-            <div class="log-filters">
-                <input type="date" id="log-date-filter" onchange="filterLogs()">
-                <select id="log-level-filter" onchange="filterLogs()">
-                    <option value="">All Levels</option>
-                    <option value="info">Info</option>
-                    <option value="warning">Warning</option>
-                    <option value="error">Error</option>
+        <section id="tasks" class="section p-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Task Management</h2>
+            <div class="bg-white p-6 rounded-xl shadow-sm border max-w-2xl mb-8">
+                <select id="taskEmpSelect" class="border p-3 rounded-lg w-full mb-4">
+                    <option value="">Select Employee to Assign</option>
                 </select>
-                <button class="export-btn" onclick="exportLogs()">Export CSV</button>
+                <input type="text" id="taskName" placeholder="Task Description" class="border p-3 rounded-lg w-full mb-4">
+                <button onclick="addTask()" class="bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition">Assign Task</button>
             </div>
-            <table class="machine-table">
-                <thead>
-                    <tr>
-                        <th>Machine ID</th>
-                        <th>Event</th>
-                        <th>Timestamp</th>
-                        <th>Details</th>
-                        <th>Level</th>
-                    </tr>
-                </thead>
-                <tbody id="logs-table">
-                    <!-- Logs populated here -->
-                </tbody>
-            </table>
+            <div id="taskList" class="space-y-3">
+                </div>
         </section>
 
-        <section id="settings">
-            <h2 class="section-title">Settings</h2>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number">Auto-Sync</div>
-                    <div class="stat-label">Enable real-time updates</div>
-                    <button class="view-btn" onclick="toggleAutoSync()">Toggle</button>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">ML Monitoring</div>
-                    <div class="stat-label">Anomaly Detection</div>
-                    <button class="view-btn" onclick="configureML()">Configure</button>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">Predictive Maintenance</div>
-                    <div class="stat-label">Forecasting Model</div>
-                    <button class="view-btn" onclick="trainModel()">Train Model</button>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">Notifications</div>
-                    <div class="stat-label">Email Alerts</div>
-                    <button class="view-btn" onclick="toggleNotificationsEmail()">Toggle</button>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">Backup</div>
-                    <div class="stat-label">Auto Backup</div>
-                    <button class="view-btn" onclick="scheduleBackup()">Schedule</button>
-                </div>
-            </div>
-            <div style="margin-top: 24px;">
-                <h3 style="color: var(--text-primary); margin-bottom: 16px;">User Profile</h3>
-                <p><strong>User:</strong> <span id="profile-user">Admin</span></p>
-                <p><strong>Last Login:</strong> <span id="profile-last-login">N/A</span></p>
-                <button class="view-btn" onclick="updateProfile()">Update Profile</button>
-            </div>
-        </section>
     </main>
 
-    <!-- Floating Action Button for Sidebar -->
-    <div class="fab" onclick="toggleSidebar()">
-        <span class="material-icons">menu</span>
-    </div>
-
-    <!-- Custom Dialog -->
-    <div class="dialog-backdrop" id="dialog-backdrop">
-        <div class="dialog" id="dialog">
-            <button class="absolute top-4 right-4 text-gray-500" onclick="closeDialog()" aria-label="Close dialog">✕</button>
-            <div class="dialog-title" id="dialog-title">Info</div>
-            <div class="dialog-message" id="dialog-message"></div>
-            <button class="dialog-close" onclick="closeDialog()">OK</button>
-        </div>
-    </div>
-
-    <!-- Machine Details Modal -->
-    <div class="machine-details-backdrop" id="machine-details-backdrop">
-        <div class="machine-details" id="machine-details">
-            <button class="close-details" onclick="closeMachineDetails()">✕</button>
-            <div class="machine-details-title" id="machine-details-title"></div>
-            <div id="machine-details-content"></div>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-        import { getAuth, onAuthStateChanged, signOut, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-        import { getDatabase, ref, onValue, set, serverTimestamp, push } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js';
-
+    <script>
+        // --- CONFIGURATION ---
         const firebaseConfig = {
-          apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
-          authDomain: "fire-b-a8878.firebaseapp.com",
-          databaseURL: "https://fire-b-a8878.firebaseio.com",
-          projectId: "fire-b-a8878",
-          storageBucket: "fire-b-a8878.firebasestorage.app",
-          messagingSenderId: "658673187627",
-          appId: "1:658673187627:web:6e4c29af661785f0afa36e",
-          measurementId: "G-V4W97VMSKL"
+            apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
+            authDomain: "fire-b-a8878.firebaseapp.com",
+            projectId: "fire-b-a8878",
+            databaseURL: "https://fire-b-a8878-default-rtdb.firebaseio.com",
+            appId: "1:658673187627:web:6e4c29af661785f0afa36e"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getDatabase(app);
-
-        let currentUser = null;
-        let machines = {};
-        let machineHistories = {}; // For ML: history of CPU for each machine
-        let logs = []; // Local logs array for filtering/export
-        let searchQuery = '';
-        let usageChart;
-        let trendChart;
-        let notifications = [];
-        let autoSyncEnabled = true;
-        let isDarkMode = false;
-        const loader = document.getElementById('loader-overlay');
-        const sidebar = document.getElementById('sidebar');
-        const CONNECTION_TIMEOUT = 10000; // 10 seconds
-        const HISTORY_SIZE = 50; // Keep last 50 metrics for anomaly detection and prediction
-
-        function showLoader() {
-          loader.classList.add('show');
-        }
-
-        function hideLoader() {
-          loader.classList.remove('show');
-        }
-
-        // Toggle sidebar
-        window.toggleSidebar = () => {
-          sidebar.classList.toggle('open');
+        const CLOUDINARY_CONFIG = {
+            cloudName: 'dqkujefxj',
+            uploadPreset: 'banter_box'
         };
 
-        // Theme toggle
-        window.toggleTheme = () => {
-          isDarkMode = !isDarkMode;
-          document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
-          localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-          const icon = event.target;
-          icon.textContent = isDarkMode ? '☀️' : '🌙';
-        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        // Load theme on init
-        if (localStorage.getItem('theme') === 'dark') {
-          isDarkMode = true;
-          document.documentElement.setAttribute('data-theme', 'dark');
+        // --- CORE FUNCTIONS ---
+
+        // 1. Navigation
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
         }
 
-        // Custom Dialog Functions
-        function showDialog(message, type = 'info') {
-          const backdrop = document.getElementById('dialog-backdrop');
-          const title = document.getElementById('dialog-title');
-          const msg = document.getElementById('dialog-message');
-          const dialog = document.getElementById('dialog');
-
-          msg.textContent = message;
-          title.textContent = type === 'success' ? 'Success!' : type === 'error' ? 'Error!' : 'Info';
-          dialog.className = `dialog ${type}`;
-          backdrop.classList.add('show');
-        }
-
-        function closeDialog() {
-          document.getElementById('dialog-backdrop').classList.remove('show');
-        }
-
-        // Close dialog on backdrop click
-        document.getElementById('dialog-backdrop').addEventListener('click', (e) => {
-          if (e.target.id === 'dialog-backdrop') {
-            closeDialog();
-          }
-        });
-
-        // Notifications
-        function toggleNotifications() {
-          const dropdown = document.getElementById('notifications-dropdown');
-          dropdown.classList.toggle('show');
-        }
-
-        function addNotification(title, message, type = 'info') {
-          const id = Date.now();
-          notifications.unshift({ id, title, message, type, timestamp: new Date().toLocaleString(), read: false });
-          updateNotificationBadge();
-          populateNotifications();
-          // Simulate persistence
-          push(ref(db, 'notifications'), { id, title, message, type, timestamp: serverTimestamp(), read: false });
-        }
-
-        function populateNotifications() {
-          const dropdown = document.getElementById('notifications-dropdown');
-          dropdown.innerHTML = notifications.slice(0, 5).map(notif => `
-            <div class="notification-item ${notif.type}">
-              <strong>${notif.title}</strong><br>
-              ${notif.message}<br>
-              <small>${notif.timestamp}</small>
-            </div>
-          `).join('') || '<div class="notification-item">No notifications</div>';
-        }
-
-        function updateNotificationBadge() {
-          const badge = document.getElementById('notification-badge');
-          const unread = notifications.filter(n => !n.read).length;
-          badge.textContent = unread;
-          badge.style.display = unread > 0 ? 'flex' : 'none';
-        }
-
-        // Improved ML Anomaly Detection: Enhanced Z-Score with moving average
-        function detectAnomaly(history, current) {
-          try {
-            if (history.length < 10) return { isAnomaly: false, score: 0 };
-
-            const recentHistory = history.slice(-20); // Use recent 20 for better sensitivity
-            const mean = recentHistory.reduce((a, b) => a + b, 0) / recentHistory.length;
-            const variance = recentHistory.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / recentHistory.length;
-            const std = Math.sqrt(variance);
-            const zScore = Math.abs((current - mean) / (std || 1)); // Avoid div by zero
-            const isAnomaly = zScore > 2.5; // Adjusted threshold
-            return { isAnomaly, score: zScore.toFixed(2) };
-          } catch (error) {
-            console.error('Anomaly detection error:', error);
-            return { isAnomaly: false, score: 0 };
-          }
-        }
-
-        // Improved Predictive Maintenance: Polynomial regression for better forecast
-        async function predictNextCPU(history) {
-          try {
-            if (history.length < 5) return { prediction: 0, risk: 'low' };
-
-            const xs = tf.tensor2d(history.map((_, i) => [i]));
-            const ys = tf.tensor2d(history.map(y => [y]));
-
-            const model = tf.sequential({
-              layers: [
-                tf.layers.dense({ inputShape: [1], units: 10, activation: 'relu' }),
-                tf.layers.dense({ units: 1 })
-              ]
+        // 2. Cloudinary Upload
+        async function uploadImage(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CONFIG.cloudName}/upload`, {
+                method: 'POST',
+                body: formData
             });
-            model.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
-            await model.fit(xs, ys, { epochs: 200, verbose: 0 });
-
-            const nextX = tf.tensor2d([[history.length]]);
-            const predictionTensor = model.predict(nextX);
-            const prediction = Math.max(0, Math.min(100, Math.round(predictionTensor.dataSync()[0])));
-
-            model.dispose();
-            xs.dispose();
-            ys.dispose();
-            nextX.dispose();
-            predictionTensor.dispose();
-
-            const risk = prediction > 85 ? 'high' : prediction > 70 ? 'medium' : 'low';
-            return { prediction, risk };
-          } catch (error) {
-            console.error('Prediction error:', error);
-            return { prediction: 0, risk: 'low' };
-          }
+            const data = await res.json();
+            return data.secure_url;
         }
 
-        // Machine Details Modal Functions
-        function showMachineDetails(machineId) {
-          try {
-            const backdrop = document.getElementById('machine-details-backdrop');
-            const title = document.getElementById('machine-details-title');
-            const content = document.getElementById('machine-details-content');
+        // 3. Add Employee
+        async function addEmployee() {
+            const name = document.getElementById('empName').value;
+            const role = document.getElementById('empRole').value;
+            const file = document.getElementById('empPhoto').files[0];
+            const btn = document.getElementById('addBtn');
 
-            const machine = machines[machineId];
-            if (!machine) return showDialog('Machine not found', 'error');
+            if (!name || !file) return alert("Missing info");
 
-            const now = Date.now();
-            const lastActivity = machine.timestamp ? new Date(machine.timestamp).getTime() : 0;
-            const isConnected = (now - lastActivity) < CONNECTION_TIMEOUT;
-            const timeAgo = machine.timestamp ? `${Math.round((now - lastActivity) / 1000)}s ago` : 'Never';
-            const anomalyInfo = machine.anomaly ? `<p class="anomaly-alert">⚠️ ML Anomaly Detected (Z-Score: ${machine.anomalyScore})</p>` : '';
-            const predictionInfo = machine.prediction ? `<p class="prediction-alert">🔮 Predicted CPU (next interval): ${machine.prediction}% (Risk: ${machine.risk})</p>` : '';
+            btn.innerText = "Uploading...";
+            btn.disabled = true;
 
-            title.textContent = machine.name || machineId;
-            content.innerHTML = `
-                <p><strong>Status:</strong> ${machine.status || 'unknown'} <span class="status-indicator ${isConnected ? 'online' : 'offline'}"></span></p>
-                <p><strong>Connection:</strong> ${isConnected ? 'Connected (Active Data Flow)' : 'Disconnected'}</p>
-                <p><strong>CPU:</strong> ${machine.cpu || 0}%</p>
-                <p><strong>Memory:</strong> ${machine.memory || 0} MB</p>
-                <p><strong>Last Data Flow:</strong> ${timeAgo}</p>
-                ${anomalyInfo}
-                ${predictionInfo}
-                <div style="margin-top: 16px;">
-                    <button class="action-btn start" onclick="startMachine('${machineId}')">Start</button>
-                    <button class="action-btn stop" onclick="stopMachine('${machineId}')">Stop</button>
-                    <button class="view-btn" onclick="storeData('${machineId}')" style="margin-left: 8px;">Send Data (Store)</button>
-                    <button class="view-btn" onclick="retrieveData('${machineId}')" style="margin-left: 8px;">Retrieve Data</button>
-                </div>
-            `;
-
-            backdrop.classList.add('show');
-          } catch (error) {
-            showDialog(`Error loading details: ${error.message}`, 'error');
-          }
-        }
-
-        function closeMachineDetails() {
-          document.getElementById('machine-details-backdrop').classList.remove('show');
-        }
-
-        // Close machine details on backdrop click
-        document.getElementById('machine-details-backdrop').addEventListener('click', (e) => {
-          if (e.target.id === 'machine-details-backdrop') {
-            closeMachineDetails();
-          }
-        });
-
-        // Machine actions
-        window.startMachine = async (machineId) => {
-          try {
-            await set(ref(db, `machines/${machineId}/status`), 'running');
-            addNotification('Machine Started', `Server ${machineId} has been started.`, 'success');
-            closeMachineDetails();
-          } catch (error) {
-            showDialog(`Failed to start machine: ${error.message}`, 'error');
-          }
-        };
-
-        window.stopMachine = async (machineId) => {
-          try {
-            await set(ref(db, `machines/${machineId}/status`), 'stopped');
-            addNotification('Machine Stopped', `Server ${machineId} has been stopped.`, 'warning');
-            closeMachineDetails();
-          } catch (error) {
-            showDialog(`Failed to stop machine: ${error.message}`, 'error');
-          }
-        };
-
-        // Filter machines based on search query
-        window.filterMachines = () => {
-          const input = document.getElementById('machine-search') || document.getElementById('all-machines-search');
-          if (!input) return;
-          searchQuery = input.value.toLowerCase();
-          if (document.getElementById('dashboard').style.display === 'block') {
-            populateMachinesGrid('machines-grid');
-          } else if (document.getElementById('machines').style.display === 'block') {
-            populateMachinesGrid('all-machines-grid');
-          }
-        };
-
-        // Navbar scroll effect
-        window.addEventListener('scroll', () => {
-          const navbar = document.getElementById('navbar');
-          if (window.scrollY > 50) {
-            navbar.classList.add('scrolled');
-          } else {
-            navbar.classList.remove('scrolled');
-          }
-        });
-
-        // Sidebar toggle for mobile via logo (fallback)
-        const logoLink = document.getElementById('logo-link');
-        logoLink.addEventListener('click', (e) => {
-          if (window.innerWidth <= 1024) {
-            e.preventDefault();
-            toggleSidebar();
-          }
-        });
-
-        // Tab switching function
-        function showTab(targetId) {
-          document.querySelectorAll('section').forEach(section => {
-            section.style.display = 'none';
-          });
-          const targetSection = document.getElementById(targetId);
-          if (targetSection) {
-            targetSection.style.display = 'block';
-          }
-          // Update active classes
-          document.querySelectorAll('a[data-target]').forEach(a => a.classList.remove('active'));
-          document.querySelectorAll(`a[data-target="${targetId}"]`).forEach(a => a.classList.add('active'));
-          // Close sidebar on mobile after selection
-          if (window.innerWidth <= 1024) {
-            sidebar.classList.remove('open');
-          }
-          // Populate section-specific data
-          if (targetId === 'dashboard') {
-            updateStats();
-            populateMachinesGrid('machines-grid');
-            populateAlerts();
-          } else if (targetId === 'machines') {
-            populateMachinesGrid('all-machines-grid');
-          } else if (targetId === 'alerts') {
-            populateAlerts();
-          } else if (targetId === 'logs') {
-            populateLogs();
-          }
-        }
-
-        // Navigation handling
-        document.addEventListener('DOMContentLoaded', () => {
-          document.querySelectorAll('a[data-target]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-              e.preventDefault();
-              const target = this.getAttribute('data-target');
-              showTab(target);
-            });
-          });
-          // Initialize dashboard
-          showTab('dashboard');
-          // Set theme icon
-          const themeBtn = document.querySelector('.theme-toggle');
-          themeBtn.textContent = isDarkMode ? '☀️' : '🌙';
-        });
-
-        // Logout
-        window.logout = async () => {
-          try {
-            await signOut(auth);
-            window.location.href = 'login.html'; // Adjust as needed
-          } catch (error) {
-            showDialog(`Logout failed: ${error.message}`, 'error');
-          }
-        };
-
-        let totalActive = 0;
-        let totalCPU = 0;
-        let count = 0;
-        let totalStorage = 0;
-        let totalAnomalies = 0;
-        let totalHighRisk = 0;
-        let cpuHistory = []; // For trend chart
-
-        // Real-time listener: Fetch and sync data from all machines
-        const machinesRef = ref(db, 'machines');
-        onValue(machinesRef, async (snapshot) => {
-          try {
-            const newMachines = snapshot.val() || {};
-            totalActive = 0;
-            totalCPU = 0;
-            count = 0;
-            totalStorage = 0;
-            totalAnomalies = 0;
-            totalHighRisk = 0;
-
-            const now = Date.now();
-            for (const [machineId, data] of Object.entries(newMachines)) {
-              // Validate data
-              if (typeof data !== 'object' || data === null) continue;
-
-              if (!machines[machineId]) {
-                machineHistories[machineId] = []; // Init history
-              }
-              machines[machineId] = { ...data };
-
-              // Add to history and detect anomaly
-              if (data.cpu !== undefined && typeof data.cpu === 'number') {
-                machineHistories[machineId].push(data.cpu);
-                if (machineHistories[machineId].length > HISTORY_SIZE) {
-                  machineHistories[machineId].shift();
-                }
-                const anomalyResult = detectAnomaly(machineHistories[machineId], data.cpu);
-                machines[machineId].anomaly = anomalyResult.isAnomaly;
-                machines[machineId].anomalyScore = anomalyResult.score;
-                if (anomalyResult.isAnomaly) {
-                  totalAnomalies++;
-                  addNotification('Anomaly Detected', `Machine ${machineId} shows anomalous CPU usage (Z-Score: ${anomalyResult.score}).`, 'warning');
-                }
-
-                // Predictive maintenance: Forecast next CPU
-                const predictionResult = await predictNextCPU(machineHistories[machineId]);
-                machines[machineId].prediction = predictionResult.prediction;
-                machines[machineId].risk = predictionResult.risk;
-                if (predictionResult.risk === 'high') {
-                  totalHighRisk++;
-                  addNotification('High Risk Prediction', `Machine ${machineId} predicted high CPU load (${predictionResult.prediction}%).`, 'warning');
-                }
-
-                // Add to global CPU history for trend
-                cpuHistory.push({ time: now, cpu: data.cpu });
-                if (cpuHistory.length > 24) cpuHistory.shift(); // Keep last 24 points
-              }
-
-              if (data.timestamp) {
-                const lastActivity = new Date(data.timestamp).getTime();
-                const isConnected = (now - lastActivity) < CONNECTION_TIMEOUT;
-                machines[machineId].isConnected = isConnected;
-                if (isConnected && data.status === 'running') {
-                  totalActive++;
-                  totalCPU += data.cpu || 0;
-                  count++;
-                }
-                totalStorage += data.storage || 0;
-              }
+            try {
+                const url = await uploadImage(file);
+                await db.ref('employees').push({
+                    name, role, photoUrl: url, progress: 0, taskCount: 0, completedCount: 0
+                });
+                alert("Employee added successfully!");
+                document.getElementById('empName').value = '';
+                showSection('dashboard');
+            } catch (e) {
+                console.error(e);
+            } finally {
+                btn.innerText = "Register Employee";
+                btn.disabled = false;
             }
-
-            updateStats();
-            if (document.getElementById('dashboard').style.display === 'block') {
-              populateMachinesGrid('machines-grid');
-            } else if (document.getElementById('machines').style.display === 'block') {
-              populateMachinesGrid('all-machines-grid');
-            }
-            populateLogs();
-            populateAlerts();
-          } catch (error) {
-            console.error('Data sync error:', error);
-            showDialog('Failed to sync data. Check connection.', 'error');
-          }
-        }, (error) => {
-          console.error('Firebase listener error:', error);
-          showDialog('Database connection lost.', 'error');
-        });
-
-        // Update stats
-        function updateStats() {
-          document.getElementById('totalMachines').textContent = Object.keys(machines).length;
-          document.getElementById('activeVMs').textContent = totalActive;
-          document.getElementById('avgCPU').textContent = count > 0 ? Math.round(totalCPU / count) + '%' : '0%';
-          document.getElementById('totalStorage').textContent = (totalStorage / 1024).toFixed(1) + ' GB';
-          document.getElementById('anomalies').textContent = totalAnomalies;
-          document.getElementById('predictions').textContent = totalHighRisk;
-
-          // Update usage chart
-          const labels = ['CPU', 'Memory', 'Storage'];
-          const data = [totalCPU / count || 0, 50, totalStorage / 1024]; // Sample data; adjust as needed
-          if (usageChart) {
-            usageChart.data.labels = labels;
-            usageChart.data.datasets[0].data = data;
-            usageChart.update();
-          } else {
-            const ctx = document.getElementById('usage-chart').getContext('2d');
-            usageChart = new Chart(ctx, {
-              type: 'doughnut',
-              data: {
-                labels: labels,
-                datasets: [{
-                  data: data,
-                  backgroundColor: ['#4299e1', '#48bb78', '#ed8936']
-                }]
-              },
-              options: {
-                responsive: true,
-                plugins: {
-                  legend: { position: 'top' },
-                  title: { display: true, text: 'Resource Overview' }
-                }
-              }
-            });
-          }
-
-          // Update trend chart
-          if (trendChart) {
-            trendChart.data.labels = cpuHistory.map(h => new Date(h.time).toLocaleTimeString());
-            trendChart.data.datasets[0].data = cpuHistory.map(h => h.cpu);
-            trendChart.update();
-          } else {
-            const ctxTrend = document.getElementById('trend-chart').getContext('2d');
-            trendChart = new Chart(ctxTrend, {
-              type: 'line',
-              data: {
-                labels: cpuHistory.map(h => new Date(h.time).toLocaleTimeString()),
-                datasets: [{
-                  label: 'Avg CPU %',
-                  data: cpuHistory.map(h => h.cpu),
-                  borderColor: '#4299e1',
-                  backgroundColor: 'rgba(66, 153, 225, 0.1)',
-                  tension: 0.4
-                }]
-              },
-              options: {
-                responsive: true,
-                scales: {
-                  y: { beginAtZero: true, max: 100 }
-                }
-              }
-            });
-          }
         }
 
-        // Populate machines grid
-        function populateMachinesGrid(gridId) {
-          const grid = document.getElementById(gridId);
-          grid.innerHTML = '';
-          let filtered = Object.entries(machines).filter(([id, machine]) => {
-            const searchTerm = (machine.name || id).toLowerCase();
-            return searchTerm.includes(searchQuery);
-          });
-          filtered.slice(0, gridId === 'machines-grid' ? 6 : undefined).forEach(([machineId, machine]) => {
-            const now = Date.now();
-            const lastActivity = machine.timestamp ? new Date(machine.timestamp).getTime() : 0;
-            const isConnected = machine.isConnected || (now - lastActivity) < CONNECTION_TIMEOUT;
-            const timeAgo = machine.timestamp ? `${Math.round((now - lastActivity) / 1000)}s ago` : 'Never';
-            const anomalyAlert = machine.anomaly ? '<span class="anomaly-alert">⚠️ Anomaly Detected</span>' : '';
-            const predictionAlert = machine.risk === 'high' ? `<span class="prediction-alert">🔮 High Risk Prediction (${machine.prediction}% CPU)</span>` : '';
+        // 4. Task Management
+        async function addTask() {
+            const empId = document.getElementById('taskEmpSelect').value;
+            const taskName = document.getElementById('taskName').value;
+            if (!empId || !taskName) return;
 
-            const card = document.createElement('div');
-            let cardClass = 'machine-card';
-            if (machine.anomaly) cardClass += ' anomaly';
-            if (machine.risk === 'high') cardClass += ' prediction-high';
-            card.className = cardClass;
-            card.onclick = () => showMachineDetails(machineId);
-            card.innerHTML = `
-                <div class="machine-thumbnail">🖥️</div>
-                <div class="machine-content">
-                    <h3 class="machine-title">${machine.name || machineId}</h3>
-                    <div class="machine-meta">
-                        <span><span class="status-indicator ${isConnected ? 'online' : 'offline'}"></span>${machine.status || 'unknown'} • CPU: ${machine.cpu || 0}%</span>
-                        <button class="view-btn" onclick="event.stopPropagation(); showMachineDetails('${machineId}')">View</button>
+            const taskRef = db.ref('tasks').push();
+            await taskRef.set({ empId, taskName, status: 'pending' });
+            
+            // Update counts
+            const empRef = db.ref(`employees/${empId}`);
+            empRef.transaction(emp => {
+                if (emp) {
+                    emp.taskCount = (emp.taskCount || 0) + 1;
+                    emp.progress = Math.round((emp.completedCount / emp.taskCount) * 100);
+                }
+                return emp;
+            });
+            document.getElementById('taskName').value = '';
+        }
+
+        function toggleTask(taskId, empId, currentStatus) {
+            const newStatus = currentStatus === 'pending' ? 'completed' : 'pending';
+            db.ref(`tasks/${taskId}/status`).set(newStatus);
+            
+            const empRef = db.ref(`employees/${empId}`);
+            empRef.transaction(emp => {
+                if (emp) {
+                    emp.completedCount = newStatus === 'completed' ? emp.completedCount + 1 : emp.completedCount - 1;
+                    emp.progress = Math.round((emp.completedCount / emp.taskCount) * 100);
+                }
+                return emp;
+            });
+        }
+
+        // --- REALTIME LISTENERS ---
+
+        // Sync Dashboard & Dropdowns
+        db.ref('employees').on('value', snap => {
+            const data = snap.val() || {};
+            const grid = document.getElementById('employeeGrid');
+            const select = document.getElementById('taskEmpSelect');
+            
+            grid.innerHTML = '';
+            select.innerHTML = '<option value="">Select Employee to Assign</option>';
+
+            Object.keys(data).forEach(id => {
+                const emp = data[id];
+                // Update Select
+                select.innerHTML += `<option value="${id}">${emp.name}</option>`;
+                // Update Cards
+                grid.innerHTML += `
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 text-center">
+                        <img src="${emp.photoUrl}" class="w-20 h-20 rounded-full mx-auto mb-4 object-cover border-4 border-indigo-50">
+                        <h3 class="font-bold text-lg">${emp.name}</h3>
+                        <p class="text-gray-500 text-sm mb-4">${emp.role}</p>
+                        <div class="w-full bg-gray-100 rounded-full h-2 mb-1">
+                            <div class="bg-indigo-500 h-2 rounded-full transition-all duration-500" style="width: ${emp.progress}%"></div>
+                        </div>
+                        <span class="text-xs font-semibold text-indigo-600">${emp.progress}% Performance</span>
                     </div>
-                    <div class="data-flow">Last Data Flow: ${timeAgo} ${isConnected ? '(Active Send/Receive)' : '(No Flow)'} ${anomalyAlert} ${predictionAlert}</div>
+                `;
+            });
+
+            // Update Stats
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="bg-white p-6 rounded-xl border">
+                    <p class="text-gray-500 text-sm">Total Staff</p>
+                    <p class="text-3xl font-bold">${Object.keys(data).length}</p>
                 </div>
             `;
-            grid.appendChild(card);
-          });
-          if (filtered.length === 0) {
-            grid.innerHTML = `<p class="text-center" style="color: var(--text-secondary); grid-column: 1 / -1;">${searchQuery ? `No machines match "${searchQuery}".` : 'No machines yet.'}</p>`;
-          }
-        }
+        });
 
-        // Alerts section
-        function populateAlerts() {
-          const grid = document.getElementById('alerts-grid');
-          if (!grid) return;
-          grid.innerHTML = '';
-          const alerts = Object.entries(machines)
-            .filter(([_, m]) => m.anomaly || m.risk === 'high')
-            .map(([id, m]) => ({
-              id,
-              type: m.anomaly ? 'anomaly' : 'prediction',
-              severity: m.anomaly ? 'critical' : 'warning',
-              message: `${m.name || id}: ${m.anomaly ? `Anomaly (Z: ${m.anomalyScore})` : `High Risk (${m.prediction}%)`}`,
-              timestamp: m.timestamp || Date.now()
-            }));
-          alerts.forEach(alert => {
-            const card = document.createElement('div');
-            card.className = `alert-card ${alert.severity}`;
-            card.innerHTML = `
-              <h4>${alert.type.toUpperCase()} Alert</h4>
-              <p>${alert.message}</p>
-              <small>${new Date(alert.timestamp).toLocaleString()}</small>
-              <button class="view-btn" onclick="resolveAlert('${alert.id}')" style="margin-top: 8px; font-size: 10px;">Resolve</button>
-            `;
-            grid.appendChild(card);
-          });
-          if (alerts.length === 0) {
-            grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: var(--text-secondary);">No active alerts.</p>';
-          }
-        }
-
-        window.resolveAlert = async (machineId) => {
-          try {
-            // Simulate resolution
-            machines[machineId].anomaly = false;
-            machines[machineId].risk = 'low';
-            addNotification('Alert Resolved', `Alert for ${machineId} has been resolved.`, 'success');
-            populateAlerts();
-          } catch (error) {
-            showDialog('Failed to resolve alert', 'error');
-          }
-        };
-
-        // Actions: Store data (push update to a machine)
-        window.storeData = async (machineId) => {
-          try {
-            const payload = { message: 'Update from dashboard', value: Math.random() * 100 };
-            await set(ref(db, `machines/${machineId}`), { ...machines[machineId], configUpdate: payload, timestamp: serverTimestamp() });
-            showDialog('Data sent to machine (Store command issued)!', 'success');
-          } catch (error) {
-            showDialog(`Store failed: ${error.message}`, 'error');
-          }
-        };
-
-        // Retrieve data (logs/pulls latest for demo)
-        window.retrieveData = async (machineId) => {
-          try {
-            const data = machines[machineId];
-            let anomalyMsg = data.anomaly ? ` (ML Anomaly: Z-Score ${data.anomalyScore})` : '';
-            let predictionMsg = data.prediction ? ` (Predicted: ${data.prediction}% CPU, Risk: ${data.risk})` : '';
-            showDialog(`Retrieved: CPU=${data.cpu}%, Memory=${data.memory}MB${anomalyMsg}${predictionMsg} (Data Flow Active)`, 'info');
-          } catch (error) {
-            showDialog(`Retrieve failed: ${error.message}`, 'error');
-          }
-        };
-
-        // Logs
-        function populateLogs(filteredLogs = logs) {
-          const tbody = document.getElementById('logs-table');
-          if (!tbody) return;
-          tbody.innerHTML = '';
-          filteredLogs.slice(-50).reverse().forEach(log => {
-            const row = tbody.insertRow();
-            row.innerHTML = `
-              <td>${log.machineId}</td>
-              <td>${log.event}</td>
-              <td>${log.timestamp}</td>
-              <td>${log.details}</td>
-              <td><span style="color: ${log.level === 'error' ? 'var(--danger)' : log.level === 'warning' ? 'var(--warning)' : 'var(--accent-secondary)'}">${log.level}</span></td>
-            `;
-          });
-          if (filteredLogs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No logs yet.</td></tr>';
-          }
-        }
-
-        window.filterLogs = () => {
-          const dateFilter = document.getElementById('log-date-filter').value;
-          const levelFilter = document.getElementById('log-level-filter').value;
-          let filtered = logs;
-          if (dateFilter) {
-            filtered = filtered.filter(log => log.timestamp.startsWith(dateFilter));
-          }
-          if (levelFilter) {
-            filtered = filtered.filter(log => log.level === levelFilter);
-          }
-          populateLogs(filtered);
-        };
-
-        window.exportLogs = () => {
-          const filteredLogs = logs; // Apply filters if needed
-          const csv = 'Machine ID,Event,Timestamp,Details,Level\n' + filteredLogs.map(log => 
-            `${log.machineId},"${log.event}",${log.timestamp},"${log.details}",${log.level}`
-          ).join('\n');
-          const blob = new Blob([csv], { type: 'text/csv' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'logs.csv';
-          a.click();
-          URL.revokeObjectURL(url);
-        };
-
-        // In data listener, add to logs
-        // ... (in onValue, after processing)
-        // Example log addition:
-        // logs.push({ machineId, event: 'Data Sync', timestamp: new Date().toLocaleString(), details: 'CPU updated', level: 'info' });
-        // if (logs.length > 1000) logs.shift(); // Limit size
-
-        // Settings functions
-        window.toggleAutoSync = () => {
-          autoSyncEnabled = !autoSyncEnabled;
-          showDialog(autoSyncEnabled ? 'Auto-sync enabled' : 'Auto-sync disabled', 'success');
-        };
-
-        window.configureML = () => {
-          showDialog('ML configuration updated. Threshold set to 2.5 Z-Score.', 'success');
-        };
-
-        window.trainModel = async () => {
-          showLoader();
-          // Simulate training
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          hideLoader();
-          showDialog('Model trained successfully!', 'success');
-        };
-
-        window.toggleNotificationsEmail = () => {
-          showDialog('Email notifications toggled.', 'success');
-        };
-
-        window.scheduleBackup = () => {
-          showDialog('Backup scheduled for daily at 2 AM.', 'success');
-        };
-
-        window.updateProfile = () => {
-          showDialog('Profile updated successfully.', 'success');
-          document.getElementById('profile-last-login').textContent = new Date().toLocaleString();
-        };
-
-        // Auth state listener
-        onAuthStateChanged(auth, (user) => {
-          if (user) {
-            currentUser = user;
-            showLoader();
-            document.getElementById('user-name').textContent = user.email || 'Admin';
-            document.getElementById('profile-user').textContent = user.email || 'Admin';
-            document.getElementById('profile-last-login').textContent = new Date().toLocaleString();
-            hideLoader();
-          } else {
-            signInAnonymously(auth).catch(error => {
-              showDialog(`Auth failed: ${error.message}`, 'error');
+        // Sync Task List
+        db.ref('tasks').on('value', snap => {
+            const tasks = snap.val() || {};
+            const list = document.getElementById('taskList');
+            list.innerHTML = '';
+            
+            Object.keys(tasks).forEach(id => {
+                const t = tasks[id];
+                const isDone = t.status === 'completed';
+                list.innerHTML += `
+                    <div class="flex items-center justify-between bg-white p-4 rounded-lg border ${isDone ? 'opacity-50' : ''}">
+                        <div>
+                            <p class="font-medium ${isDone ? 'line-through' : ''}">${t.taskName}</p>
+                            <span class="text-xs text-gray-400">ID: ${t.empId.substring(0,5)}</span>
+                        </div>
+                        <button onclick="toggleTask('${id}', '${t.empId}', '${t.status}')" class="px-4 py-1 rounded-full text-sm ${isDone ? 'bg-gray-200 text-gray-700' : 'bg-green-100 text-green-700'}">
+                            ${isDone ? 'Undo' : 'Complete'}
+                        </button>
+                    </div>
+                `;
             });
-          }
         });
 
-        showLoader();
-        // Simulate initial data (in real, remove after first snapshot)
-        const machineIds = ['machine-1', 'machine-2', 'machine-3', 'machine-4'];
-        machineIds.forEach(async (id) => {
-          await set(ref(db, `machines/${id}`), {
-            name: `Server ${id}`,
-            status: Math.random() > 0.5 ? 'running' : 'stopped',
-            cpu: Math.floor(Math.random() * 100),
-            memory: Math.floor(Math.random() * 1024),
-            storage: Math.floor(Math.random() * 100) * 1024,
-            timestamp: serverTimestamp()
-          });
-        });
-        setTimeout(() => hideLoader(), 1000); // Hide after init
-
-        // Offline detection
-        window.addEventListener('online', () => showDialog('Back online!', 'success'));
-        window.addEventListener('offline', () => showDialog('Offline mode. Data will sync when back online.', 'warning'));
     </script>
 </body>
 </html>
