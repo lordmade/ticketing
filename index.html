@@ -3,85 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BanterBox CRM | Fast Edition</title>
+    <title>BanterBox CRM | Advanced Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .section { display: none; }
-        .section.active { display: block; }
-        #loginModal { transition: opacity 0.3s ease-in-out; }
-        .hidden-modal { opacity: 0; pointer-events: none; }
+       .section { display: none; }
+       .section.active { display: block; }
+       .modal {
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+            opacity: 0;
+            visibility: hidden;
+        }
+       .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+       .chart-container {
+             height: 300px;
+        }
     </style>
 </head>
 <body class="bg-slate-50 flex h-screen overflow-hidden font-sans text-slate-900">
 
-    <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 bg-opacity-95 backdrop-blur-sm">
+    <!-- Auth Modal -->
+    <div id="loginModal" class="modal active fixed inset-0 z-50 flex items-center justify-center bg-slate-900 bg-opacity-95 backdrop-blur-sm">
         <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-sm text-center">
             <h1 class="text-3xl font-bold mb-2">BanterBox</h1>
-            <p class="text-slate-500 mb-8 text-sm uppercase tracking-widest">Business Operations</p>
-            <button onclick="loginWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-white border hover:bg-slate-50 font-medium py-3 px-4 rounded-lg shadow-sm transition-all">
+            <p class="text-slate-500 mb-8 text-sm uppercase tracking-widest">Advanced CRM</p>
+            <button onclick="auth.loginWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-white border hover:bg-slate-50 font-medium py-3 px-4 rounded-lg shadow-sm transition-all">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5">
                 Sign in with Google
             </button>
         </div>
     </div>
 
+    <!-- Main App Content -->
     <div id="appContent" class="flex-1 flex h-screen overflow-hidden filter blur-sm transition-all duration-500">
-        
-        <aside class="w-64 bg-slate-900 text-white flex flex-col z-10">
+
+        <aside class="w-64 bg-slate-900 text-white flex flex-col z-10 shrink-0">
             <div class="p-6 text-2xl font-bold border-b border-slate-800">BanterBox</div>
             <nav class="flex-1 p-4 space-y-2">
-                <button onclick="showSection('dashboard')" class="w-full text-left p-3 rounded hover:bg-slate-800 flex gap-3">📊 Dashboard</button>
-                <button onclick="showSection('employees')" class="w-full text-left p-3 rounded hover:bg-slate-800 flex gap-3">👥 Employees</button>
-                <button onclick="showSection('tasks')" class="w-full text-left p-3 rounded hover:bg-slate-800 flex gap-3">📋 Tasks</button>
+                <button onclick="ui.showSection('dashboard')" class="w-full text-left p-3 rounded hover:bg-slate-800 flex gap-3 items-center">📊 Dashboard</button>
+                <button onclick="ui.showSection('clients')" class="w-full text-left p-3 rounded hover:bg-slate-800 flex gap-3 items-center">🏢 Clients</button>
+                <button onclick="ui.showSection('deals')" class="w-full text-left p-3 rounded hover:bg-slate-800 flex gap-3 items-center">💰 Deals</button>
+                <button onclick="ui.showSection('tasks')" class="w-full text-left p-3 rounded hover:bg-slate-800 flex gap-3 items-center">📋 Tasks</button>
+                <button onclick="ui.showSection('employees')" class="w-full text-left p-3 rounded hover:bg-slate-800 flex gap-3 items-center">👥 Employees</button>
             </nav>
-            <button onclick="logout()" class="p-4 text-slate-400 hover:text-white text-sm border-t border-slate-800">Sign Out</button>
+            <div class="p-4 border-t border-slate-800">
+                 <div id="userProfile" class="flex items-center gap-3"></div>
+                 <button onclick="auth.logout()" class="w-full text-left mt-3 p-2 text-slate-400 hover:text-white text-sm rounded hover:bg-slate-800">Sign Out</button>
+            </div>
         </aside>
 
         <main class="flex-1 flex flex-col overflow-y-auto">
-            
+
             <section id="dashboard" class="section active p-8">
-                <h2 class="text-3xl font-bold mb-6">Company Overview</h2>
-                <div id="statsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10"></div>
-                <div id="employeeGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                <h2 class="text-3xl font-bold mb-6">Company Dashboard</h2>
+                <div id="statsGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8"></div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl border shadow-sm"><div class="chart-container"><canvas id="dealsChart"></canvas></div></div>
+                    <div class="bg-white p-6 rounded-xl border shadow-sm"><div class="chart-container"><canvas id="tasksChart"></canvas></div></div>
+                </div>
+            </section>
+
+            <section id="clients" class="section p-8">
+                 <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-bold">Clients</h2>
+                    <button onclick="ui.showModal('clientModal')" class="bg-indigo-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-indigo-700 transition">Add Client</button>
+                </div>
+                <div id="clientList" class="space-y-4"></div>
+            </section>
+
+            <section id="deals" class="section p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-bold">Deals Pipeline</h2>
+                    <button onclick="ui.showModal('dealModal')" class="bg-emerald-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-emerald-700 transition">Add Deal</button>
+                </div>
+                <div id="dealKanban" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5"></div>
             </section>
 
             <section id="employees" class="section p-8">
-                <h2 class="text-3xl font-bold mb-6">Add New Staff</h2>
-                <div class="bg-white p-8 rounded-2xl shadow-sm border max-w-md">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Full Name</label>
-                            <input type="text" id="empName" placeholder="John Doe" class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Position</label>
-                            <input type="text" id="empRole" placeholder="Manager" class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                        </div>
-                        <button onclick="addEmployee()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition">
-                            Save Employee
-                        </button>
-                    </div>
+                 <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-bold">Employees</h2>
+                    <button onclick="ui.showModal('employeeModal')" class="bg-indigo-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-indigo-700 transition">Add Employee</button>
                 </div>
+                <div id="employeeGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             </section>
 
             <section id="tasks" class="section p-8">
-                <h2 class="text-3xl font-bold mb-6">Operations Hub</h2>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border max-w-2xl mb-8 flex flex-wrap gap-4">
-                    <select id="taskEmpSelect" class="border p-3 rounded-lg flex-1 bg-white"></select>
-                    <input type="text" id="taskName" placeholder="New Task Description..." class="border p-3 rounded-lg flex-[2]">
-                    <button onclick="addTask()" class="bg-emerald-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-emerald-700">Assign</button>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-bold">Tasks</h2>
+                    <button onclick="ui.showModal('taskModal')" class="bg-blue-600 text-white py-2 px-4 rounded-lg font-bold hover:bg-blue-700 transition">Add Task</button>
                 </div>
-                <div id="taskList" class="space-y-3 max-w-2xl"></div>
+                <div id="taskList" class="space-y-3"></div>
             </section>
 
         </main>
     </div>
 
+    <!-- Modals -->
+    <div id="employeeModal" class="modal fixed inset-0 z-40 flex items-center justify-center bg-black/60" onclick="ui.hideModal('employeeModal', event)">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md space-y-4">
+             <h3 class="font-bold text-2xl">New Employee</h3>
+            <input type="text" id="empName" placeholder="Full Name" class="w-full border p-3 rounded-lg">
+            <input type="email" id="empEmail" placeholder="Email Address" class="w-full border p-3 rounded-lg">
+            <input type="text" id="empRole" placeholder="Position / Role" class="w-full border p-3 rounded-lg">
+            <button onclick="crm.addEmployee()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold">Save Employee</button>
+        </div>
+    </div>
+
+    <div id="clientModal" class="modal fixed inset-0 z-40 flex items-center justify-center bg-black/60" onclick="ui.hideModal('clientModal', event)">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md space-y-4">
+            <h3 class="font-bold text-2xl">New Client</h3>
+            <input type="text" id="clientName" placeholder="Client / Company Name" class="w-full border p-3 rounded-lg">
+            <input type="email" id="clientEmail" placeholder="Contact Email" class="w-full border p-3 rounded-lg">
+            <input type="tel" id="clientPhone" placeholder="Contact Phone" class="w-full border p-3 rounded-lg">
+            <select id="clientStatus" class="w-full border p-3 rounded-lg bg-white">
+                <option value="Lead">Lead</option>
+                <option value="Contacted">Contacted</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+            </select>
+            <button onclick="crm.addClient()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold">Save Client</button>
+        </div>
+    </div>
+
+    <div id="taskModal" class="modal fixed inset-0 z-40 flex items-center justify-center bg-black/60" onclick="ui.hideModal('taskModal', event)">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md space-y-4">
+             <h3 class="font-bold text-2xl">New Task</h3>
+            <input type="text" id="taskName" placeholder="Task Description" class="w-full border p-3 rounded-lg">
+            <select id="taskEmpSelect" class="w-full border p-3 rounded-lg bg-white"><option>Assign to...</option></select>
+            <input type="date" id="taskDueDate" class="w-full border p-3 rounded-lg">
+             <select id="taskPriority" class="w-full border p-3 rounded-lg bg-white">
+                <option value="Low">Low Priority</option>
+                <option value="Medium" selected>Medium Priority</option>
+                <option value="High">High Priority</option>
+            </select>
+            <button onclick="crm.addTask()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">Save Task</button>
+        </div>
+    </div>
+
+     <div id="dealModal" class="modal fixed inset-0 z-40 flex items-center justify-center bg-black/60" onclick="ui.hideModal('dealModal', event)">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md space-y-4">
+             <h3 class="font-bold text-2xl">New Deal</h3>
+            <input type="text" id="dealName" placeholder="Deal Name (e.g., 'Website Redesign')" class="w-full border p-3 rounded-lg">
+            <select id="dealClientSelect" class="w-full border p-3 rounded-lg bg-white"><option>Associate with Client...</option></select>
+            <input type="number" id="dealValue" placeholder="Deal Value ($)" class="w-full border p-3 rounded-lg">
+            <select id="dealStage" class="w-full border p-3 rounded-lg bg-white">
+                 <option value="Lead In">Lead In</option>
+                 <option value="Contact Made">Contact Made</option>
+                 <option value="Proposal Sent">Proposal Sent</option>
+                 <option value="Negotiation">Negotiation</option>
+                 <option value="Closed-Won">Closed-Won</option>
+            </select>
+            <button onclick="crm.addDeal()" class="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold">Save Deal</button>
+        </div>
+    </div>
+
     <script>
-        // --- CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
             authDomain: "fire-b-a8878.firebaseapp.com",
@@ -91,145 +173,279 @@
         };
 
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+        const fb_auth = firebase.auth();
         const db = firebase.database();
-        const provider = new firebase.auth.GoogleAuthProvider();
+        const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-        // --- AUTH ---
-        auth.onAuthStateChanged(user => {
-            const modal = document.getElementById('loginModal');
-            const app = document.getElementById('appContent');
-            if (user) {
-                modal.classList.add('hidden-modal');
-                app.classList.remove('blur-sm');
-                initApp();
-            } else {
-                modal.classList.remove('hidden-modal');
-                app.classList.add('blur-sm');
+        const DEAL_STAGES = ["Lead In", "Contact Made", "Proposal Sent", "Negotiation", "Closed-Won"];
+
+        const auth = {
+            user: null,
+            loginWithGoogle: () => fb_auth.signInWithPopup(googleProvider),
+            logout: () => fb_auth.signOut(),
+            onStateChange: (callback) => fb_auth.onAuthStateChanged(callback)
+        };
+
+        const ui = {
+            app: document.getElementById('appContent'),
+            loginModal: document.getElementById('loginModal'),
+
+            showSection: (id) => {
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                document.getElementById(id).classList.add('active');
+            },
+            showModal: (id) => document.getElementById(id).classList.add('active'),
+            hideModal: (id, e) => {
+                if(e.target === document.getElementById(id)){
+                     document.getElementById(id).classList.remove('active');
+                }
+            },
+            toggleAuthView: (user) => {
+                if (user) {
+                    ui.loginModal.classList.remove('active');
+                    ui.app.classList.remove('blur-sm');
+                    auth.user = user;
+                    initApp();
+                } else {
+                    ui.loginModal.classList.add('active');
+                    ui.app.classList.add('blur-sm');
+                    auth.user = null;
+                }
+            },
+            renderUserProfile: (user) => {
+                const profileHTML = `<img src="${user.photoURL}" class="w-8 h-8 rounded-full"><p class="font-bold text-sm">${user.displayName}</p>`;
+                document.getElementById('userProfile').innerHTML = profileHTML;
+            },
+            getAvatar: (name) => {
+                const colors = ['#4F46E5', '#059669', '#DC2626', '#D97706', '#7C3AED', '#2563EB'];
+                let hash = 0;
+                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                const color = colors[Math.abs(hash) % colors.length];
+                const initial = name.charAt(0).toUpperCase();
+                return `<div class="w-12 h-12 rounded-full flex items-center justify-center text-white text-xl font-bold shrink-0" style="background-color: ${color}">${initial}</div>`;
             }
-        });
+        };
 
-        function loginWithGoogle() { auth.signInWithPopup(provider); }
-        function logout() { auth.signOut(); }
+        const crm = {
+            addEmployee: () => {
+                const name = document.getElementById('empName').value;
+                const role = document.getElementById('empRole').value;
+                const email = document.getElementById('empEmail').value;
+                if (!name ||!role) return alert("Fill all fields");
+                db.ref('employees').push({ name, role, email, createdAt: Date.now() });
+                document.getElementById('employeeModal').classList.remove('active');
+                document.getElementById('empName').value = document.getElementById('empRole').value = document.getElementById('empEmail').value = '';
+            },
+             addClient: () => {
+                const name = document.getElementById('clientName').value;
+                const email = document.getElementById('clientEmail').value;
+                const phone = document.getElementById('clientPhone').value;
+                const status = document.getElementById('clientStatus').value;
+                if (!name) return alert("Client name is required");
+                db.ref('clients').push({ name, email, phone, status, createdAt: Date.now() });
+                document.getElementById('clientModal').classList.remove('active');
+                document.getElementById('clientName').value = document.getElementById('clientEmail').value = document.getElementById('clientPhone').value = '';
+            },
+            addTask: () => {
+                const empId = document.getElementById('taskEmpSelect').value;
+                const taskName = document.getElementById('taskName').value;
+                const dueDate = document.getElementById('taskDueDate').value;
+                const priority = document.getElementById('taskPriority').value;
+                if(!taskName) return;
+                db.ref('tasks').push({ empId, taskName, dueDate, priority, status: 'pending', createdAt: Date.now() });
+                document.getElementById('taskModal').classList.remove('active');
+                document.getElementById('taskName').value = document.getElementById('taskDueDate').value = '';
+            },
+             addDeal: () => {
+                const name = document.getElementById('dealName').value;
+                const clientId = document.getElementById('dealClientSelect').value;
+                const value = parseFloat(document.getElementById('dealValue').value);
+                const stage = document.getElementById('dealStage').value;
+                if(!name ||!clientId ||!value) return alert("Please fill all deal fields.");
+                db.ref('deals').push({ name, clientId, value, stage, createdAt: Date.now() });
+                document.getElementById('dealModal').classList.remove('active');
+                document.getElementById('dealName').value = document.getElementById('dealValue').value = '';
+            },
+            toggleTask: (tid) => {
+                 db.ref(`tasks/${tid}`).once('value', snap => {
+                    const newStatus = snap.val().status === 'pending'? 'completed' : 'pending';
+                    db.ref(`tasks/${tid}/status`).set(newStatus);
+                 });
+            },
+            updateDealStage: (did, newStage) => db.ref(`deals/${did}/stage`).set(newStage),
+            deleteItem: (path) => {
+                if(confirm("Are you sure you want to delete this item?")) {
+                    db.ref(path).remove();
+                }
+            }
+        };
 
-        // --- UTILS ---
-        function getAvatarColor(name) {
-            const colors = ['#4F46E5', '#059669', '#DC2626', '#D97706', '#7C3AED', '#2563EB'];
-            let hash = 0;
-            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-            return colors[Math.abs(hash) % colors.length];
-        }
+        function render(data) {
+             // Employees
+            const empGrid = document.getElementById('employeeGrid');
+            const taskEmpSelect = document.getElementById('taskEmpSelect');
+            empGrid.innerHTML = '';
+            taskEmpSelect.innerHTML = '<option value="">Assign to...</option>';
+            Object.entries(data.employees).forEach(([id, emp]) => {
+                empGrid.innerHTML += `
+                    <div class="bg-white p-6 rounded-xl border shadow-sm flex items-center gap-4">
+                        ${ui.getAvatar(emp.name)}
+                        <div class="flex-1">
+                            <h3 class="font-bold text-lg">${emp.name}</h3>
+                            <p class="text-slate-400 text-sm">${emp.role}</p>
+                            <p class="text-xs text-indigo-500">${emp.email}</p>
+                        </div>
+                         <button onclick="crm.deleteItem('employees/${id}')" class="text-slate-400 hover:text-red-500">✖</button>
+                    </div>`;
+                taskEmpSelect.innerHTML += `<option value="${id}">${emp.name}</option>`;
+            });
 
-        function showSection(id) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
+            // Clients
+            const clientList = document.getElementById('clientList');
+            const dealClientSelect = document.getElementById('dealClientSelect');
+            clientList.innerHTML = '';
+            dealClientSelect.innerHTML = '<option value="">Associate with Client...</option>';
+            const statusColors = { Lead: 'bg-yellow-500', Contacted: 'bg-blue-500', Active: 'bg-green-500', Inactive: 'bg-slate-400' };
+            Object.entries(data.clients).forEach(([id, c]) => {
+                const dealCount = Object.values(data.deals).filter(d => d.clientId === id).length;
+                clientList.innerHTML += `
+                    <div class="bg-white p-4 rounded-xl border shadow-sm flex items-center gap-4">
+                        ${ui.getAvatar(c.name)}
+                        <div class="flex-1 grid grid-cols-3 items-center">
+                            <div><h3 class="font-bold">${c.name}</h3><p class="text-sm text-slate-500">${c.email}</p></div>
+                            <div><span class="text-sm font-bold py-1 px-3 rounded-full text-white ${statusColors[c.status]}">${c.status}</span></div>
+                            <div><p class="font-bold">${dealCount} Deals</p></div>
+                        </div>
+                        <button onclick="crm.deleteItem('clients/${id}')" class="text-slate-400 hover:text-red-500">✖</button>
+                    </div>`;
+                dealClientSelect.innerHTML += `<option value="${id}">${c.name}</option>`;
+            });
 
-        // --- CORE CRM LOGIC ---
-        async function addEmployee() {
-            const name = document.getElementById('empName').value;
-            const role = document.getElementById('empRole').value;
-            
-            if (!name || !role) return alert("Fill all fields");
+            // Tasks
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '';
+            const priorityBadge = { High: 'bg-red-100 text-red-800', Medium: 'bg-yellow-100 text-yellow-800', Low: 'bg-slate-100' };
+            Object.entries(data.tasks).reverse().forEach(([id, t]) => {
+                const isDone = t.status === 'completed';
+                taskList.innerHTML += `
+                    <div class="flex items-center justify-between bg-white p-4 rounded-xl border ${isDone? 'opacity-50' : ''} shadow-sm">
+                        <div class="flex items-center gap-4">
+                            <input type="checkbox" onchange="crm.toggleTask('${id}')" ${isDone? 'checked' : ''} class="h-5 w-5 rounded-full text-indigo-600 focus:ring-indigo-500 border-slate-300">
+                            <div>
+                                <p class="font-medium ${isDone? 'line-through' : ''}">${t.taskName}</p>
+                                <div class="flex items-center gap-2 text-xs text-slate-500">
+                                    <span>${data.employees[t.empId]?.name || 'Unassigned'}</span>
+                                    <span>&bull;</span>
+                                    <span>${t.dueDate || 'No due date'}</span>
+                                    <span>&bull;</span>
+                                    <span class="font-bold px-2 py-0.5 rounded-full ${priorityBadge[t.priority]}">${t.priority}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="crm.deleteItem('tasks/${id}')" class="text-slate-400 hover:text-red-500">✖</button>
+                    </div>`;
+            });
 
-            try {
-                await db.ref('employees').push({
-                    name, 
-                    role, 
-                    progress: 0, 
-                    taskCount: 0, 
-                    completedCount: 0,
-                    createdAt: Date.now()
+            // Deals Kanban Board
+            const kanban = document.getElementById('dealKanban');
+            kanban.innerHTML = '';
+            DEAL_STAGES.forEach(stage => {
+                let stageDealsHTML = '';
+                Object.entries(data.deals).filter(([_,d]) => d.stage === stage).forEach(([id,d]) => {
+                     stageDealsHTML += `
+                        <div class="bg-white p-3 rounded-lg border shadow-sm mb-3">
+                             <p class="font-bold">${d.name}</p>
+                             <p class="text-sm text-slate-500">${data.clients[d.clientId]?.name}</p>
+                             <p class="text-emerald-600 font-black mt-1">$${d.value.toLocaleString()}</p>
+                             <select onchange="crm.updateDealStage('${id}', this.value)" class="w-full text-xs mt-2 p-1 border rounded bg-slate-50">
+                                ${DEAL_STAGES.map(s => `<option value="${s}" ${s === stage? 'selected' : ''}>${s}</option>`).join('')}
+                             </select>
+                        </div>`;
                 });
-                document.getElementById('empName').value = '';
-                document.getElementById('empRole').value = '';
-                showSection('dashboard');
-            } catch (e) { alert(e.message); }
+                kanban.innerHTML += `
+                    <div>
+                        <h3 class="font-bold text-sm uppercase text-slate-500 p-2">${stage}</h3>
+                        <div class="bg-slate-100 p-2 rounded-lg h-full">${stageDealsHTML}</div>
+                    </div>`;
+            });
+
+            // Dashboard Stats & Charts
+            const totalClients = Object.keys(data.clients).length;
+            const totalDeals = Object.values(data.deals).length;
+            const wonDeals = Object.values(data.deals).filter(d => d.stage === 'Closed-Won');
+            const pipelineValue = Object.values(data.deals).filter(d => d.stage!== 'Closed-Won').reduce((sum, d) => sum + d.value, 0);
+            const wonValue = wonDeals.reduce((sum, d) => sum + d.value, 0);
+
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="bg-white p-5 rounded-xl border"><p class="text-slate-500 text-sm font-bold">Total Clients</p><p class="text-4xl font-black">${totalClients}</p></div>
+                <div class="bg-white p-5 rounded-xl border"><p class="text-slate-500 text-sm font-bold">Pipeline</p><p class="text-4xl font-black">$${pipelineValue.toLocaleString()}</p></div>
+                <div class="bg-white p-5 rounded-xl border"><p class="text-slate-500 text-sm font-bold">Closed Deals</p><p class="text-4xl font-black">${wonDeals.length}</p></div>
+                <div class="bg-white p-5 rounded-xl border"><p class="text-slate-500 text-sm font-bold">Revenue</p><p class="text-4xl font-black text-emerald-600">$${wonValue.toLocaleString()}</p></div>
+            `;
+
+            const dealsByStage = DEAL_STAGES.map(stage => Object.values(data.deals).filter(d => d.stage === stage).length);
+            charts.deals.data.datasets[0].data = dealsByStage;
+            charts.deals.update();
+
+            const tasksByStatus = [
+                Object.values(data.tasks).filter(t => t.status === 'pending').length,
+                Object.values(data.tasks).filter(t => t.status === 'completed').length,
+            ];
+            charts.tasks.data.datasets[0].data = tasksByStatus;
+            charts.tasks.update();
+        }
+
+        const charts = { deals: null, tasks: null };
+
+        function initCharts(){
+             Chart.defaults.font.family = 'sans-serif';
+             Chart.defaults.font.weight = '600';
+
+            const dealsCtx = document.getElementById('dealsChart').getContext('2d');
+            charts.deals = new Chart(dealsCtx, {
+                type: 'bar',
+                data: {
+                    labels: DEAL_STAGES,
+                    datasets: [{ label: 'Deals per Stage', data: [], backgroundColor: '#4F46E5' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }}, scales: { y: { beginAtZero: true } } }
+            });
+
+            const tasksCtx = document.getElementById('tasksChart').getContext('2d');
+            charts.tasks = new Chart(tasksCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pending', 'Completed'],
+                    datasets: [{ data: [], backgroundColor: ['#F59E0B', '#10B981'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' }}}
+            });
         }
 
         function initApp() {
-            // Employee Sync
-            db.ref('employees').on('value', snap => {
-                const data = snap.val() || {};
-                const grid = document.getElementById('employeeGrid');
-                const select = document.getElementById('taskEmpSelect');
-                
-                grid.innerHTML = '';
-                select.innerHTML = '<option value="">Choose Employee...</option>';
-                let total = 0, sumProg = 0;
+            if (!auth.user) return;
+            ui.renderUserProfile(auth.user);
+            initCharts();
 
-                Object.keys(data).forEach(id => {
-                    const emp = data[id];
-                    total++; sumProg += emp.progress;
-                    select.innerHTML += `<option value="${id}">${emp.name}</option>`;
-                    
-                    const initial = emp.name.charAt(0).toUpperCase();
-                    const color = getAvatarColor(emp.name);
+            const refs = {
+                employees: db.ref('employees'),
+                clients: db.ref('clients'),
+                tasks: db.ref('tasks'),
+                deals: db.ref('deals')
+            };
 
-                    grid.innerHTML += `
-                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
-                            <div class="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-3 shadow-inner" style="background-color: ${color}">
-                                ${initial}
-                            </div>
-                            <h3 class="font-bold text-lg">${emp.name}</h3>
-                            <p class="text-slate-400 text-sm mb-4">${emp.role}</p>
-                            <div class="w-full bg-slate-100 rounded-full h-2 mb-2">
-                                <div class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: ${emp.progress}%"></div>
-                            </div>
-                            <span class="text-xs font-bold text-slate-500">${emp.progress}% Done</span>
-                        </div>
-                    `;
-                });
+            let appData = { employees:{}, clients:{}, tasks:{}, deals:{} };
 
-                document.getElementById('statsGrid').innerHTML = `
-                    <div class="bg-white p-6 rounded-xl border"><p class="text-slate-400 text-sm font-bold uppercase">Headcount</p><p class="text-4xl font-black">${total}</p></div>
-                    <div class="bg-white p-6 rounded-xl border"><p class="text-slate-400 text-sm font-bold uppercase">Efficiency</p><p class="text-4xl font-black text-indigo-600">${total ? Math.round(sumProg/total) : 0}%</p></div>
-                `;
-            });
-
-            // Tasks Sync
-            db.ref('tasks').on('value', snap => {
-                const tasks = snap.val() || {};
-                const list = document.getElementById('taskList');
-                list.innerHTML = '';
-                Object.entries(tasks).reverse().forEach(([id, t]) => {
-                    const isDone = t.status === 'completed';
-                    list.innerHTML += `
-                        <div class="flex items-center justify-between bg-white p-4 rounded-xl border ${isDone ? 'opacity-40' : ''} shadow-sm">
-                            <div class="flex items-center gap-4">
-                                <div class="w-2 h-2 rounded-full ${isDone ? 'bg-slate-300' : 'bg-emerald-500'}"></div>
-                                <p class="font-medium ${isDone ? 'line-through' : ''}">${t.taskName}</p>
-                            </div>
-                            <button onclick="toggleTask('${id}', '${t.empId}', '${t.status}')" class="text-xs font-bold px-3 py-2 rounded-lg ${isDone ? 'bg-slate-100' : 'bg-slate-900 text-white'} transition">
-                                ${isDone ? 'Undo' : 'Complete'}
-                            </button>
-                        </div>`;
-                });
+            Object.entries(refs).forEach(([key, ref]) => {
+                 ref.on('value', snap => {
+                    appData[key] = snap.val() || {};
+                    render(appData);
+                 });
             });
         }
 
-        async function addTask() {
-            const empId = document.getElementById('taskEmpSelect').value;
-            const taskName = document.getElementById('taskName').value;
-            if(!empId || !taskName) return;
-            await db.ref('tasks').push({ empId, taskName, status: 'pending' });
-            updateStats(empId);
-            document.getElementById('taskName').value = '';
-        }
+        auth.onStateChange(ui.toggleAuthView);
 
-        function toggleTask(tid, eid, stat) {
-            db.ref(`tasks/${tid}/status`).set(stat === 'pending' ? 'completed' : 'pending');
-            setTimeout(() => updateStats(eid), 100);
-        }
-
-        function updateStats(eid) {
-            db.ref('tasks').orderByChild('empId').equalTo(eid).once('value', snap => {
-                const tasks = snap.val() || {};
-                let tot = 0, done = 0;
-                Object.values(tasks).forEach(t => { tot++; if(t.status === 'completed') done++; });
-                db.ref(`employees/${eid}`).update({ taskCount: tot, completedCount: done, progress: tot ? Math.round((done/tot)*100) : 0 });
-            });
-        }
     </script>
 </body>
 </html>
