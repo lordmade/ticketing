@@ -1,429 +1,1888 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VitaCare - Book Healthcare Appointments</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js"></script>
-    
-    <!-- Mapbox -->
-    <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
-    <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediCare — Premium Healthcare Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: #f8fafc; 
-        }
-        
-        .hero-bg {
-            background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
-        }
-        
-        .glass {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-        }
-        
-        .doctor-card {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .doctor-card:hover {
-            transform: translateY(-12px);
-            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15);
-        }
-        
-        .marker {
-            background: linear-gradient(135deg, #14b8a6, #0f766e);
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 4px solid white;
-            box-shadow: 0 10px 15px -3px rgb(45 212 191 / 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 18px;
-        }
-        
-        .nav-link {
-            position: relative;
-        }
-        .nav-link:after {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 2px;
-            bottom: -2px;
-            left: 0;
-            background: #14b8a6;
-            transition: width 0.3s ease;
-        }
-        .nav-link:hover:after {
-            width: 100%;
-        }
-    </style>
+<style>
+:root {
+  --navy: #050e1f;
+  --navy-2: #0d1f3c;
+  --navy-3: #0f2750;
+  --emerald: #0ea472;
+  --emerald-2: #0bc585;
+  --emerald-glow: rgba(14,164,114,0.18);
+  --gold: #f0b429;
+  --white: #ffffff;
+  --off-white: #f5f7fb;
+  --muted: #8da0b7;
+  --border: rgba(255,255,255,0.08);
+  --card-bg: rgba(13,31,60,0.8);
+  --glass: rgba(255,255,255,0.04);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--navy);
+  color: var(--white);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--navy); }
+::-webkit-scrollbar-thumb { background: var(--emerald); border-radius: 3px; }
+
+/* ─── NOISE OVERLAY ─── */
+body::before {
+  content:''; position:fixed; inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events:none; z-index:0;
+}
+
+/* ─── AMBIENT BLOBS ─── */
+.blob-1, .blob-2, .blob-3 {
+  position: fixed; border-radius: 50%;
+  filter: blur(90px); pointer-events: none; z-index: 0;
+}
+.blob-1 { width:600px; height:600px; background:rgba(14,164,114,0.12); top:-200px; right:-100px; }
+.blob-2 { width:500px; height:500px; background:rgba(5,14,31,0.8); bottom:200px; left:-150px; }
+.blob-3 { width:400px; height:400px; background:rgba(240,180,41,0.06); bottom:0; right:200px; }
+
+/* ─── EMERGENCY BANNER ─── */
+.emergency-banner {
+  background: linear-gradient(90deg,#c0392b,#e74c3c);
+  text-align:center; padding: 10px 16px;
+  font-size: 13px; font-weight: 600; letter-spacing: 0.3px;
+  position: relative; z-index: 100;
+  animation: pulse-bg 3s infinite;
+}
+@keyframes pulse-bg {
+  0%,100% { background: linear-gradient(90deg,#c0392b,#e74c3c); }
+  50%      { background: linear-gradient(90deg,#e74c3c,#c0392b); }
+}
+.emergency-banner a { color:#fff; text-decoration:underline; margin-left:8px; }
+
+/* ─── NAV ─── */
+nav {
+  position: sticky; top: 0; z-index: 90;
+  backdrop-filter: blur(20px);
+  background: rgba(5,14,31,0.85);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  max-width: 1280px; margin: 0 auto;
+  padding: 0 32px;
+  display: flex; align-items: center;
+  height: 70px; gap: 32px;
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700; font-size: 22px; color: var(--white);
+  text-decoration: none; flex-shrink: 0;
+}
+.logo-icon {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--emerald), var(--emerald-2));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; box-shadow: 0 0 18px var(--emerald-glow);
+}
+.logo span { color: var(--emerald); }
+.nav-links {
+  display: flex; gap: 6px; align-items: center; flex: 1;
+}
+.nav-links a {
+  color: var(--muted); text-decoration: none; font-size: 14px;
+  font-weight: 500; padding: 6px 14px; border-radius: 8px;
+  transition: all 0.2s;
+}
+.nav-links a:hover { color: var(--white); background: var(--glass); }
+.nav-links a.active { color: var(--emerald); }
+.nav-actions { display: flex; gap: 10px; align-items: center; }
+.btn-ghost {
+  background: transparent; color: var(--muted); border: 1px solid var(--border);
+  padding: 8px 20px; border-radius: 10px; font-size: 14px;
+  font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit;
+}
+.btn-ghost:hover { color: var(--white); border-color: rgba(255,255,255,0.2); }
+.btn-primary {
+  background: var(--emerald); color: var(--navy);
+  padding: 9px 22px; border-radius: 10px; font-size: 14px;
+  font-weight: 700; cursor: pointer; transition: all 0.2s;
+  border: none; font-family: inherit;
+  box-shadow: 0 0 20px var(--emerald-glow);
+}
+.btn-primary:hover { background: var(--emerald-2); transform: translateY(-1px); }
+
+/* ─── HERO ─── */
+.hero {
+  max-width: 1280px; margin: 0 auto;
+  padding: 80px 32px 60px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 60px; align-items: center;
+  position: relative; z-index: 10;
+}
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(14,164,114,0.12); border: 1px solid rgba(14,164,114,0.3);
+  color: var(--emerald); font-size: 13px; font-weight: 600;
+  padding: 6px 14px; border-radius: 100px; margin-bottom: 24px;
+}
+.hero-eyebrow i { font-size: 11px; }
+h1.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(42px, 5vw, 62px);
+  font-weight: 900; line-height: 1.1;
+  letter-spacing: -0.5px; margin-bottom: 20px;
+}
+h1.hero-title em { font-style: normal; color: var(--emerald); }
+.hero-sub {
+  color: var(--muted); font-size: 17px; line-height: 1.7;
+  margin-bottom: 40px; max-width: 480px; font-weight: 400;
+}
+.search-box {
+  background: rgba(13,31,60,0.9);
+  border: 1px solid var(--border);
+  border-radius: 18px; padding: 8px;
+  display: flex; gap: 6px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(14,164,114,0.1);
+  backdrop-filter: blur(10px); margin-bottom: 24px;
+}
+.search-field {
+  flex: 1; padding: 12px 16px;
+  border-right: 1px solid var(--border);
+}
+.search-field:last-of-type { border-right: none; }
+.search-field label {
+  display: block; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--muted); margin-bottom: 4px;
+}
+.search-field input {
+  background: transparent; border: none; outline: none;
+  color: var(--white); font-size: 14px; font-weight: 600;
+  font-family: inherit; width: 100%;
+}
+.search-field input::placeholder { color: rgba(141,160,183,0.5); }
+.search-btn {
+  background: var(--emerald); color: var(--navy);
+  border: none; padding: 14px 28px; border-radius: 12px;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: all 0.2s; white-space: nowrap;
+  display: flex; align-items: center; gap: 8px;
+  box-shadow: 0 0 24px var(--emerald-glow);
+}
+.search-btn:hover { background: var(--emerald-2); transform: translateY(-1px); }
+.hero-trust {
+  display: flex; gap: 24px; align-items: center;
+}
+.trust-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--muted);
+}
+.trust-item i { color: var(--emerald); }
+
+/* ─── HERO VISUAL ─── */
+.hero-visual { position: relative; }
+.hero-img-wrap {
+  border-radius: 28px; overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+  position: relative; height: 460px;
+}
+.hero-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+.hero-img-wrap::after {
+  content:''; position:absolute; inset:0;
+  background: linear-gradient(180deg, transparent 50%, rgba(5,14,31,0.6) 100%);
+}
+.hero-float-card {
+  position: absolute; background: rgba(13,31,60,0.95);
+  backdrop-filter: blur(20px); border: 1px solid var(--border);
+  border-radius: 16px; padding: 16px 20px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+.hfc-1 { bottom: 30px; left: -30px; }
+.hfc-2 { top: 30px; right: -20px; }
+.hfc-stat { font-size: 24px; font-weight: 700; color: var(--white); }
+.hfc-label { font-size: 11px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+.hfc-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--emerald); display: inline-block; margin-right: 6px;
+  animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+/* ─── STATS BAR ─── */
+.stats-bar {
+  background: rgba(13,31,60,0.6);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  position: relative; z-index: 10;
+}
+.stats-bar-inner {
+  max-width: 1280px; margin: 0 auto; padding: 28px 32px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+}
+.stat-item { text-align: center; }
+.stat-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 36px; font-weight: 700; color: var(--white);
+  line-height: 1;
+}
+.stat-num span { color: var(--emerald); }
+.stat-desc { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+/* ─── SECTION ─── */
+section { position: relative; z-index: 10; }
+.section-wrap { max-width: 1280px; margin: 0 auto; padding: 80px 32px; }
+.section-header { margin-bottom: 48px; }
+.section-eyebrow {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 2px; color: var(--emerald); margin-bottom: 12px;
+}
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(28px, 4vw, 42px); font-weight: 700;
+  line-height: 1.2; color: var(--white);
+}
+.section-sub { color: var(--muted); font-size: 16px; margin-top: 12px; max-width: 600px; }
+
+/* ─── SPECIALTIES GRID ─── */
+.specs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+}
+.spec-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 18px; padding: 24px 20px; text-align: center;
+  cursor: pointer; transition: all 0.3s; text-decoration: none;
+  display: block;
+}
+.spec-card:hover {
+  border-color: rgba(14,164,114,0.4); background: rgba(14,164,114,0.08);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(14,164,114,0.15);
+}
+.spec-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; margin: 0 auto 14px;
+}
+.spec-name { font-size: 14px; font-weight: 600; color: var(--white); margin-bottom: 4px; }
+.spec-count { font-size: 12px; color: var(--muted); }
+
+/* ─── RESULTS + FILTERS ─── */
+.results-layout { display: grid; grid-template-columns: 280px 1fr; gap: 28px; align-items: start; }
+
+.filters-panel {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 20px; padding: 24px; position: sticky; top: 90px;
+}
+.filter-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+.filter-group { margin-bottom: 24px; }
+.filter-label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.filter-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  background: var(--glass); border: 1px solid var(--border);
+  color: var(--muted); font-size: 13px; font-weight: 500;
+  padding: 6px 14px; border-radius: 100px; cursor: pointer;
+  transition: all 0.2s; font-family: inherit;
+}
+.chip:hover, .chip.active { background: var(--emerald-glow); border-color: var(--emerald); color: var(--emerald); }
+.filter-range { width: 100%; accent-color: var(--emerald); }
+
+.results-panel {}
+.results-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 20px;
+}
+.results-count { font-size: 15px; color: var(--muted); }
+.results-count strong { color: var(--white); }
+.sort-select {
+  background: var(--card-bg); border: 1px solid var(--border);
+  color: var(--white); padding: 8px 14px; border-radius: 10px;
+  font-size: 13px; outline: none; cursor: pointer; font-family: inherit;
+}
+.view-toggle { display: flex; gap: 4px; }
+.view-btn {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: var(--glass); border: 1px solid var(--border);
+  color: var(--muted); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+}
+.view-btn.active, .view-btn:hover { background: var(--emerald-glow); color: var(--emerald); border-color: var(--emerald); }
+
+.doctors-grid { display: grid; gap: 16px; }
+.doctor-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 20px; padding: 24px;
+  display: grid; grid-template-columns: 80px 1fr auto;
+  gap: 20px; align-items: center; cursor: pointer;
+  transition: all 0.3s;
+}
+.doctor-card:hover {
+  border-color: rgba(14,164,114,0.3);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  transform: translateY(-2px);
+}
+.doc-avatar {
+  width: 80px; height: 80px; border-radius: 16px; overflow: hidden;
+  border: 2px solid var(--border); flex-shrink: 0;
+}
+.doc-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.doc-name { font-size: 17px; font-weight: 700; margin-bottom: 3px; }
+.doc-spec { font-size: 13px; color: var(--emerald); font-weight: 600; margin-bottom: 6px; }
+.doc-meta { display: flex; gap: 16px; flex-wrap: wrap; }
+.doc-meta-item { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+.doc-meta-item i { font-size: 10px; }
+.doc-rating { display: flex; align-items: center; gap: 4px; }
+.stars { color: var(--gold); font-size: 12px; }
+.doc-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.avail-badge {
+  font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px;
+}
+.avail-today { background: rgba(14,164,114,0.15); color: var(--emerald); border: 1px solid rgba(14,164,114,0.3); }
+.avail-tomorrow { background: rgba(240,180,41,0.12); color: var(--gold); border: 1px solid rgba(240,180,41,0.25); }
+.btn-book {
+  background: var(--emerald); color: var(--navy);
+  border: none; padding: 10px 22px; border-radius: 10px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: all 0.2s; white-space: nowrap;
+}
+.btn-book:hover { background: var(--emerald-2); transform: scale(1.03); }
+.btn-profile {
+  background: transparent; color: var(--muted); border: 1px solid var(--border);
+  padding: 8px 18px; border-radius: 10px; font-size: 13px;
+  font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;
+}
+.btn-profile:hover { color: var(--white); border-color: rgba(255,255,255,0.2); }
+
+/* ─── MAP SECTION ─── */
+.map-section {
+  background: rgba(13,31,60,0.5);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.map-layout {
+  max-width: 1280px; margin: 0 auto; padding: 80px 32px;
+  display: grid; grid-template-columns: 1fr 1.6fr; gap: 40px; align-items: center;
+}
+.map-placeholder {
+  height: 400px; border-radius: 24px; overflow: hidden;
+  border: 1px solid var(--border); position: relative;
+  background: var(--navy-2);
+  display: flex; align-items: center; justify-content: center;
+}
+.map-placeholder-inner { text-align: center; }
+.map-placeholder-inner i { font-size: 48px; color: var(--emerald); margin-bottom: 16px; display: block; }
+.nearby-list { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+.nearby-item {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 18px; cursor: pointer; transition: all 0.2s;
+}
+.nearby-item:hover { border-color: rgba(14,164,114,0.3); }
+.nearby-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: var(--emerald-glow); color: var(--emerald);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.nearby-name { font-size: 14px; font-weight: 600; }
+.nearby-dist { font-size: 12px; color: var(--muted); }
+.nearby-status { margin-left: auto; font-size: 11px; font-weight: 700; }
+.open { color: var(--emerald); }
+.closed { color: #e74c3c; }
+
+/* ─── TELEMEDICINE ─── */
+.tele-section { background: linear-gradient(135deg, rgba(14,164,114,0.12) 0%, rgba(5,14,31,0) 60%); }
+.tele-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+}
+.tele-features { display: flex; flex-direction: column; gap: 20px; margin: 32px 0; }
+.tele-feature {
+  display: flex; gap: 16px; align-items: flex-start;
+}
+.tf-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--emerald-glow); border: 1px solid rgba(14,164,114,0.3);
+  color: var(--emerald); display: flex; align-items: center;
+  justify-content: center; flex-shrink: 0; font-size: 16px;
+}
+.tf-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.tf-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+.tele-visual { position: relative; }
+.tele-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 24px; overflow: hidden;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+}
+.video-placeholder {
+  height: 260px; background: linear-gradient(135deg,#0d1f3c,#0f2750);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+}
+.video-placeholder::before {
+  content:''; position:absolute; inset:0;
+  background: radial-gradient(circle at 40% 40%, rgba(14,164,114,0.15), transparent 60%);
+}
+.video-placeholder img { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; }
+.video-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.play-btn {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--emerald); color: var(--navy);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; padding-left: 4px;
+  box-shadow: 0 0 30px var(--emerald-glow);
+  cursor: pointer; transition: transform 0.2s;
+}
+.play-btn:hover { transform: scale(1.1); }
+.tele-card-body { padding: 20px 24px; }
+.tele-doc-row {
+  display: flex; align-items: center; gap: 12px;
+}
+.tele-doc-av { width: 44px; height: 44px; border-radius: 12px; overflow: hidden; }
+.tele-doc-av img { width:100%;height:100%;object-fit:cover; }
+.tele-doc-name { font-size: 14px; font-weight: 700; }
+.tele-doc-spec { font-size: 12px; color: var(--emerald); }
+.tele-price { margin-left: auto; font-size: 18px; font-weight: 700; }
+.tele-price span { font-size: 12px; color: var(--muted); }
+
+/* ─── HOSPITALS ─── */
+.hospitals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+.hospital-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 20px; overflow: hidden; transition: all 0.3s; cursor: pointer;
+}
+.hospital-card:hover { border-color: rgba(14,164,114,0.3); transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.3); }
+.hospital-img { height: 160px; overflow: hidden; position: relative; }
+.hospital-img img { width:100%;height:100%;object-fit:cover; }
+.hospital-type {
+  position: absolute; top: 12px; left: 12px;
+  background: rgba(5,14,31,0.8); backdrop-filter: blur(8px);
+  border: 1px solid var(--border); font-size: 11px; font-weight: 700;
+  color: var(--emerald); padding: 4px 10px; border-radius: 100px;
+}
+.hospital-body { padding: 20px; }
+.hospital-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.hospital-addr { font-size: 12px; color: var(--muted); margin-bottom: 12px; display: flex; gap: 4px; align-items: flex-start; }
+.hospital-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.htag {
+  background: var(--glass); border: 1px solid var(--border);
+  font-size: 11px; color: var(--muted); padding: 3px 10px; border-radius: 100px;
+}
+
+/* ─── HEALTH TIPS ─── */
+.tips-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+.tip-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 20px; overflow: hidden; transition: all 0.3s;
+}
+.tip-card:hover { border-color: rgba(14,164,114,0.2); transform: translateY(-3px); }
+.tip-img { height: 180px; overflow: hidden; }
+.tip-img img { width:100%;height:100%;object-fit:cover; transition: transform 0.5s; }
+.tip-card:hover .tip-img img { transform: scale(1.05); }
+.tip-body { padding: 20px; }
+.tip-category {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--emerald); margin-bottom: 8px;
+}
+.tip-title { font-size: 16px; font-weight: 700; line-height: 1.4; margin-bottom: 8px; }
+.tip-excerpt { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.tip-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+.tip-author { font-size: 12px; color: var(--muted); }
+.tip-read { font-size: 12px; font-weight: 600; color: var(--emerald); text-decoration: none; }
+
+/* ─── TESTIMONIALS ─── */
+.testi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+.testi-card {
+  background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 20px; padding: 28px;
+}
+.testi-stars { color: var(--gold); font-size: 14px; margin-bottom: 16px; }
+.testi-text { font-size: 15px; line-height: 1.7; color: rgba(255,255,255,0.8); margin-bottom: 20px; }
+.testi-author { display: flex; align-items: center; gap: 12px; }
+.testi-av {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--emerald), var(--navy-3));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 700;
+}
+.testi-name { font-size: 14px; font-weight: 700; }
+.testi-detail { font-size: 12px; color: var(--muted); }
+
+/* ─── APP CTA ─── */
+.cta-section {
+  background: linear-gradient(135deg, rgba(14,164,114,0.15), rgba(15,39,80,0.5));
+  border-top: 1px solid var(--border);
+}
+.cta-inner {
+  max-width: 1280px; margin: 0 auto; padding: 80px 32px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 60px; align-items: center;
+}
+.cta-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(32px, 4vw, 50px); font-weight: 700; line-height: 1.2;
+  margin-bottom: 16px;
+}
+.cta-sub { color: var(--muted); font-size: 16px; margin-bottom: 32px; }
+.app-btns { display: flex; gap: 14px; flex-wrap: wrap; }
+.app-btn {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+  border-radius: 14px; padding: 12px 20px; cursor: pointer;
+  transition: all 0.2s; text-decoration: none; color: var(--white);
+}
+.app-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+.app-btn i { font-size: 24px; }
+.app-btn-text { text-align: left; }
+.app-btn-text small { font-size: 10px; color: var(--muted); display: block; }
+.app-btn-text strong { font-size: 14px; font-weight: 700; }
+.cta-phones { display: flex; justify-content: center; gap: -20px; }
+.cta-phone {
+  width: 220px; height: 380px;
+  background: var(--navy-2); border: 1px solid var(--border);
+  border-radius: 36px; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+  font-size: 40px; color: var(--emerald);
+}
+
+/* ─── FOOTER ─── */
+footer {
+  background: var(--navy-2); border-top: 1px solid var(--border);
+  position: relative; z-index: 10;
+}
+.footer-inner {
+  max-width: 1280px; margin: 0 auto; padding: 60px 32px 40px;
+}
+.footer-top {
+  display: grid; grid-template-columns: 1.5fr repeat(4, 1fr); gap: 40px;
+  margin-bottom: 48px;
+}
+.footer-brand { }
+.footer-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700; font-size: 20px; color: var(--white); margin-bottom: 14px;
+}
+.footer-desc { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
+.footer-social { display: flex; gap: 10px; }
+.social-btn {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--glass); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 14px; cursor: pointer; transition: all 0.2s;
+  text-decoration: none;
+}
+.social-btn:hover { background: var(--emerald-glow); color: var(--emerald); border-color: var(--emerald); }
+.footer-col-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--white); margin-bottom: 16px; }
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.footer-links a { font-size: 14px; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: var(--white); }
+.footer-bottom {
+  border-top: 1px solid var(--border); padding-top: 24px;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 12px;
+}
+.footer-copy { font-size: 13px; color: var(--muted); }
+.footer-badges { display: flex; gap: 10px; }
+.fbadge {
+  background: var(--glass); border: 1px solid var(--border);
+  font-size: 11px; color: var(--muted); padding: 4px 12px;
+  border-radius: 100px;
+}
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(5,14,31,0.85); backdrop-filter: blur(12px);
+  display: none; align-items: center; justify-content: center; padding: 16px;
+}
+.modal-overlay.open { display: flex; animation: fade-in 0.25s; }
+@keyframes fade-in { from{opacity:0;} to{opacity:1;} }
+.modal-box {
+  background: var(--navy-2); border: 1px solid var(--border);
+  border-radius: 28px; width: 100%; max-width: 520px; overflow: hidden;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+  animation: slide-up 0.3s ease-out;
+}
+@keyframes slide-up { from{transform:translateY(20px);opacity:0;} to{transform:translateY(0);opacity:1;} }
+.modal-header {
+  padding: 28px 32px 0; display: flex; justify-content: space-between; align-items: flex-start;
+}
+.modal-close {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--glass); border: 1px solid var(--border);
+  color: var(--muted); display: flex; align-items: center;
+  justify-content: center; cursor: pointer; transition: all 0.2s;
+  flex-shrink: 0;
+}
+.modal-close:hover { color: var(--white); background: rgba(231,76,60,0.2); border-color: rgba(231,76,60,0.3); }
+.modal-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; }
+.modal-subtitle { font-size: 14px; color: var(--emerald); font-weight: 600; margin-top: 4px; }
+.modal-doctor-preview {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--glass); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 16px; margin: 20px 32px 0;
+}
+.mdp-av { width: 52px; height: 52px; border-radius: 12px; overflow: hidden; flex-shrink: 0; }
+.mdp-av img { width:100%;height:100%;object-fit:cover; }
+.mdp-name { font-size: 15px; font-weight: 700; }
+.mdp-spec { font-size: 13px; color: var(--emerald); }
+.mdp-rating { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.modal-tabs {
+  display: flex; gap: 4px; padding: 20px 32px 0; border-bottom: 1px solid var(--border);
+}
+.modal-tab {
+  padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; background: transparent; border: none;
+  color: var(--muted); font-family: inherit;
+}
+.modal-tab.active { background: var(--emerald-glow); color: var(--emerald); }
+.modal-body { padding: 24px 32px 32px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 8px; display: block; }
+.form-input {
+  width: 100%; background: var(--glass); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 16px; color: var(--white);
+  font-size: 14px; font-family: inherit; outline: none;
+  transition: border-color 0.2s;
+}
+.form-input:focus { border-color: var(--emerald); box-shadow: 0 0 0 3px rgba(14,164,114,0.1); }
+.form-input::placeholder { color: rgba(141,160,183,0.4); }
+.time-slots { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.time-slot {
+  background: var(--glass); border: 1px solid var(--border);
+  border-radius: 10px; padding: 8px; text-align: center;
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.time-slot:hover, .time-slot.selected { background: var(--emerald-glow); border-color: var(--emerald); color: var(--emerald); }
+.time-slot.taken { opacity: 0.4; cursor: not-allowed; text-decoration: line-through; }
+.consult-types { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.consult-type {
+  background: var(--glass); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px; cursor: pointer; transition: all 0.2s; text-align: center;
+}
+.consult-type:hover, .consult-type.selected {
+  background: var(--emerald-glow); border-color: var(--emerald);
+}
+.consult-type i { font-size: 22px; color: var(--emerald); margin-bottom: 6px; display: block; }
+.consult-type span { font-size: 13px; font-weight: 600; display: block; }
+.consult-type small { font-size: 11px; color: var(--muted); }
+.modal-footer {
+  padding: 0 32px 32px; display: flex; gap: 12px;
+}
+.btn-confirm {
+  flex: 1; background: var(--emerald); color: var(--navy);
+  border: none; padding: 14px; border-radius: 14px; font-size: 15px;
+  font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.2s;
+}
+.btn-confirm:hover { background: var(--emerald-2); }
+.btn-cancel {
+  background: var(--glass); color: var(--muted); border: 1px solid var(--border);
+  padding: 14px 24px; border-radius: 14px; font-size: 14px;
+  font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;
+}
+.btn-cancel:hover { color: var(--white); }
+
+/* ─── SUCCESS TOAST ─── */
+.toast {
+  position: fixed; bottom: 30px; right: 30px;
+  background: rgba(13,31,60,0.95); border: 1px solid rgba(14,164,114,0.4);
+  border-radius: 16px; padding: 16px 22px;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  z-index: 300; transform: translateY(100px); opacity: 0;
+  transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  max-width: 360px;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--emerald-glow); color: var(--emerald); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.toast-title { font-size: 14px; font-weight: 700; }
+.toast-msg { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* ─── LOADING STATE ─── */
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite; border-radius: 8px;
+}
+@keyframes shimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+
+/* ─── SECTION DIVIDER ─── */
+.divider {
+  max-width: 1280px; margin: 0 auto;
+  border: none; border-top: 1px solid var(--border); padding: 0 32px;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 1024px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero-visual { display: none; }
+  .results-layout { grid-template-columns: 1fr; }
+  .filters-panel { position: static; }
+  .map-layout { grid-template-columns: 1fr; }
+  .tele-grid { grid-template-columns: 1fr; }
+  .cta-inner { grid-template-columns: 1fr; }
+  .footer-top { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .hero { padding: 40px 20px; }
+  .section-wrap { padding: 60px 20px; }
+  .stats-bar-inner { grid-template-columns: repeat(2,1fr); }
+  .doctor-card { grid-template-columns: 60px 1fr; }
+  .doc-actions { display: none; }
+  .form-row { grid-template-columns: 1fr; }
+  .modal-box { border-radius: 20px; }
+  .modal-header, .modal-body, .modal-footer { padding-left: 20px; padding-right: 20px; }
+  .modal-doctor-preview { margin-left: 20px; margin-right: 20px; }
+  .modal-tabs { padding-left: 20px; padding-right: 20px; }
+}
+</style>
 </head>
-<body class="antialiased">
+<body>
 
-    <!-- Navbar -->
-    <nav class="bg-white border-b sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-11 h-11 bg-gradient-to-br from-teal-600 to-cyan-600 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg">
-                    <i class="fa-solid fa-heart-pulse"></i>
-                </div>
-                <div class="text-3xl font-bold tracking-tighter text-slate-900">VitaCare</div>
-            </div>
-            
-            <div class="hidden md:flex items-center gap-8 font-medium">
-                <a href="#" class="nav-link text-slate-700 hover:text-teal-700">Find Doctors</a>
-                <a href="#" class="nav-link text-slate-700 hover:text-teal-700">Hospitals</a>
-                <a href="#" class="nav-link text-slate-700 hover:text-teal-700">Specialities</a>
-                <a href="#" class="nav-link text-slate-700 hover:text-teal-700">For Providers</a>
-            </div>
+<div class="blob-1"></div>
+<div class="blob-2"></div>
+<div class="blob-3"></div>
 
-            <div id="authSection" class="flex items-center gap-4">
-                <!-- Populated by JS after auth check -->
-            </div>
+<!-- EMERGENCY BANNER -->
+<div class="emergency-banner">
+  <i class="fa-solid fa-triangle-exclamation"></i>
+  &nbsp;Medical Emergency? Call <strong>10177</strong> (SA Ambulance) or <strong>112</strong> (Mobile)
+  <a href="tel:10177">Call Now →</a>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon"><i class="fa-solid fa-staff-snake"></i></div>
+      Medi<span>Care.</span>
+    </a>
+    <div class="nav-links">
+      <a href="#" class="active">Home</a>
+      <a href="#find-doctors">Find Doctors</a>
+      <a href="#hospitals">Hospitals</a>
+      <a href="#telemedicine">Telemedicine</a>
+      <a href="#health-tips">Health Tips</a>
+    </div>
+    <div class="nav-actions">
+      <button class="btn-ghost">Log In</button>
+      <button class="btn-primary" onclick="openModal(null,'signup')"><i class="fa-solid fa-user-plus" style="margin-right:6px"></i>Sign Up Free</button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section>
+  <div class="hero">
+    <div>
+      <div class="hero-eyebrow">
+        <i class="fa-solid fa-circle-check"></i>
+        South Africa's #1 Healthcare Platform
+      </div>
+      <h1 class="hero-title">
+        Your Health,<br>
+        <em>Expert Care,</em><br>
+        One Platform.
+      </h1>
+      <p class="hero-sub">
+        Search verified doctors, book appointments in seconds, and access quality healthcare — from your home or in person.
+      </p>
+
+      <div class="search-box">
+        <div class="search-field">
+          <label>Doctor, Speciality or Condition</label>
+          <input type="text" id="searchInput" placeholder="e.g. Cardiologist, Flu, Dr. Dlamini">
         </div>
-    </nav>
-
-    <!-- Hero -->
-    <header class="hero-bg text-white pt-24 pb-28">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="grid lg:grid-cols-2 gap-16 items-center">
-                <div class="space-y-10">
-                    <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full text-sm">
-                        <span class="text-teal-300">●</span>
-                        Trusted by 12,450+ patients in Limpopo
-                    </div>
-                    
-                    <h1 class="text-6xl lg:text-7xl font-extrabold leading-none tracking-tighter">
-                        Healthcare,<br>made <span class="text-teal-300">simple</span>.
-                    </h1>
-                    
-                    <p class="text-xl text-teal-100 max-w-md">
-                        Book appointments with trusted doctors and hospitals near you in seconds.
-                    </p>
-
-                    <div class="bg-white rounded-3xl p-2 shadow-2xl">
-                        <div class="flex flex-col md:flex-row">
-                            <div class="flex-1 p-6">
-                                <label class="block text-xs font-bold text-slate-400 tracking-widest mb-2">SEARCH DOCTOR / SPECIALITY</label>
-                                <input id="searchInput" type="text" 
-                                       placeholder="Cardiologist, Dr. Mokoena..." 
-                                       class="w-full bg-transparent text-xl font-medium text-slate-900 focus:outline-none">
-                            </div>
-                            <div class="flex-1 p-6 border-t md:border-t-0 md:border-l">
-                                <label class="block text-xs font-bold text-slate-400 tracking-widest mb-2">YOUR LOCATION</label>
-                                <input id="locationInput" type="text" value="Mokopane, Limpopo" 
-                                       class="w-full bg-transparent text-xl font-medium text-slate-900 focus:outline-none">
-                            </div>
-                            <button onclick="performSearch()" 
-                                    class="bg-teal-600 hover:bg-teal-700 text-white px-12 py-6 rounded-2xl font-semibold text-lg flex items-center gap-3 transition-all">
-                                <i class="fa-solid fa-magnifying-glass"></i>
-                                Search
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="relative hidden lg:block">
-                    <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
-                         alt="Doctor consultation" 
-                         class="rounded-3xl shadow-2xl border-8 border-white/30">
-                </div>
-            </div>
+        <div class="search-field">
+          <label>Location</label>
+          <input type="text" id="locationInput" placeholder="Pretoria, Johannesburg...">
         </div>
-    </header>
-
-    <!-- Results Section -->
-    <section id="resultsSection" class="hidden max-w-7xl mx-auto px-6 py-16">
-        <div class="flex justify-between items-center mb-10">
-            <h2 id="resultsTitle" class="text-4xl font-bold text-slate-900">Available Healthcare Providers</h2>
-            <p class="text-slate-500" id="resultCount">0 results</p>
+        <div class="search-field" style="max-width:130px; border-right:none">
+          <label>Consult Type</label>
+          <select style="background:transparent;border:none;outline:none;color:var(--white);font-size:14px;font-weight:600;font-family:inherit;width:100%">
+            <option value="" style="background:#0d1f3c">Any</option>
+            <option value="in-person" style="background:#0d1f3c">In-Person</option>
+            <option value="virtual" style="background:#0d1f3c">Virtual</option>
+          </select>
         </div>
+        <button class="search-btn" onclick="showResults()">
+          <i class="fa-solid fa-magnifying-glass"></i> Search
+        </button>
+      </div>
 
-        <div class="grid lg:grid-cols-12 gap-8">
-            <!-- Doctor List -->
-            <div class="lg:col-span-5">
-                <div id="doctorList" class="space-y-6 max-h-[720px] overflow-y-auto pr-4">
-                    <!-- Dynamically populated -->
-                </div>
-            </div>
-
-            <!-- Map -->
-            <div class="lg:col-span-7">
-                <div class="rounded-3xl overflow-hidden shadow-2xl h-[720px] relative border border-slate-100">
-                    <div id="map" class="w-full h-full"></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Booking Modal -->
-    <div id="bookingModal" class="fixed inset-0 bg-black/70 backdrop-blur-xl hidden flex items-center justify-center z-[100] p-4">
-        <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden">
-            <div class="px-8 py-6 border-b flex items-center justify-between">
-                <div>
-                    <h3 class="text-2xl font-bold">Book Appointment</h3>
-                    <p id="modalDoctorName" class="text-teal-600 font-semibold"></p>
-                </div>
-                <button onclick="closeBookingModal()" class="text-4xl text-slate-300 hover:text-slate-600">×</button>
-            </div>
-            
-            <form id="bookingForm" class="p-8 space-y-6">
-                <input type="hidden" id="doctorId">
-                
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Full Name</label>
-                    <input type="text" id="patientName" required class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:border-teal-600 focus:ring-4 focus:ring-teal-100 outline-none">
-                </div>
-                
-                <div class="grid grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Phone Number</label>
-                        <input type="tel" id="patientPhone" required class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:border-teal-600 focus:ring-4 focus:ring-teal-100 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Preferred Date</label>
-                        <input type="datetime-local" id="appointmentDate" required class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:border-teal-600 focus:ring-4 focus:ring-teal-100 outline-none">
-                    </div>
-                </div>
-
-                <button type="submit" 
-                        class="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-5 rounded-2xl text-lg transition-all">
-                    Confirm Booking
-                </button>
-            </form>
-        </div>
+      <div class="hero-trust">
+        <div class="trust-item"><i class="fa-solid fa-circle-check"></i> Verified Doctors</div>
+        <div class="trust-item"><i class="fa-solid fa-shield-halved"></i> Secure & Private</div>
+        <div class="trust-item"><i class="fa-solid fa-bolt"></i> Instant Booking</div>
+      </div>
     </div>
 
-    <script type="module">
-        // ====================== VITA CARE - FULL CODE ======================
-        
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
-            authDomain: "fire-b-a8878.firebaseapp.com",
-            databaseURL: "https://fire-b-a8878.firebaseio.com",
-            projectId: "fire-b-a8878",
-            storageBucket: "fire-b-a8878.firebasestorage.app",
-            messagingSenderId: "658673187627",
-            appId: "1:658673187627:web:32699cbc33e85f4bafa36e"
-        };
+    <div class="hero-visual">
+      <div class="hero-img-wrap">
+        <img src="https://images.unsplash.com/photo-1551601651-2a8555f1a136?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Doctor">
+      </div>
+      <div class="hero-float-card hfc-1">
+        <div style="display:flex;align-items:center;gap:10px">
+          <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=60&q=80" style="width:38px;height:38px;border-radius:10px;object-fit:cover" alt="">
+          <div>
+            <div style="font-size:13px;font-weight:700">Next Available</div>
+            <div style="font-size:12px;color:var(--emerald);font-weight:600"><span class="hfc-dot"></span>Today, 14:30</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-float-card hfc-2">
+        <div class="hfc-stat">4,800+</div>
+        <div class="hfc-label">Verified Specialists</div>
+      </div>
+    </div>
+  </div>
+</section>
 
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stats-bar-inner">
+    <div class="stat-item">
+      <div class="stat-num">4,800<span>+</span></div>
+      <div class="stat-desc">Verified Doctors</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">320<span>+</span></div>
+      <div class="stat-desc">Partner Hospitals</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">1.2<span>M</span></div>
+      <div class="stat-desc">Appointments Booked</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">4.9<span>★</span></div>
+      <div class="stat-desc">Average Rating</div>
+    </div>
+  </div>
+</div>
 
-        // Google Auth Provider
-        const provider = new firebase.auth.GoogleAuthProvider();
+<!-- SPECIALTIES -->
+<section>
+  <div class="section-wrap">
+    <div class="section-header">
+      <div class="section-eyebrow">Browse By Speciality</div>
+      <h2 class="section-title">Find the Right Specialist</h2>
+      <p class="section-sub">From general practitioners to niche specialists — we connect you to the right care.</p>
+    </div>
+    <div class="specs-grid">
+      <a href="#" class="spec-card" onclick="filterSpec('General Practitioner')">
+        <div class="spec-icon" style="background:rgba(14,164,114,0.15)"><i class="fa-solid fa-stethoscope" style="color:#0ea472"></i></div>
+        <div class="spec-name">General Practice</div>
+        <div class="spec-count">1,240 doctors</div>
+      </a>
+      <a href="#" class="spec-card" onclick="filterSpec('Cardiologist')">
+        <div class="spec-icon" style="background:rgba(231,76,60,0.12)"><i class="fa-solid fa-heart-pulse" style="color:#e74c3c"></i></div>
+        <div class="spec-name">Cardiology</div>
+        <div class="spec-count">320 doctors</div>
+      </a>
+      <a href="#" class="spec-card" onclick="filterSpec('Dermatologist')">
+        <div class="spec-icon" style="background:rgba(155,89,182,0.12)"><i class="fa-solid fa-hand-dots" style="color:#9b59b6"></i></div>
+        <div class="spec-name">Dermatology</div>
+        <div class="spec-count">180 doctors</div>
+      </a>
+      <a href="#" class="spec-card" onclick="filterSpec('Paediatrician')">
+        <div class="spec-icon" style="background:rgba(52,152,219,0.12)"><i class="fa-solid fa-baby" style="color:#3498db"></i></div>
+        <div class="spec-name">Paediatrics</div>
+        <div class="spec-count">290 doctors</div>
+      </a>
+      <a href="#" class="spec-card" onclick="filterSpec('Neurologist')">
+        <div class="spec-icon" style="background:rgba(230,126,34,0.12)"><i class="fa-solid fa-brain" style="color:#e67e22"></i></div>
+        <div class="spec-name">Neurology</div>
+        <div class="spec-count">145 doctors</div>
+      </a>
+      <a href="#" class="spec-card" onclick="filterSpec('Orthopaedic Surgeon')">
+        <div class="spec-icon" style="background:rgba(240,180,41,0.12)"><i class="fa-solid fa-bone" style="color:#f0b429"></i></div>
+        <div class="spec-name">Orthopaedics</div>
+        <div class="spec-count">210 doctors</div>
+      </a>
+      <a href="#" class="spec-card" onclick="filterSpec('Psychiatrist')">
+        <div class="spec-icon" style="background:rgba(26,188,156,0.12)"><i class="fa-solid fa-face-smile-beam" style="color:#1abc9c"></i></div>
+        <div class="spec-name">Mental Health</div>
+        <div class="spec-count">160 doctors</div>
+      </a>
+      <a href="#" class="spec-card" onclick="filterSpec('Gynaecologist')">
+        <div class="spec-icon" style="background:rgba(231,76,60,0.12)"><i class="fa-solid fa-venus" style="color:#e74c3c"></i></div>
+        <div class="spec-name">Gynaecology</div>
+        <div class="spec-count">195 doctors</div>
+      </a>
+      <a href="#" class="spec-card" onclick="filterSpec('Ophthalmologist')">
+        <div class="spec-icon" style="background:rgba(52,152,219,0.12)"><i class="fa-solid fa-eye" style="color:#3498db"></i></div>
+        <div class="spec-name">Ophthalmology</div>
+        <div class="spec-count">130 doctors</div>
+      </a>
+      <a href="#" class="spec-card" onclick="filterSpec('Dentist')">
+        <div class="spec-icon" style="background:rgba(14,164,114,0.12)"><i class="fa-solid fa-tooth" style="color:#0ea472"></i></div>
+        <div class="spec-name">Dentistry</div>
+        <div class="spec-count">560 doctors</div>
+      </a>
+    </div>
+  </div>
+</section>
 
-        // Mapbox Token - REPLACE WITH YOUR OWN
-        mapboxgl.accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
+<!-- FIND DOCTORS -->
+<section id="find-doctors" style="background:rgba(13,31,60,0.3); border-top:1px solid var(--border);">
+  <div class="section-wrap">
+    <div class="section-header" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px">
+      <div>
+        <div class="section-eyebrow">Top Rated</div>
+        <h2 class="section-title">Available Professionals</h2>
+      </div>
+      <button class="btn-ghost" style="margin-bottom:4px">View All Doctors</button>
+    </div>
 
-        let map = null;
-        let currentUser = null;
-        let doctorsData = []; // Will be loaded from Firebase later
+    <div class="results-layout">
+      <!-- FILTERS -->
+      <div class="filters-panel">
+        <div class="filter-title">Filter Results</div>
 
-        // Auth UI
-        function updateAuthUI(user) {
-            currentUser = user;
-            const authDiv = document.getElementById('authSection');
-            
-            if (user) {
-                authDiv.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <img src="${user.photoURL}" class="w-9 h-9 rounded-full border-2 border-teal-200">
-                        <div>
-                            <p class="text-sm font-medium text-slate-700">${user.displayName}</p>
-                        </div>
-                        <button onclick="signOut()" 
-                                class="px-5 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-2xl transition-colors">
-                            Logout
-                        </button>
-                    </div>
-                `;
-            } else {
-                authDiv.innerHTML = `
-                    <button onclick="signInWithGoogle()" 
-                            class="flex items-center gap-3 bg-white border border-slate-300 hover:border-slate-400 px-6 py-3 rounded-2xl font-medium text-slate-700 transition-all">
-                        <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" 
-                             class="h-5">
-                        Sign in with Google
-                    </button>
-                `;
-            }
-        }
+        <div class="filter-group">
+          <div class="filter-label">Availability</div>
+          <div class="filter-chips">
+            <button class="chip active">Any</button>
+            <button class="chip">Today</button>
+            <button class="chip">This Week</button>
+          </div>
+        </div>
 
-        // Sign In with Google
-        async function signInWithGoogle() {
-            try {
-                const result = await auth.signInWithPopup(provider);
-                updateAuthUI(result.user);
-                alert(`Welcome, ${result.user.displayName}!`);
-            } catch (error) {
-                console.error("Google Sign-in Error:", error);
-                alert("Failed to sign in. Please try again.");
-            }
-        }
+        <div class="filter-group">
+          <div class="filter-label">Consult Type</div>
+          <div class="filter-chips">
+            <button class="chip active">All</button>
+            <button class="chip">In-Person</button>
+            <button class="chip">Virtual</button>
+          </div>
+        </div>
 
-        function signOut() {
-            auth.signOut().then(() => {
-                updateAuthUI(null);
-            });
-        }
+        <div class="filter-group">
+          <div class="filter-label">Gender</div>
+          <div class="filter-chips">
+            <button class="chip active">Any</button>
+            <button class="chip">Male</button>
+            <button class="chip">Female</button>
+          </div>
+        </div>
 
-        // Initialize Map
-        function initMap() {
-            if (mapboxgl.accessToken === 'YOUR_MAPBOX_ACCESS_TOKEN') {
-                document.getElementById('map').innerHTML = `
-                    <div class="h-full flex items-center justify-center bg-slate-50 text-slate-400">
-                        <div class="text-center">
-                            <i class="fa-solid fa-map text-6xl mb-4"></i>
-                            <p class="font-medium">Map will appear after adding Mapbox token</p>
-                        </div>
-                    </div>`;
-                return;
-            }
+        <div class="filter-group">
+          <div class="filter-label">Language</div>
+          <div class="filter-chips">
+            <button class="chip">English</button>
+            <button class="chip">Zulu</button>
+            <button class="chip">Afrikaans</button>
+            <button class="chip">Sotho</button>
+          </div>
+        </div>
 
-            map = new mapboxgl.Map({
-                container: 'map',
-                style: 'mapbox://styles/mapbox/streets-v12',
-                center: [29.0167, -24.1833], // Mokopane
-                zoom: 12
-            });
-        }
+        <div class="filter-group">
+          <div class="filter-label">Min. Rating</div>
+          <input type="range" class="filter-range" min="0" max="5" step="0.5" value="4">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px">
+            <span>Any</span><span id="ratingLabel" style="color:var(--emerald)">4.0+</span><span>5.0</span>
+          </div>
+        </div>
 
-        // Render Doctors (from Firebase in future)
-        function renderDoctors(doctors) {
-            const container = document.getElementById('doctorList');
-            container.innerHTML = '';
+        <div class="filter-group" style="margin-bottom:0">
+          <div class="filter-label">Medical Aid</div>
+          <div class="filter-chips">
+            <button class="chip">Discovery</button>
+            <button class="chip">Medihelp</button>
+            <button class="chip">Bonitas</button>
+            <button class="chip">GEMS</button>
+          </div>
+        </div>
+      </div>
 
-            doctors.forEach(doc => {
-                const card = document.createElement('div');
-                card.className = "doctor-card bg-white rounded-3xl overflow-hidden border border-slate-100";
-                card.innerHTML = `
-                    <div class="p-7">
-                        <div class="flex justify-between">
-                            <div>
-                                <h3 class="font-bold text-2xl">${doc.name}</h3>
-                                <p class="text-teal-600 font-semibold mt-1">${doc.speciality}</p>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-amber-500 text-xl">★</span>
-                                <span class="font-bold text-slate-700">${doc.rating}</span>
-                            </div>
-                        </div>
-                        <p class="text-slate-500 mt-4 text-sm">${doc.address}</p>
-                    </div>
-                    <div class="bg-slate-50 px-7 py-5 flex gap-3">
-                        <button onclick="bookAppointment('${doc.id}')" 
-                                class="flex-1 bg-teal-600 text-white font-bold py-4 rounded-2xl hover:bg-teal-700 transition-all">
-                            Book Now
-                        </button>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
+      <!-- DOCTOR CARDS -->
+      <div class="results-panel">
+        <div class="results-toolbar">
+          <div class="results-count">Showing <strong>6</strong> doctors near you</div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <select class="sort-select">
+              <option>Sort: Recommended</option>
+              <option>Sort: Rating (High)</option>
+              <option>Sort: Distance</option>
+              <option>Sort: Next Available</option>
+            </select>
+          </div>
+        </div>
+        <div class="doctors-grid" id="doctorList">
 
-        // Search Function
-        function performSearch() {
-            document.getElementById('resultsSection').classList.remove('hidden');
-            
-            // For now using placeholder data - replace with real Firebase query later
-            const sampleDoctors = [
-                { id: "1", name: "Dr. Thabo Mokoena", speciality: "General Practitioner", address: "Mokopane", rating: "4.9" },
-                { id: "2", name: "Dr. Lerato Nkosi", speciality: "Cardiologist", address: "Mokopane", rating: "4.8" }
-            ];
-            
-            renderDoctors(sampleDoctors);
-            
-            if (!map) initMap();
-        }
+          <!-- Doctor 1 -->
+          <div class="doctor-card">
+            <div class="doc-avatar">
+              <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=120&q=80" alt="Dr. Sarah Jenkins">
+            </div>
+            <div>
+              <div class="doc-name">Dr. Sarah Jenkins</div>
+              <div class="doc-spec">Cardiologist</div>
+              <div class="doc-meta">
+                <div class="doc-meta-item doc-rating">
+                  <span class="stars">★★★★★</span> <span style="font-weight:600;color:var(--white)">4.9</span>
+                  <span style="color:var(--muted)">(312 reviews)</span>
+                </div>
+                <div class="doc-meta-item"><i class="fa-solid fa-location-dot" style="color:var(--emerald)"></i> Pretoria Central · 2.3 km</div>
+                <div class="doc-meta-item"><i class="fa-solid fa-briefcase"></i> 14 yrs exp.</div>
+                <div class="doc-meta-item"><i class="fa-solid fa-comments"></i> English, Afrikaans</div>
+              </div>
+            </div>
+            <div class="doc-actions">
+              <div class="avail-badge avail-today">Available Today</div>
+              <button class="btn-book" onclick="openModal({id:'d1',name:'Dr. Sarah Jenkins',spec:'Cardiologist',img:'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=120&q=80',rating:'4.9',reviews:312})">Book Now</button>
+              <button class="btn-profile">View Profile</button>
+            </div>
+          </div>
 
-        // Booking Modal
-        let selectedDoctor = null;
+          <!-- Doctor 2 -->
+          <div class="doctor-card">
+            <div class="doc-avatar">
+              <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=120&q=80" alt="Dr. Thabo Mokoena">
+            </div>
+            <div>
+              <div class="doc-name">Dr. Thabo Mokoena</div>
+              <div class="doc-spec">General Practitioner</div>
+              <div class="doc-meta">
+                <div class="doc-meta-item doc-rating">
+                  <span class="stars">★★★★★</span> <span style="font-weight:600;color:var(--white)">4.8</span>
+                  <span style="color:var(--muted)">(524 reviews)</span>
+                </div>
+                <div class="doc-meta-item"><i class="fa-solid fa-location-dot" style="color:var(--emerald)"></i> Sunnyside, Pretoria · 3.1 km</div>
+                <div class="doc-meta-item"><i class="fa-solid fa-briefcase"></i> 9 yrs exp.</div>
+                <div class="doc-meta-item"><i class="fa-solid fa-comments"></i> English, Zulu, Sotho</div>
+              </div>
+            </div>
+            <div class="doc-actions">
+              <div class="avail-badge avail-today">Available Today</div>
+              <button class="btn-book" onclick="openModal({id:'d2',name:'Dr. Thabo Mokoena',spec:'General Practitioner',img:'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=120&q=80',rating:'4.8',reviews:524})">Book Now</button>
+              <button class="btn-profile">View Profile</button>
+            </div>
+          </div>
 
-        function bookAppointment(docId) {
-            // In production, fetch doctor details from Firebase
-            selectedDoctor = { id: docId, name: "Dr. Example" }; // Placeholder
-            document.getElementById('modalDoctorName').textContent = `with ${selectedDoctor.name}`;
-            document.getElementById('bookingModal').classList.remove('hidden');
-            document.getElementById('bookingModal').classList.add('flex');
-        }
+          <!-- Doctor 3 -->
+          <div class="doctor-card">
+            <div class="doc-avatar">
+              <img src="https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&w=120&q=80" alt="Dr. Emily Chen">
+            </div>
+            <div>
+              <div class="doc-name">Dr. Emily Chen</div>
+              <div class="doc-spec">Dermatologist</div>
+              <div class="doc-meta">
+                <div class="doc-meta-item doc-rating">
+                  <span class="stars">★★★★★</span> <span style="font-weight:600;color:var(--white)">5.0</span>
+                  <span style="color:var(--muted)">(201 reviews)</span>
+                </div>
+                <div class="doc-meta-item"><i class="fa-solid fa-location-dot" style="color:var(--emerald)"></i> Centurion · 8.7 km</div>
+                <div class="doc-meta-item"><i class="fa-solid fa-briefcase"></i> 11 yrs exp.</div>
+                <div class="doc-meta-item"><i class="fa-solid fa-video" style="color:var(--emerald)"></i> Virtual available</div>
+              </div>
+            </div>
+            <div class="doc-actions">
+              <div class="avail-badge avail-tomorrow">Tomorrow</div>
+              <button class="btn-book" onclick="openModal({id:'d3',name:'Dr. Emily Chen',spec:'Dermatologist',img:'https://images.unsplash.com/photo-1594824476967-48c8b964273f?auto=format&fit=crop&w=120&q=80',rating:'5.0',reviews:201})">Book Now</button>
+              <button class="btn-profile">View Profile</button>
+            </div>
+          </div>
 
-        function closeBookingModal() {
-            const modal = document.getElementById('bookingModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
+          <!-- Doctor 4 -->
+          <div class="doctor-card">
+            <div class="doc-avatar">
+              <img src="https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&w=120&q=80" alt="Dr. Priya Naidoo">
+            </div>
+            <div>
+              <div class="doc-name">Dr. Priya Naidoo</div>
+              <div class="doc-spec">Paediatrician</div>
+              <div class="doc-meta">
+                <div class="doc-meta-item doc-rating">
+                  <span class="stars">★★★★★</span> <span style="font-weight:600;color:var(--white)">4.9</span>
+                  <span style="color:var(--muted)">(448 reviews)</span>
+                </div>
+                <div class="doc-meta-item"><i class="fa-solid fa-location-dot" style="color:var(--emerald)"></i> Hatfield, Pretoria · 4.2 km</div>
+                <div class="doc-meta-item"><i class="fa-solid fa-briefcase"></i> 17 yrs exp.</div>
+                <div class="doc-meta-item"><i class="fa-solid fa-comments"></i> English, Tamil, Zulu</div>
+              </div>
+            </div>
+            <div class="doc-actions">
+              <div class="avail-badge avail-today">Available Today</div>
+              <button class="btn-book" onclick="openModal({id:'d4',name:'Dr. Priya Naidoo',spec:'Paediatrician',img:'https://images.unsplash.com/photo-1582750433449-648ed127bb54?auto=format&fit=crop&w=120&q=80',rating:'4.9',reviews:448})">Book Now</button>
+              <button class="btn-profile">View Profile</button>
+            </div>
+          </div>
 
-        // Booking Form Submit
-        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (!currentUser) {
-                alert("Please sign in with Google to book an appointment.");
-                closeBookingModal();
-                return;
-            }
+          <!-- Doctor 5 -->
+          <div class="doctor-card">
+            <div class="doc-avatar">
+              <img src="https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=120&q=80" alt="Dr. James Ndlovu">
+            </div>
+            <div>
+              <div class="doc-name">Dr. James Ndlovu</div>
+              <div class="doc-spec">Orthopaedic Surgeon</div>
+              <div class="doc-meta">
+                <div class="doc-meta-item doc-rating">
+                  <span class="stars">★★★★★</span> <span style="font-weight:600;color:var(--white)">4.7</span>
+                  <span style="color:var(--muted)">(187 reviews)</span>
+                </div>
+                <div class="doc-meta-item"><i class="fa-solid fa-location-dot" style="color:var(--emerald)"></i> Sandton, JHB · 12.4 km</div>
+                <div class="doc-meta-item"><i class="fa-solid fa-briefcase"></i> 22 yrs exp.</div>
+                <div class="doc-meta-item"><i class="fa-solid fa-comments"></i> English, Zulu, Xhosa</div>
+              </div>
+            </div>
+            <div class="doc-actions">
+              <div class="avail-badge avail-tomorrow">Tomorrow</div>
+              <button class="btn-book" onclick="openModal({id:'d5',name:'Dr. James Ndlovu',spec:'Orthopaedic Surgeon',img:'https://images.unsplash.com/photo-1537368910025-700350fe46c7?auto=format&fit=crop&w=120&q=80',rating:'4.7',reviews:187})">Book Now</button>
+              <button class="btn-profile">View Profile</button>
+            </div>
+          </div>
 
-            const appointmentData = {
-                doctorId: selectedDoctor.id,
-                patientUid: currentUser.uid,
-                patientName: document.getElementById('patientName').value,
-                patientPhone: document.getElementById('patientPhone').value,
-                appointmentDate: document.getElementById('appointmentDate').value,
-                status: "pending",
-                createdAt: new Date().toISOString()
-            };
+          <!-- Doctor 6 -->
+          <div class="doctor-card">
+            <div class="doc-avatar">
+              <img src="https://images.unsplash.com/photo-1651008376811-b90baee60c1f?auto=format&fit=crop&w=120&q=80" alt="Dr. Amara Botha">
+            </div>
+            <div>
+              <div class="doc-name">Dr. Amara Botha</div>
+              <div class="doc-spec">Psychiatrist</div>
+              <div class="doc-meta">
+                <div class="doc-meta-item doc-rating">
+                  <span class="stars">★★★★★</span> <span style="font-weight:600;color:var(--white)">4.9</span>
+                  <span style="color:var(--muted)">(390 reviews)</span>
+                </div>
+                <div class="doc-meta-item"><i class="fa-solid fa-location-dot" style="color:var(--emerald)"></i> Menlyn, Pretoria · 6.0 km</div>
+                <div class="doc-meta-item"><i class="fa-solid fa-briefcase"></i> 13 yrs exp.</div>
+                <div class="doc-meta-item"><i class="fa-solid fa-video" style="color:var(--emerald)"></i> Virtual available</div>
+              </div>
+            </div>
+            <div class="doc-actions">
+              <div class="avail-badge avail-today">Available Today</div>
+              <button class="btn-book" onclick="openModal({id:'d6',name:'Dr. Amara Botha',spec:'Psychiatrist',img:'https://images.unsplash.com/photo-1651008376811-b90baee60c1f?auto=format&fit=crop&w=120&q=80',rating:'4.9',reviews:390})">Book Now</button>
+              <button class="btn-profile">View Profile</button>
+            </div>
+          </div>
 
-            try {
-                const newAppointmentRef = db.ref('appointments').push();
-                await newAppointmentRef.set(appointmentData);
-                
-                alert("✅ Appointment booked successfully! You will receive confirmation shortly.");
-                closeBookingModal();
-                document.getElementById('bookingForm').reset();
-            } catch (error) {
-                console.error(error);
-                alert("Failed to book appointment. Please try again.");
-            }
-        });
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
-        // Auth State Listener
-        auth.onAuthStateChanged((user) => {
-            updateAuthUI(user);
-        });
+<!-- MAP / NEARBY -->
+<section class="map-section">
+  <div class="map-layout">
+    <div>
+      <div class="section-eyebrow">Location Services</div>
+      <h2 class="section-title">Nearest Facilities</h2>
+      <p class="section-sub">Quickly find hospitals, clinics, and pharmacies closest to you — with real-time open/closed status.</p>
 
-        // Initialize on load
-        window.onload = () => {
-            // Show results by default for demo
-            setTimeout(() => {
-                document.getElementById('resultsSection').classList.remove('hidden');
-                const demoDoctors = [
-                    { id: "1", name: "Dr. Thabo Mokoena", speciality: "General Practitioner", address: "123 Hospital Road, Mokopane", rating: "4.9" },
-                    { id: "2", name: "Dr. Lerato Nkosi", speciality: "Cardiologist", address: "45 Medical Centre, Mokopane", rating: "4.8" }
-                ];
-                renderDoctors(demoDoctors);
-                initMap();
-            }, 600);
-        };
-    </script>
+      <div class="nearby-list">
+        <div class="nearby-item">
+          <div class="nearby-icon"><i class="fa-solid fa-hospital"></i></div>
+          <div>
+            <div class="nearby-name">Steve Biko Academic Hospital</div>
+            <div class="nearby-dist">1.8 km · Public · Emergency 24/7</div>
+          </div>
+          <div class="nearby-status open">● Open</div>
+        </div>
+        <div class="nearby-item">
+          <div class="nearby-icon"><i class="fa-solid fa-clinic-medical"></i></div>
+          <div>
+            <div class="nearby-name">Netcare Jacaranda Hospital</div>
+            <div class="nearby-dist">3.4 km · Private · Medical Aid</div>
+          </div>
+          <div class="nearby-status open">● Open</div>
+        </div>
+        <div class="nearby-item">
+          <div class="nearby-icon"><i class="fa-solid fa-pills"></i></div>
+          <div>
+            <div class="nearby-name">Dis-Chem Pharmacy – Menlyn</div>
+            <div class="nearby-dist">4.2 km · Pharmacy</div>
+          </div>
+          <div class="nearby-status open">● Open</div>
+        </div>
+        <div class="nearby-item">
+          <div class="nearby-icon"><i class="fa-solid fa-ambulance"></i></div>
+          <div>
+            <div class="nearby-name">ER24 Emergency Services</div>
+            <div class="nearby-dist">2.1 km · Emergency · 24/7</div>
+          </div>
+          <div class="nearby-status open">● Ready</div>
+        </div>
+        <div class="nearby-item">
+          <div class="nearby-icon" style="background:rgba(231,76,60,0.12);color:#e74c3c"><i class="fa-solid fa-hospital"></i></div>
+          <div>
+            <div class="nearby-name">Mediclinic Medforum</div>
+            <div class="nearby-dist">5.0 km · Private · Specialist Clinics</div>
+          </div>
+          <div class="nearby-status closed">● Closed</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="map-placeholder">
+      <div class="map-placeholder-inner">
+        <i class="fa-solid fa-map-location-dot"></i>
+        <div style="font-size:16px;font-weight:600;margin-bottom:8px">Interactive Map</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:20px;max-width:280px">
+          Integrate your Mapbox token to see real-time doctor locations, hospitals and pharmacies near you.
+        </div>
+        <button class="btn-primary" style="font-size:13px;padding:10px 20px">
+          <i class="fa-solid fa-location-arrow" style="margin-right:6px"></i> Enable Location
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TELEMEDICINE -->
+<section id="telemedicine" class="tele-section">
+  <div class="section-wrap">
+    <div class="tele-grid">
+      <div>
+        <div class="section-eyebrow">Virtual Consultations</div>
+        <h2 class="section-title">See a Doctor From Anywhere</h2>
+        <p class="section-sub">Skip the waiting room. Connect with qualified doctors via secure video call in minutes.</p>
+
+        <div class="tele-features">
+          <div class="tele-feature">
+            <div class="tf-icon"><i class="fa-solid fa-video"></i></div>
+            <div>
+              <div class="tf-title">HD Video Consultations</div>
+              <div class="tf-desc">Crystal-clear, encrypted video calls with doctors from your phone or computer.</div>
+            </div>
+          </div>
+          <div class="tele-feature">
+            <div class="tf-icon"><i class="fa-solid fa-file-prescription"></i></div>
+            <div>
+              <div class="tf-title">Digital Prescriptions</div>
+              <div class="tf-desc">Receive and share prescriptions electronically. Send directly to your pharmacy.</div>
+            </div>
+          </div>
+          <div class="tele-feature">
+            <div class="tf-icon"><i class="fa-solid fa-clock"></i></div>
+            <div>
+              <div class="tf-title">Available 24 / 7</div>
+              <div class="tf-desc">Doctors on call around the clock for urgent consultations and follow-ups.</div>
+            </div>
+          </div>
+          <div class="tele-feature">
+            <div class="tf-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div>
+              <div class="tf-title">100% Secure & Private</div>
+              <div class="tf-desc">POPIA-compliant platform with end-to-end encryption on all consultations.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn-primary">
+            <i class="fa-solid fa-video" style="margin-right:8px"></i>Start a Consultation
+          </button>
+          <button class="btn-ghost">Learn More</button>
+        </div>
+      </div>
+
+      <div class="tele-visual">
+        <div class="tele-card">
+          <div class="video-placeholder">
+            <img src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=600&q=80" alt="Telemedicine">
+            <div class="video-overlay">
+              <div class="play-btn"><i class="fa-solid fa-play"></i></div>
+            </div>
+          </div>
+          <div class="tele-card-body">
+            <div class="tele-doc-row">
+              <div class="tele-doc-av">
+                <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=80&q=80" alt="">
+              </div>
+              <div>
+                <div class="tele-doc-name">Dr. Sarah Jenkins</div>
+                <div class="tele-doc-spec">Cardiologist · <span class="hfc-dot" style="margin-right:3px"></span>Online Now</div>
+              </div>
+              <div class="tele-price">R350 <span>/session</span></div>
+            </div>
+            <button class="btn-book" style="width:100%;margin-top:14px;padding:12px;" onclick="openModal({id:'d1',name:'Dr. Sarah Jenkins',spec:'Cardiologist',img:'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=120&q=80',rating:'4.9',reviews:312})">
+              <i class="fa-solid fa-video" style="margin-right:6px"></i>Book Video Call
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOSPITALS -->
+<section id="hospitals" style="border-top:1px solid var(--border)">
+  <div class="section-wrap">
+    <div class="section-header" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px">
+      <div>
+        <div class="section-eyebrow">Partner Facilities</div>
+        <h2 class="section-title">Top Hospitals & Clinics</h2>
+      </div>
+      <button class="btn-ghost">View All Facilities</button>
+    </div>
+    <div class="hospitals-grid">
+      <div class="hospital-card">
+        <div class="hospital-img">
+          <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=600&q=80" alt="">
+          <div class="hospital-type">Private</div>
+        </div>
+        <div class="hospital-body">
+          <div class="hospital-name">Netcare Pretoria East Hospital</div>
+          <div class="hospital-addr"><i class="fa-solid fa-location-dot" style="color:var(--emerald);margin-top:1px"></i> Faerie Glen, Pretoria · 5.2 km</div>
+          <div class="hospital-tags">
+            <span class="htag">ICU</span><span class="htag">Maternity</span><span class="htag">Oncology</span><span class="htag">Emergency</span>
+          </div>
+        </div>
+      </div>
+      <div class="hospital-card">
+        <div class="hospital-img">
+          <img src="https://images.unsplash.com/photo-1586773860418-d37222d8fce3?auto=format&fit=crop&w=600&q=80" alt="">
+          <div class="hospital-type">Public · 24/7</div>
+        </div>
+        <div class="hospital-body">
+          <div class="hospital-name">Steve Biko Academic Hospital</div>
+          <div class="hospital-addr"><i class="fa-solid fa-location-dot" style="color:var(--emerald);margin-top:1px"></i> Arcadia, Pretoria · 1.8 km</div>
+          <div class="hospital-tags">
+            <span class="htag">Trauma</span><span class="htag">Paediatrics</span><span class="htag">Cardiology</span>
+          </div>
+        </div>
+      </div>
+      <div class="hospital-card">
+        <div class="hospital-img">
+          <img src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=600&q=80" alt="">
+          <div class="hospital-type">Private</div>
+        </div>
+        <div class="hospital-body">
+          <div class="hospital-name">Mediclinic Kloof Hospital</div>
+          <div class="hospital-addr"><i class="fa-solid fa-location-dot" style="color:var(--emerald);margin-top:1px"></i> Erasmuskloof, Pretoria · 9.1 km</div>
+          <div class="hospital-tags">
+            <span class="htag">Neurology</span><span class="htag">Orthopaedics</span><span class="htag">Radiology</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HEALTH TIPS -->
+<section id="health-tips" style="background:rgba(13,31,60,0.3);border-top:1px solid var(--border);">
+  <div class="section-wrap">
+    <div class="section-header" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px">
+      <div>
+        <div class="section-eyebrow">Wellness Hub</div>
+        <h2 class="section-title">Health Tips & Articles</h2>
+      </div>
+      <button class="btn-ghost">View All Articles</button>
+    </div>
+    <div class="tips-grid">
+      <div class="tip-card">
+        <div class="tip-img"><img src="https://images.unsplash.com/photo-1505576399279-565b52d4ac71?auto=format&fit=crop&w=600&q=80" alt=""></div>
+        <div class="tip-body">
+          <div class="tip-category">Heart Health</div>
+          <div class="tip-title">7 Daily Habits That Dramatically Improve Your Heart Health</div>
+          <div class="tip-excerpt">Cardiologists share evidence-based lifestyle changes that can reduce your risk of heart disease by up to 80%.</div>
+          <div class="tip-meta">
+            <span class="tip-author">Dr. Sarah Jenkins · 5 min read</span>
+            <a href="#" class="tip-read">Read →</a>
+          </div>
+        </div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-img"><img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=600&q=80" alt=""></div>
+        <div class="tip-body">
+          <div class="tip-category">Mental Wellness</div>
+          <div class="tip-title">Recognising Burnout Before It Breaks You: Signs & Solutions</div>
+          <div class="tip-excerpt">Workplace stress affects millions. Learn how to identify burnout early and evidence-based strategies to recover.</div>
+          <div class="tip-meta">
+            <span class="tip-author">Dr. Amara Botha · 7 min read</span>
+            <a href="#" class="tip-read">Read →</a>
+          </div>
+        </div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-img"><img src="https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=600&q=80" alt=""></div>
+        <div class="tip-body">
+          <div class="tip-category">Nutrition</div>
+          <div class="tip-title">Eating for Your DNA: Personalised Nutrition in 2025</div>
+          <div class="tip-excerpt">New research shows how tailoring your diet to your unique biology leads to dramatically better outcomes.</div>
+          <div class="tip-meta">
+            <span class="tip-author">Dr. Priya Naidoo · 4 min read</span>
+            <a href="#" class="tip-read">Read →</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section style="border-top:1px solid var(--border)">
+  <div class="section-wrap">
+    <div class="section-header" style="text-align:center">
+      <div class="section-eyebrow">Patient Stories</div>
+      <h2 class="section-title">Trusted by Thousands</h2>
+    </div>
+    <div class="testi-grid">
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Booked an appointment with a cardiologist in under 2 minutes. No phone calls, no hold music, no wasted time. MediCare has genuinely changed how I manage my health."</p>
+        <div class="testi-author">
+          <div class="testi-av">LS</div>
+          <div><div class="testi-name">Lungelo Sithole</div><div class="testi-detail">Johannesburg · Cardiac patient</div></div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"The telemedicine feature is incredible. My daughter had a fever at 11pm and we had a video consultation with a paediatrician within 15 minutes. Absolute lifesaver."</p>
+        <div class="testi-author">
+          <div class="testi-av" style="background:linear-gradient(135deg,#9b59b6,#0d1f3c)">PN</div>
+          <div><div class="testi-name">Precious Nkosi</div><div class="testi-detail">Pretoria · Mother of 3</div></div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"As a business owner, I never had time to see a doctor. Now I do a virtual check-in monthly. The doctors on this platform are world-class and the experience is seamless."</p>
+        <div class="testi-author">
+          <div class="testi-av" style="background:linear-gradient(135deg,#e67e22,#0d1f3c)">AB</div>
+          <div><div class="testi-name">Andile Bhengu</div><div class="testi-detail">Durban · Entrepreneur</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APP CTA -->
+<section class="cta-section">
+  <div class="cta-inner">
+    <div>
+      <div class="section-eyebrow">Mobile App</div>
+      <h2 class="cta-title">Healthcare<br>in Your Pocket.</h2>
+      <p class="cta-sub">Download the MediCare app to book appointments, track your health records, and connect with doctors — anytime, anywhere.</p>
+      <div class="app-btns">
+        <a href="#" class="app-btn">
+          <i class="fa-brands fa-apple"></i>
+          <div class="app-btn-text">
+            <small>Download on the</small>
+            <strong>App Store</strong>
+          </div>
+        </a>
+        <a href="#" class="app-btn">
+          <i class="fa-brands fa-google-play"></i>
+          <div class="app-btn-text">
+            <small>Get it on</small>
+            <strong>Google Play</strong>
+          </div>
+        </a>
+      </div>
+    </div>
+    <div class="cta-phones">
+      <div class="cta-phone">
+        <div style="text-align:center">
+          <i class="fa-solid fa-mobile-screen-button" style="display:block;font-size:48px;margin-bottom:12px"></i>
+          <div style="font-size:14px;font-weight:600;color:var(--white)">MediCare App</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Coming Soon</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <div class="logo-icon" style="width:32px;height:32px;font-size:14px"><i class="fa-solid fa-staff-snake"></i></div>
+          Medi<span style="color:var(--emerald)">Care.</span>
+        </div>
+        <p class="footer-desc">South Africa's most trusted healthcare platform. Connecting patients with verified doctors since 2021.</p>
+        <div class="footer-social">
+          <a href="#" class="social-btn"><i class="fa-brands fa-facebook-f"></i></a>
+          <a href="#" class="social-btn"><i class="fa-brands fa-twitter"></i></a>
+          <a href="#" class="social-btn"><i class="fa-brands fa-instagram"></i></a>
+          <a href="#" class="social-btn"><i class="fa-brands fa-linkedin-in"></i></a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-col-title">Services</div>
+        <ul class="footer-links">
+          <li><a href="#">Find a Doctor</a></li>
+          <li><a href="#">Book Appointment</a></li>
+          <li><a href="#">Telemedicine</a></li>
+          <li><a href="#">Hospital Finder</a></li>
+          <li><a href="#">Pharmacy Locator</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">For Doctors</div>
+        <ul class="footer-links">
+          <li><a href="#">Join as a Doctor</a></li>
+          <li><a href="#">Practice Management</a></li>
+          <li><a href="#">Patient Portal</a></li>
+          <li><a href="#">Billing & Insurance</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Company</div>
+        <ul class="footer-links">
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Press</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Legal</div>
+        <ul class="footer-links">
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+          <li><a href="#">POPIA Compliance</a></li>
+          <li><a href="#">Cookie Policy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2025 MediCare. All rights reserved. Registered in South Africa.</div>
+      <div class="footer-badges">
+        <span class="fbadge"><i class="fa-solid fa-shield-halved" style="margin-right:4px;color:var(--emerald)"></i>POPIA Compliant</span>
+        <span class="fbadge"><i class="fa-solid fa-lock" style="margin-right:4px;color:var(--emerald)"></i>SSL Secured</span>
+        <span class="fbadge">HPCSA Verified</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- BOOKING MODAL -->
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal-box" id="modalBox">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Book Appointment</div>
+        <div class="modal-subtitle" id="modalSubtitle">Select a doctor to begin</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="modal-doctor-preview" id="modalDoctorPreview">
+      <div class="mdp-av"><img id="modalDocImg" src="" alt=""></div>
+      <div>
+        <div class="mdp-name" id="modalDocName">—</div>
+        <div class="mdp-spec" id="modalDocSpec">—</div>
+        <div class="mdp-rating" id="modalDocRating">—</div>
+      </div>
+    </div>
+
+    <div class="modal-tabs">
+      <button class="modal-tab active" onclick="switchTab(this,'details')">Patient Details</button>
+      <button class="modal-tab" onclick="switchTab(this,'datetime')">Date & Time</button>
+      <button class="modal-tab" onclick="switchTab(this,'consult')">Consult Type</button>
+    </div>
+
+    <form id="bookingForm" onsubmit="submitBooking(event)">
+      <input type="hidden" id="doctorId">
+
+      <!-- Tab: Details -->
+      <div class="modal-body" id="tab-details">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <input type="text" class="form-input" id="patientFirstName" placeholder="Thabo" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <input type="text" class="form-input" id="patientLastName" placeholder="Mokoena" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contact Number</label>
+          <input type="tel" class="form-input" id="patientPhone" placeholder="+27 82 000 0000" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" class="form-input" id="patientEmail" placeholder="you@email.com">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Reason for Visit</label>
+          <input type="text" class="form-input" id="visitReason" placeholder="Brief description of your concern">
+        </div>
+      </div>
+
+      <!-- Tab: Date & Time (hidden) -->
+      <div class="modal-body" id="tab-datetime" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Preferred Date</label>
+          <input type="date" class="form-input" id="appointmentDate" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Available Times</label>
+          <div class="time-slots">
+            <div class="time-slot" onclick="selectTime(this)">08:00</div>
+            <div class="time-slot" onclick="selectTime(this)">08:30</div>
+            <div class="time-slot taken">09:00</div>
+            <div class="time-slot" onclick="selectTime(this)">09:30</div>
+            <div class="time-slot taken">10:00</div>
+            <div class="time-slot" onclick="selectTime(this)">10:30</div>
+            <div class="time-slot" onclick="selectTime(this)">11:00</div>
+            <div class="time-slot" onclick="selectTime(this)">11:30</div>
+            <div class="time-slot taken">14:00</div>
+            <div class="time-slot" onclick="selectTime(this)">14:30</div>
+            <div class="time-slot" onclick="selectTime(this)">15:00</div>
+            <div class="time-slot" onclick="selectTime(this)">15:30</div>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Medical Aid</label>
+          <select class="form-input" style="color:var(--white)">
+            <option value="" style="background:#0d1f3c">Self-Pay (Cash)</option>
+            <option style="background:#0d1f3c">Discovery Health</option>
+            <option style="background:#0d1f3c">Medihelp</option>
+            <option style="background:#0d1f3c">Bonitas</option>
+            <option style="background:#0d1f3c">GEMS</option>
+            <option style="background:#0d1f3c">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tab: Consult Type (hidden) -->
+      <div class="modal-body" id="tab-consult" style="display:none">
+        <label class="form-label">How would you like to consult?</label>
+        <div class="consult-types">
+          <div class="consult-type selected" onclick="selectConsult(this)">
+            <i class="fa-solid fa-hospital-user"></i>
+            <span>In-Person</span>
+            <small>Visit the practice</small>
+          </div>
+          <div class="consult-type" onclick="selectConsult(this)">
+            <i class="fa-solid fa-video"></i>
+            <span>Video Call</span>
+            <small>Online consultation</small>
+          </div>
+          <div class="consult-type" onclick="selectConsult(this)">
+            <i class="fa-solid fa-phone"></i>
+            <span>Phone Call</span>
+            <small>Audio only</small>
+          </div>
+          <div class="consult-type" onclick="selectConsult(this)">
+            <i class="fa-solid fa-comment-medical"></i>
+            <span>Chat / Text</span>
+            <small>Async messaging</small>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Additional Notes</label>
+          <textarea class="form-input" rows="3" placeholder="Any additional info for the doctor..." style="resize:none"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn-confirm" id="confirmBtn">
+          <i class="fa-solid fa-calendar-check" style="margin-right:8px"></i>Confirm Booking
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- SUCCESS TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-icon"><i class="fa-solid fa-circle-check"></i></div>
+  <div>
+    <div class="toast-title">Appointment Confirmed!</div>
+    <div class="toast-msg" id="toastMsg">Your booking has been saved successfully.</div>
+  </div>
+</div>
+
+<!-- FIREBASE + SCRIPTS -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
+    authDomain: "fire-b-a8878.firebaseapp.com",
+    databaseURL: "https://fire-b-a8878.firebaseio.com",
+    projectId: "fire-b-a8878",
+    storageBucket: "fire-b-a8878.firebasestorage.app",
+    messagingSenderId: "658673187627",
+    appId: "1:658673187627:web:32699cbc33e85f4bafa36e"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  window._db = db;
+  window._ref = ref;
+  window._push = push;
+  window._set = set;
+</script>
+
+<script>
+  // ── CHIP TOGGLE ──
+  document.querySelectorAll('.chip').forEach(c => {
+    c.addEventListener('click', function() {
+      const siblings = this.closest('.filter-chips').querySelectorAll('.chip');
+      siblings.forEach(s => s.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  // ── RATING SLIDER ──
+  const rSlider = document.querySelector('.filter-range');
+  const rLabel = document.getElementById('ratingLabel');
+  if (rSlider) rSlider.addEventListener('input', () => { rLabel.textContent = rSlider.value + '+'; });
+
+  // ── MODAL STATE ──
+  let currentDoctor = null;
+  let selectedTimeValue = null;
+
+  window.openModal = function(doctor, mode) {
+    currentDoctor = doctor;
+    if (doctor) {
+      document.getElementById('modalDocImg').src = doctor.img;
+      document.getElementById('modalDocName').textContent = doctor.name;
+      document.getElementById('modalDocSpec').textContent = doctor.spec;
+      document.getElementById('modalDocRating').textContent = `★ ${doctor.rating} · ${doctor.reviews} reviews`;
+      document.getElementById('modalSubtitle').textContent = `with ${doctor.name}`;
+      document.getElementById('doctorId').value = doctor.id;
+    }
+    const overlay = document.getElementById('bookingModal');
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    // Set min date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('appointmentDate').min = today;
+    document.getElementById('appointmentDate').value = today;
+  };
+
+  window.closeModal = function() {
+    document.getElementById('bookingModal').classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  document.getElementById('bookingModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ── TABS ──
+  window.switchTab = function(btn, tabId) {
+    document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    ['details','datetime','consult'].forEach(t => {
+      document.getElementById('tab-' + t).style.display = (t === tabId) ? 'block' : 'none';
+    });
+  };
+
+  // ── TIME SLOT ──
+  window.selectTime = function(el) {
+    if (el.classList.contains('taken')) return;
+    document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedTimeValue = el.textContent;
+  };
+
+  // ── CONSULT TYPE ──
+  window.selectConsult = function(el) {
+    document.querySelectorAll('.consult-type').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  };
+
+  // ── FILTER SPEC ──
+  window.filterSpec = function(spec) {
+    document.getElementById('searchInput').value = spec;
+    document.getElementById('find-doctors').scrollIntoView({ behavior: 'smooth' });
+  };
+
+  window.showResults = function() {
+    document.getElementById('find-doctors').scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // ── SUBMIT ──
+  window.submitBooking = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('confirmBtn');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:8px"></i>Booking...';
+    btn.disabled = true;
+
+    const data = {
+      doctorId: currentDoctor?.id || '',
+      doctorName: currentDoctor?.name || '',
+      doctorSpec: currentDoctor?.spec || '',
+      patientFirstName: document.getElementById('patientFirstName').value,
+      patientLastName: document.getElementById('patientLastName').value,
+      patientPhone: document.getElementById('patientPhone').value,
+      patientEmail: document.getElementById('patientEmail').value,
+      visitReason: document.getElementById('visitReason').value,
+      appointmentDate: document.getElementById('appointmentDate').value,
+      appointmentTime: selectedTimeValue || 'TBD',
+      consultType: document.querySelector('.consult-type.selected span')?.textContent || 'In-Person',
+      timestamp: new Date().toISOString(),
+      status: 'pending'
+    };
+
+    try {
+      if (window._db) {
+        const apptRef = window._ref(window._db, 'appointments');
+        const newRef = window._push(apptRef);
+        await window._set(newRef, data);
+      }
+
+      closeModal();
+      document.getElementById('bookingForm').reset();
+      selectedTimeValue = null;
+
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent =
+        `Appointment with ${data.doctorName} on ${data.appointmentDate} at ${data.appointmentTime}.`;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 5000);
+
+    } catch (err) {
+      console.error(err);
+      alert('Booking failed. Please try again.');
+    } finally {
+      btn.innerHTML = '<i class="fa-solid fa-calendar-check" style="margin-right:8px"></i>Confirm Booking';
+      btn.disabled = false;
+    }
+  };
+
+  // ── SCROLL ANIMATION ──
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.doctor-card, .spec-card, .hospital-card, .tip-card, .testi-card, .nearby-item').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    observer.observe(el);
+  });
+</script>
 </body>
 </html>
