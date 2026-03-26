@@ -20,6 +20,14 @@
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var(--ink);background:var(--bg);}
 
+/* ── YOCO IFRAME / OVERLAY ALWAYS ON TOP ─────────────────────────── */
+iframe[src*="yoco"],
+div[class*="yoco"],
+div[id*="yoco"],
+.yoco-popup,
+.yoco-modal,
+.yoco-overlay { z-index: 99999 !important; }
+
 .shell{display:flex;height:100vh;width:100vw;overflow:hidden;position:relative;}
 
 /* Initial Auth Loader */
@@ -283,8 +291,9 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 .auth-skip{display:block;text-align:center;margin-top:14px;color:var(--muted); font-size:13px;cursor:pointer;transition:.15s;}
 .auth-skip:hover{color:var(--blue);}
 
-/* modal */
-.mbg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200; display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
+/* modal — z-index raised to 500 so it's above panels but below Yoco (99999) */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;
+  display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
 @media(min-width:900px){.mbg{align-items:center;}}
 .mbg.show{display:flex;}
 .modal{background:#fff;border-radius:26px 26px 0 0;padding:26px 24px calc(34px + env(safe-area-inset-bottom, 0px));
@@ -590,8 +599,7 @@ window.db = db;
 
 // --- REMOTE CONFIG & YOCO ---
 const rc = getRemoteConfig(app);
-rc.settings.minimumFetchIntervalMillis = 3600000; // 1 hour
-// Test key fallback if Remote Config isn't set yet
+rc.settings.minimumFetchIntervalMillis = 3600000;
 let yocoPublicKey = 'pk_test_ed3c54a6gOol69qa7f45'; 
 
 fetchAndActivate(rc).then(() => {
@@ -599,13 +607,20 @@ fetchAndActivate(rc).then(() => {
   if(remoteKey) { yocoPublicKey = remoteKey; }
 }).catch(console.error);
 
-// Reusable Yoco Trigger
-window.triggerYocoPayment = function(amount, description, onSuccessCallback) {
+// ── Yoco payment trigger ─────────────────────────────────────────────
+// Hides any open .mbg modal BEFORE opening Yoco so nothing blocks it.
+// Restores the modal on payment failure/cancel.
+window.triggerYocoPayment = function(amount, description, onSuccessCallback, restoreModalId) {
   if (typeof window.YocoSDK === 'undefined') {
     window.showToast("Payment system currently unavailable.");
     return;
   }
-  
+
+  // Hide the triggering modal so it can't sit above Yoco's iframe
+  if (restoreModalId) {
+    document.getElementById(restoreModalId).classList.remove('show');
+  }
+
   const yoco = new window.YocoSDK({ publicKey: yocoPublicKey });
   yoco.showPopup({
     amountInCents: Math.round(amount * 100),
@@ -614,11 +629,12 @@ window.triggerYocoPayment = function(amount, description, onSuccessCallback) {
     description: description,
     callback: function (result) {
       if (result.error) {
+        // Restore the original modal on failure so the user can retry
+        if (restoreModalId) {
+          document.getElementById(restoreModalId).classList.add('show');
+        }
         window.showToast("Payment failed: " + result.error.message);
       } else {
-        // NOTE: In production, result.id (the token) MUST be sent to your backend
-        // to finalize the charge using your Yoco Secret Key.
-        // For this frontend flow, we simulate backend success.
         onSuccessCallback(result.id);
       }
     }
@@ -636,21 +652,17 @@ function updateUI(u){
   else{if(al)al.textContent='Sign in with Google';if(so)so.style.display='none';}
 }
 
-// Authentication Flow with Loader
 onAuthStateChanged(auth,async u=>{
-  document.getElementById('initLoader').classList.add('hide'); // Hide init loader
-
+  document.getElementById('initLoader').classList.add('hide');
   updateUI(u);
   if(!u){
     document.getElementById('authOverlay').classList.add('show');
     return;
   }
-  
   document.getElementById('authOverlay').classList.remove('show');
-  
   const ws=await get(ref(db,`users/${u.uid}/wallet/balance`));
   if(!ws.exists()){
-    await set(ref(db,`users/${u.uid}/wallet/balance`), 0); // Start at 0 now that topups exist
+    await set(ref(db,`users/${u.uid}/wallet/balance`), 0);
   }
   onValue(ref(db,`users/${u.uid}/trips`),snap=>{
     renderTrips(Object.values(snap.val()||{}).reverse());
@@ -673,83 +685,74 @@ function renderTx(obj){
   el.innerHTML=list.map(t=>`<div class="txi"><div><div class="txl">${t.label}</div><div class="txd">${t.date?new Date(t.date).toLocaleDateString('en-ZA'):''}</div></div><div class="txa ${t.type}">${t.type==='cr'?'+':'-'}R ${Math.abs(t.amount||0).toFixed(2)}</div></div>`).join('');
 }
 
-// Ride Booking (Now triggers Yoco payment first)
-window.initiateRidePayment=async function(){
+// ── Ride booking — closes confirmModal before launching Yoco ─────────
+window.initiateRidePayment = async function(){
   if(!cu) { window.showToast('Please sign in first'); return; }
-  const r=window._rides.find(x=>x.id===window._selId);
-  const sp=document.getElementById('bspin'),btn=document.getElementById('bookBtn');
-  btn.disabled=true; sp.classList.add('on');
-  
-  window.triggerYocoPayment(r.price, `Ride: ${r.type}`, async (token) => {
-    // Payment Succeeded! Record the transaction
-    try {
-      const dest = window._destName.split(',').slice(0,2).join(',');
-      await push(ref(db,`users/${cu.uid}/trips`),{type:r.type,driver:r.driver,fare:r.price,destination:dest,status:'Completed',date:Date.now()});
-      await push(ref(db,`users/${cu.uid}/wallet/transactions`),{label:`${r.type} to ${dest} (Paid with Card)`,amount:r.price,type:'dr',date:Date.now()});
-      
-      // Close Modals and Start Search Timer
-      window.closeModal();
-      document.getElementById('bookPanel').style.display='none';
-      if(window._mapFly) window._mapFly(); // Re-center map
-      window.startSearchTimer();
+  const r = window._rides.find(x => x.id === window._selId);
 
-    } catch(e) { window.showToast('Database error after payment.'); }
-    sp.classList.remove('on'); btn.disabled=false;
-  });
-  
-  sp.classList.remove('on'); btn.disabled=false; // Re-enable btn while popup is active
+  window.triggerYocoPayment(
+    r.price,
+    `Ride: ${r.type}`,
+    async (token) => {
+      try {
+        const dest = window._destName.split(',').slice(0,2).join(',');
+        await push(ref(db,`users/${cu.uid}/trips`),{type:r.type,driver:r.driver,fare:r.price,destination:dest,status:'Completed',date:Date.now()});
+        await push(ref(db,`users/${cu.uid}/wallet/transactions`),{label:`${r.type} to ${dest} (Paid with Card)`,amount:r.price,type:'dr',date:Date.now()});
+        document.getElementById('bookPanel').style.display = 'none';
+        if(window._mapFly) window._mapFly();
+        window.startSearchTimer();
+      } catch(e) { window.showToast('Database error after payment.'); }
+    },
+    'confirmModal' // ← the modal to hide before Yoco opens, restore on failure
+  );
 };
 
-// Top Up & Voucher Logic
+// ── Wallet top-up — closes topUpModal before launching Yoco ─────────
 window.executeYocoTopUp = async function() {
   if(!cu) { window.showToast("Sign in first."); return; }
   const input = document.getElementById('yocoAmount').value;
   const amt = parseFloat(input);
   if(isNaN(amt) || amt < 10) { window.showToast("Enter a valid amount (Min R10)"); return; }
-  
-  window.triggerYocoPayment(amt, `Wallet Top-Up`, async (token) => {
-     try {
-       const wRef = ref(db, `users/${cu.uid}/wallet/balance`);
-       const snap = await get(wRef);
-       const curr = snap.val() || 0;
-       await update(ref(db, `users/${cu.uid}/wallet`), { balance: curr + amt });
-       await push(ref(db,`users/${cu.uid}/wallet/transactions`),{label:'Yoco Wallet Top Up',amount:amt,type:'cr',date:Date.now()});
-       
-       window.closeTopUpModal();
-       window.showToast(`Successfully added R${amt.toFixed(2)}`);
-       document.getElementById('yocoAmount').value = '';
-     } catch(e) { window.showToast("Database error saving top-up."); }
-  });
+
+  window.triggerYocoPayment(
+    amt,
+    `Wallet Top-Up`,
+    async (token) => {
+      try {
+        const wRef = ref(db, `users/${cu.uid}/wallet/balance`);
+        const snap = await get(wRef);
+        const curr = snap.val() || 0;
+        await update(ref(db, `users/${cu.uid}/wallet`), { balance: curr + amt });
+        await push(ref(db,`users/${cu.uid}/wallet/transactions`),{label:'Yoco Wallet Top Up',amount:amt,type:'cr',date:Date.now()});
+        document.getElementById('yocoAmount').value = '';
+        window.showToast(`Successfully added R${amt.toFixed(2)}`);
+      } catch(e) { window.showToast("Database error saving top-up."); }
+    },
+    'topUpModal' // ← hide before Yoco, restore on failure
+  );
 };
 
 window.executeVoucher = async function() {
   if(!cu) { window.showToast("Sign in first."); return; }
   const code = document.getElementById('voucherCode').value.trim().toUpperCase();
   if(!code) { window.showToast("Please enter a code"); return; }
-  
   try {
     const vRef = ref(db, `vouchers/${code}`);
     const snap = await get(vRef);
     if(snap.exists()) {
       const data = snap.val();
       if(data.used) { window.showToast("Voucher has already been used."); return; }
-      
       const amt = parseFloat(data.amount);
       if(isNaN(amt)) { window.showToast("Invalid voucher data."); return; }
-      
-      // Credit wallet and mark as used atomically
       const wRef = ref(db, `users/${cu.uid}/wallet/balance`);
       const wSnap = await get(wRef);
       const curr = wSnap.val() || 0;
-      
       const updates = {};
       updates[`users/${cu.uid}/wallet/balance`] = curr + amt;
       updates[`vouchers/${code}/used`] = true;
       updates[`vouchers/${code}/redeemedBy`] = cu.uid;
-      
       await update(ref(db), updates);
       await push(ref(db,`users/${cu.uid}/wallet/transactions`),{label:`Redeemed Voucher: ${code}`,amount:amt,type:'cr',date:Date.now()});
-      
       window.closeTopUpModal();
       window.showToast(`R${amt.toFixed(2)} added from voucher!`);
       document.getElementById('voucherCode').value = '';
@@ -782,21 +785,17 @@ setTimeout(() => {
     rtdbOnValue(rtdbRef(window.db, 'active_drivers'), snap => {
       realDrivers = snap.val() || {};
     });
-
     setInterval(() => {
       const driverIds = Object.keys(realDrivers);
-      
       if (driverIds.length === 0) {
         if (!noDriverToastShown) {
           window.showToast('No drivers currently available nearby.');
           noDriverToastShown = true;
         }
       } else { noDriverToastShown = false; }
-
       Object.keys(driverMarkersObj).forEach(id => {
         if(!realDrivers[id]) { driverMarkersObj[id].remove(); delete driverMarkersObj[id]; }
       });
-
       driverIds.forEach(id => {
         const d = realDrivers[id];
         if(d.lat && d.lng && window.mapboxgl) {
@@ -820,14 +819,13 @@ window.ini2 = function(n){return(n||'?').split(' ').map(x=>x[0]).join('').substr
 const TK='pk.eyJ1Ijoia2F0bGVnb3BoYXNoYSIsImEiOiJjbTlpOTdzbmYwMGNsMmpzYWJtZzN4d3pqIn0.Zt-aSMEoahrV3zkiVVHbOw';
 mapboxgl.accessToken=TK;
 const DLNG=28.9934,DLAT=-24.1991;
-
 const DEFAULT_ZOOM = 15.5;
 
 const map=new mapboxgl.Map({
   container:'map', style:'mapbox://styles/mapbox/light-v11',
   center:[DLNG,DLAT],zoom:DEFAULT_ZOOM, attributionControl:false, logoPosition:'bottom-right'
 });
-window._mapInstance = map; // exposed for marker updates
+window._mapInstance = map;
 map.addControl(new mapboxgl.AttributionControl({compact:true}),'bottom-right');
 map.addControl(new mapboxgl.NavigationControl({showCompass:false}),'bottom-right');
 
@@ -849,7 +847,6 @@ window.requestLocation = function() {
       document.getElementById('locModal').classList.remove('show');
       const{latitude:la,longitude:lo}=pos.coords;
       wULng=lo; wULat=la; oMk.setLngLat([lo,la]);
-      
       map.flyTo({center:[lo,la],zoom:DEFAULT_ZOOM,speed:1.2, padding:{bottom: getMobilePadding()}});
       fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lo},${la}.json?access_token=${TK}&types=place,neighborhood,address&limit=1`)
         .then(r=>r.json()).then(d=>{
@@ -898,11 +895,9 @@ geocoder.on('result',e=>{
   if(dMk)dMk.remove();
   const de=document.createElement('div'); de.className='dmarker';
   dMk=new mapboxgl.Marker({element:de,anchor:'center'}).setLngLat([lng,lat]).addTo(map);
-  
   map.fitBounds([[Math.min(wULng,lng)-.008,Math.min(wULat,lat)-.008],[Math.max(wULng,lng)+.008,Math.max(wULat,lat)+.008]],
     {padding:{top:55,bottom:getMobilePadding(),left:55,right:55},duration:850,essential:true});
   drawRoute([wULng,wULat],[lng,lat]);
-  
   const r=window._rides.find(x=>x.id===window._selId);
   const btn = document.getElementById('confirmBtn');
   btn.style.display = 'block'; btn.textContent = `Book ${r.type}`;
@@ -910,7 +905,6 @@ geocoder.on('result',e=>{
 geocoder.on('clear',()=>{
   if(dMk){dMk.remove();dMk=null;}
   clearRoute(); destName=''; window._destName='';
-  
   document.getElementById('confirmBtn').style.display = 'none';
   window._distKm=0; window._tripDurationMins=0; renderRides();
   map.flyTo({center:[wULng,wULat], zoom:DEFAULT_ZOOM, speed:1.2, padding:{bottom: getMobilePadding()}});
@@ -997,16 +991,14 @@ window.startSearchTimer = function() {
   const text = document.getElementById('searchTimerTxt');
   circle.style.strokeDashoffset = "0"; text.textContent = "60s";
   clearInterval(searchInterval); clearTimeout(searchTimeout);
-
   searchInterval = setInterval(() => {
-      timeLeft--; text.textContent = timeLeft + "s";
-      const offset = 283 - (timeLeft / 60) * 283;
-      circle.style.strokeDashoffset = offset;
-      if(timeLeft <= 0) clearInterval(searchInterval);
+    timeLeft--; text.textContent = timeLeft + "s";
+    const offset = 283 - (timeLeft / 60) * 283;
+    circle.style.strokeDashoffset = offset;
+    if(timeLeft <= 0) clearInterval(searchInterval);
   }, 1000);
-
   searchTimeout = setTimeout(() => {
-      window.cancelSearch('No drivers accepted. Payment will be refunded.');
+    window.cancelSearch('No drivers accepted. Payment will be refunded.');
   }, 60000);
 }
 
