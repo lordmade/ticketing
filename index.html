@@ -115,7 +115,7 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 .ride-list::-webkit-scrollbar{display:none;}
 .rcard{display:flex;align-items:center;justify-content:space-between;padding:12px 13px;
   border-radius:15px;border:2px solid var(--border);cursor:pointer;
-  transition:all .17s;background:#fff;}
+  transition:all .17s;background:#fff;position:relative;}
 .rcard:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.06);}
 .rcard.sel{border-color:var(--blue);background:rgba(26,59,255,.04);box-shadow:0 4px 16px var(--glow);}
 .rinfo{display:flex;align-items:center;gap:11px;}
@@ -129,6 +129,23 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 .rtbadge{font-size:10px;font-weight:600;color:var(--blue);
   background:rgba(26,59,255,.09);padding:2px 8px;border-radius:20px;
   margin-top:4px;display:inline-block;}
+
+/* Mobile: Tap to confirm hint on selected card */
+@media(max-width:899px){
+  .rcard.sel::after{
+    content:'Tap to confirm';
+    position:absolute;
+    bottom:8px;
+    right:13px;
+    font-size:10px;
+    font-weight:700;
+    color:var(--blue);
+    background:rgba(26,59,255,.09);
+    padding:2px 8px;
+    border-radius:20px;
+  }
+  #confirmBtn{display:none;}
+}
 
 /* confirm btn */
 .cbtn{width:100%;padding:16px;border:none;border-radius:14px;flex-shrink:0;
@@ -704,7 +721,15 @@ function renderRides(){
       </div>
     </div>`).join('');
 }
+
+// MODIFIED: Mobile tap on selected ride opens confirmation modal
 window.selRide=function(id){
+  // Mobile: If tapping the already-selected ride, open modal directly
+  if(window._selId===id && window.innerWidth<900){
+    openModal();
+    return;
+  }
+  
   window._selId=id; renderRides();
   const r=window._rides.find(x=>x.id===id);
   if(window._destName) document.getElementById('confirmBtn').textContent=`Confirm ${r.type}`;
