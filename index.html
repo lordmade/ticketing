@@ -3,166 +3,288 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medical Appointment Booking</title>
+    <title>MediCare - Appointment Booking</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #f8fafc;
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .glass-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
         
-        .glass-card {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+        /* Mapbox marker styling */
+        .marker {
+            background-color: #2563eb;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            cursor: pointer;
         }
 
-        /* Subtle floating animation for background blobs */
-        @keyframes blob {
-            0% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
-            100% { transform: translate(0px, 0px) scale(1); }
-        }
-        .animate-blob {
-            animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-            animation-delay: 2s;
-        }
+        /* Modal transitions */
+        .modal-enter { opacity: 0; transform: scale(0.95); }
+        .modal-enter-active { opacity: 1; transform: scale(1); transition: all 0.3s ease-out; }
     </style>
 </head>
 <body class="antialiased overflow-x-hidden">
 
     <nav class="container mx-auto px-6 py-6 flex justify-between items-center relative z-50">
-        <div class="text-2xl font-extrabold text-blue-600 flex items-center gap-2 tracking-tight">
+        <div class="text-2xl font-extrabold text-blue-600 flex items-center gap-2">
             <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm">
                 <i class="fa-solid fa-staff-snake"></i>
             </div>
             MediCare.
         </div>
-        
-        <div class="hidden md:flex space-x-10 text-slate-600 font-semibold text-sm">
-            <a href="#" class="text-blue-600 transition">Home</a>
-            <a href="#" class="hover:text-blue-600 transition">Find a Doctor</a>
-            <a href="#" class="hover:text-blue-600 transition">Services</a>
-            <a href="#" class="hover:text-blue-600 transition">Reviews</a>
-        </div>
-
         <div class="hidden md:flex items-center gap-4">
             <a href="#" class="text-slate-600 font-semibold text-sm hover:text-blue-600">Log In</a>
-            <button class="bg-slate-900 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-blue-600 transition-colors shadow-lg shadow-slate-200">
-                Book Appointment
-            </button>
         </div>
     </nav>
 
-    <main class="container mx-auto px-6 pt-12 pb-24 md:pt-16 lg:pt-20 relative">
-        <div class="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-            
+    <main class="container mx-auto px-6 pt-12 pb-12 relative">
+        <div class="grid lg:grid-cols-2 gap-12 items-center">
             <div class="space-y-8 relative z-20">
-                <div class="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-full text-xs font-bold tracking-wide uppercase border border-blue-100">
-                    <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
-                    24/7 Emergency Service
-                </div>
-                
-                <h1 class="text-5xl md:text-6xl lg:text-[4rem] font-extrabold text-slate-900 leading-[1.1] tracking-tight">
+                <h1 class="text-5xl font-extrabold text-slate-900 leading-[1.1] tracking-tight">
                     Find & Book <br>
                     <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Top Doctors</span> <br>
                     Near You.
                 </h1>
                 
-                <p class="text-lg text-slate-500 leading-relaxed max-w-lg font-medium">
-                    Get access to the best medical professionals, read reviews, and effortlessly schedule your appointments online.
+                <p class="text-lg text-slate-500 font-medium">
+                    Search for specialists in your area and book instantly.
                 </p>
 
-                <div class="bg-white p-3 rounded-[1.5rem] shadow-xl shadow-slate-200/50 flex flex-col md:flex-row gap-2 border border-slate-100 max-w-2xl">
-                    
+                <div class="bg-white p-3 rounded-[1.5rem] shadow-xl flex flex-col md:flex-row gap-2 border border-slate-100 max-w-2xl">
                     <div class="flex-1 px-4 py-2 border-b md:border-b-0 md:border-r border-slate-100">
-                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doctor, Speciality...</label>
-                        <div class="flex items-center text-slate-700">
-                            <i class="fa-solid fa-magnifying-glass text-slate-300 mr-2"></i>
-                            <input type="text" placeholder="e.g. Cardiologist" class="w-full focus:outline-none placeholder-slate-300 font-semibold text-slate-700 bg-transparent">
-                        </div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doctor, Speciality</label>
+                        <input type="text" id="searchInput" placeholder="e.g. Cardiologist" class="w-full focus:outline-none placeholder-slate-300 font-semibold text-slate-700 bg-transparent">
                     </div>
-                    
                     <div class="flex-1 px-4 py-2">
                         <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Location</label>
-                        <div class="flex items-center text-slate-700">
-                            <i class="fa-solid fa-location-dot text-slate-300 mr-2"></i>
-                            <input type="text" placeholder="New York, NY" class="w-full focus:outline-none placeholder-slate-300 font-semibold text-slate-700 bg-transparent">
-                        </div>
+                        <input type="text" id="locationInput" placeholder="Pretoria, GP" class="w-full focus:outline-none placeholder-slate-300 font-semibold text-slate-700 bg-transparent">
                     </div>
-                    
-                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold transition-colors w-full md:w-auto flex items-center justify-center gap-2">
+                    <button id="searchBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold transition-colors w-full md:w-auto">
                         Search
                     </button>
                 </div>
-
-                <div class="flex items-center gap-8 pt-4">
-                    <div>
-                        <h3 class="text-3xl font-extrabold text-slate-900">10k+</h3>
-                        <p class="text-sm text-slate-500 font-medium mt-1">Active Patients</p>
-                    </div>
-                    <div class="w-px h-10 bg-slate-200"></div>
-                    <div>
-                        <h3 class="text-3xl font-extrabold text-slate-900">500+</h3>
-                        <p class="text-sm text-slate-500 font-medium mt-1">Expert Doctors</p>
-                    </div>
-                    <div class="w-px h-10 bg-slate-200"></div>
-                    <div>
-                        <h3 class="text-3xl font-extrabold text-slate-900">4.9</h3>
-                        <div class="flex text-yellow-400 text-xs mt-1">
-                            <i class="fa-solid fa-star"></i>
-                            <i class="fa-solid fa-star"></i>
-                            <i class="fa-solid fa-star"></i>
-                            <i class="fa-solid fa-star"></i>
-                            <i class="fa-solid fa-star"></i>
-                        </div>
-                    </div>
-                </div>
             </div>
 
-            <div class="relative mt-12 lg:mt-0">
-                <div class="absolute top-0 right-0 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob"></div>
-                <div class="absolute top-0 right-24 w-72 h-72 bg-cyan-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-2000"></div>
-
-                <div class="relative z-10 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-blue-900/10 border-[6px] border-white h-[500px] lg:h-[600px] bg-slate-100">
-                    <img src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Professional Doctor" class="w-full h-full object-cover object-top">
-                </div>
-
-                <div class="absolute top-12 -left-6 lg:-left-12 glass-card p-4 rounded-2xl shadow-xl border border-white/60 flex items-center gap-4 z-20 animate-fade-in">
-                    <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-500 text-xl shadow-inner">
-                        <i class="fa-solid fa-shield-check"></i>
-                    </div>
-                    <div class="pr-2">
-                        <p class="text-sm font-extrabold text-slate-900">Top Rated</p>
-                        <p class="text-xs text-slate-500 font-medium">Verified Experts</p>
-                    </div>
-                </div>
-
-                <div class="absolute bottom-12 -right-6 lg:-right-8 glass-card p-4 rounded-2xl shadow-xl border border-white/60 flex flex-col gap-3 z-20">
-                    <div class="flex -space-x-3">
-                        <img class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-sm" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="Patient">
-                        <img class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-sm" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=100&q=80" alt="Patient">
-                        <img class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-sm" src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=100&q=80" alt="Patient">
-                        <div class="w-10 h-10 rounded-full border-2 border-white bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold shadow-sm">+2k</div>
-                    </div>
-                    <div>
-                        <p class="text-sm font-extrabold text-slate-900">Happy Patients</p>
-                        <p class="text-[11px] text-slate-500 font-medium mt-0.5">Trust our services everyday</p>
-                    </div>
+            <div class="relative mt-12 lg:mt-0 hidden lg:block">
+                <div class="relative z-10 rounded-[2.5rem] overflow-hidden shadow-2xl border-[6px] border-white h-[400px] bg-slate-100">
+                    <img src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Doctor" class="w-full h-full object-cover">
                 </div>
             </div>
-            
         </div>
     </main>
 
+    <section id="resultsSection" class="hidden container mx-auto px-6 py-12 border-t border-slate-200">
+        <h2 class="text-3xl font-extrabold text-slate-900 mb-6">Available Professionals</h2>
+        <div class="grid lg:grid-cols-3 gap-8">
+            <div id="doctorList" class="lg:col-span-1 space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                </div>
+            <div class="lg:col-span-2 rounded-[2rem] overflow-hidden shadow-lg border-4 border-white h-[500px] relative">
+                <div id="map" class="w-full h-full bg-slate-100"></div>
+            </div>
+        </div>
+    </section>
+
+    <div id="bookingModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative">
+            <button id="closeModal" class="absolute top-4 right-4 text-slate-400 hover:text-slate-900">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            
+            <h3 class="text-2xl font-extrabold text-slate-900 mb-1">Book Appointment</h3>
+            <p id="modalDoctorName" class="text-blue-600 font-semibold mb-6">with Dr. Name</p>
+            
+            <form id="bookingForm" class="space-y-4">
+                <input type="hidden" id="doctorId">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Your Name</label>
+                    <input type="text" id="patientName" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Contact Number</label>
+                    <input type="tel" id="patientPhone" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">Preferred Date & Time</label>
+                    <input type="datetime-local" id="appointmentDate" required class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none transition-all">
+                </div>
+                <button type="submit" class="w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors mt-4">
+                    Confirm Booking
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        // 1. Import Firebase Modular SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // 2. Initialize Firebase using your exact config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
+            authDomain: "fire-b-a8878.firebaseapp.com",
+            databaseURL: "https://fire-b-a8878.firebaseio.com",
+            projectId: "fire-b-a8878",
+            storageBucket: "fire-b-a8878.firebasestorage.app",
+            messagingSenderId: "658673187627",
+            appId: "1:658673187627:web:32699cbc33e85f4bafa36e",
+            measurementId: "G-2505EVBRWX"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // 3. Mapbox Initialization
+        // ! VYNIX: PASTE YOUR MAPBOX TOKEN HERE !
+        mapboxgl.accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN'; 
+        let map;
+
+        // Mock Data: Doctors with coordinates 
+        // (In production, you would fetch this from Firebase too)
+        const mockDoctors = [
+            { id: "d1", name: "Dr. Sarah Jenkins", spec: "Cardiologist", address: "123 Health Ave, Pretoria", lat: -25.7479, lng: 28.2293, rating: "4.9" },
+            { id: "d2", name: "Dr. Thabo Mokoena", spec: "General Practitioner", address: "45 Wellness St, Pretoria", lat: -25.7550, lng: 28.2000, rating: "4.8" },
+            { id: "d3", name: "Dr. Emily Chen", spec: "Dermatologist", address: "89 Skin Care Blvd, Centurion", lat: -25.8500, lng: 28.1833, rating: "5.0" }
+        ];
+
+        // 4. DOM Elements
+        const searchBtn = document.getElementById('searchBtn');
+        const resultsSection = document.getElementById('resultsSection');
+        const doctorList = document.getElementById('doctorList');
+        const bookingModal = document.getElementById('bookingModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const bookingForm = document.getElementById('bookingForm');
+        
+        let selectedDoctor = null;
+
+        // 5. Search Logic
+        searchBtn.addEventListener('click', () => {
+            // Show results area
+            resultsSection.classList.remove('hidden');
+            
+            // Initialize map if not already done
+            if (!map && mapboxgl.accessToken !== 'YOUR_MAPBOX_ACCESS_TOKEN') {
+                map = new mapboxgl.Map({
+                    container: 'map',
+                    style: 'mapbox://styles/mapbox/streets-v12',
+                    center: [28.2293, -25.7479], // Defaulting to Pretoria
+                    zoom: 11
+                });
+            } else if (mapboxgl.accessToken === 'YOUR_MAPBOX_ACCESS_TOKEN') {
+                document.getElementById('map').innerHTML = "<div class='flex items-center justify-center h-full bg-red-50 text-red-500 font-bold'>Please add your Mapbox Access Token in the code.</div>";
+            }
+
+            renderDoctors();
+        });
+
+        // 6. Render Doctors & Map Markers
+        function renderDoctors() {
+            doctorList.innerHTML = '';
+            
+            mockDoctors.forEach(doc => {
+                // Add Marker to Map
+                if (map) {
+                    const el = document.createElement('div');
+                    el.className = 'marker';
+                    new mapboxgl.Marker(el)
+                        .setLngLat([doc.lng, doc.lat])
+                        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(`<b>${doc.name}</b><br>${doc.spec}`))
+                        .addTo(map);
+                }
+
+                // Add Card to List
+                const card = document.createElement('div');
+                card.className = "bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-slate-900">${doc.name}</h3>
+                        <span class="text-yellow-400 text-xs"><i class="fa-solid fa-star"></i> ${doc.rating}</span>
+                    </div>
+                    <p class="text-sm text-blue-600 font-semibold mb-1">${doc.spec}</p>
+                    <p class="text-xs text-slate-500 mb-4"><i class="fa-solid fa-location-dot mr-1"></i> ${doc.address}</p>
+                    <button class="w-full bg-blue-50 text-blue-600 font-bold py-2 rounded-lg hover:bg-blue-600 hover:text-white transition-colors book-btn" data-id="${doc.id}">
+                        Book Appointment
+                    </button>
+                `;
+                doctorList.appendChild(card);
+            });
+
+            // Attach event listeners to new book buttons
+            document.querySelectorAll('.book-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const docId = e.target.getAttribute('data-id');
+                    openBookingModal(mockDoctors.find(d => d.id === docId));
+                });
+            });
+        }
+
+        // 7. Modal Logic
+        function openBookingModal(doctor) {
+            selectedDoctor = doctor;
+            document.getElementById('doctorId').value = doctor.id;
+            document.getElementById('modalDoctorName').innerText = `with ${doctor.name}`;
+            bookingModal.classList.remove('hidden');
+            bookingModal.classList.add('flex');
+        }
+
+        closeModalBtn.addEventListener('click', () => {
+            bookingModal.classList.add('hidden');
+            bookingModal.classList.remove('flex');
+        });
+
+        // 8. Handle Firebase Submission
+        bookingForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Gather form data
+            const appointmentData = {
+                doctorId: document.getElementById('doctorId').value,
+                doctorName: selectedDoctor.name,
+                patientName: document.getElementById('patientName').value,
+                patientPhone: document.getElementById('patientPhone').value,
+                appointmentDate: document.getElementById('appointmentDate').value,
+                timestamp: new Date().toISOString(),
+                status: "pending"
+            };
+
+            try {
+                // Change button text to show loading
+                const submitBtn = bookingForm.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerText;
+                submitBtn.innerText = "Booking...";
+                submitBtn.disabled = true;
+
+                // Push to Firebase Realtime DB
+                const appointmentsRef = ref(db, 'appointments');
+                const newAppointmentRef = push(appointmentsRef);
+                await set(newAppointmentRef, appointmentData);
+
+                // Success
+                alert(`Success! Your appointment with ${selectedDoctor.name} has been booked.`);
+                bookingModal.classList.add('hidden');
+                bookingModal.classList.remove('flex');
+                bookingForm.reset();
+                
+            } catch (error) {
+                console.error("Error writing to Firebase:", error);
+                alert("There was an error saving your booking. Check console for details.");
+            } finally {
+                // Reset button
+                const submitBtn = bookingForm.querySelector('button[type="submit"]');
+                submitBtn.innerText = "Confirm Booking";
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
 </body>
 </html>
