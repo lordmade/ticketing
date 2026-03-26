@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VynixRide Web App</title>
+    <title>VynixRide | Real-time</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -16,480 +16,220 @@
             --border-color: #E5E5EA;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); overflow: hidden; }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            overflow: hidden; /* Prevent body scrolling, manage internally */
-        }
+        .layout-wrapper { display: flex; height: 100vh; width: 100vw; position: relative; }
 
-        /* --- Main Layout Wrapper --- */
-        .layout-wrapper {
-            display: flex;
-            height: 100vh;
-            width: 100vw;
-            position: relative;
-        }
-
-        /* --- Desktop Sidebar (Hidden on Mobile) --- */
+        /* --- Desktop Sidebar --- */
         .sidebar {
-            display: none;
-            width: 280px;
-            background-color: var(--card-bg);
-            border-right: 1px solid var(--border-color);
-            flex-direction: column;
-            padding: 24px;
-            z-index: 50;
-            box-shadow: 2px 0 20px rgba(0,0,0,0.02);
-        }
-
-        .brand-logo {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--primary-blue);
-            margin-bottom: 40px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .nav-links {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            flex-grow: 1;
+            display: none; width: 280px; background: var(--card-bg); border-right: 1px solid var(--border-color);
+            flex-direction: column; padding: 24px; z-index: 50;
         }
 
         .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 14px 16px;
-            border-radius: 12px;
-            color: var(--text-muted);
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            cursor: pointer;
+            display: flex; align-items: center; gap: 16px; padding: 14px 16px; border-radius: 12px;
+            color: var(--text-muted); font-weight: 500; text-decoration: none; cursor: pointer; transition: 0.2s;
         }
 
-        .nav-link:hover, .nav-link.active {
-            background-color: rgba(0, 0, 255, 0.04);
-            color: var(--primary-blue);
-        }
+        .nav-link.active { background: rgba(0, 0, 255, 0.05); color: var(--primary-blue); }
 
-        .user-profile-mini {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding-top: 24px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        /* --- Main Content Area (Map + Booking Panel) --- */
-        .main-content {
-            flex-grow: 1;
-            position: relative;
-            height: 100vh;
-        }
-
-        /* --- Simulated Map Area --- */
-        .map-view {
-            width: 100%;
-            height: 100%;
-            background-color: #E8E8ED;
-            position: absolute;
-            top: 0;
-            left: 0;
-            background-image: radial-gradient(#D1D1D6 1px, transparent 1px);
-            background-size: 24px 24px;
-            z-index: 1;
-        }
-
-        .location-pin {
-            position: absolute;
-            top: 45%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 24px;
-            height: 24px;
-            background: var(--primary-blue);
-            border: 4px solid #FFF;
-            border-radius: 50%;
-            box-shadow: 0 4px 12px rgba(0, 0, 255, 0.4);
-        }
-
-        .location-pin::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
-            background: rgba(0, 0, 255, 0.1);
-            border-radius: 50%;
-            animation: pulse 2.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        /* --- Main Content --- */
+        .main-content { flex-grow: 1; position: relative; height: 100vh; }
+        .map-view { 
+            width: 100%; height: 100%; background: #E8E8ED; position: absolute; 
+            background-image: radial-gradient(#D1D1D6 1px, transparent 1px); background-size: 24px 24px;
         }
 
         /* --- Floating Booking Panel --- */
         .booking-panel {
-            position: absolute;
-            background: var(--card-bg);
-            display: flex;
-            flex-direction: column;
-            z-index: 20;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: absolute; background: var(--card-bg); display: flex; flex-direction: column; z-index: 20;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* Mobile specific booking panel (Bottom Sheet) */
         @media (max-width: 899px) {
-            .booking-panel {
-                bottom: 0;
-                left: 0;
-                width: 100%;
-                height: 55vh;
-                border-radius: 32px 32px 0 0;
-                padding: 24px 20px 100px 20px;
-                box-shadow: 0 -10px 30px rgba(0,0,0,0.08);
-            }
-            .map-view {
-                height: 50vh; /* Leave room for sheet */
-            }
+            .booking-panel { bottom: 95px; left: 15px; right: 15px; height: 50vh; border-radius: 24px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+            .sidebar { display: none; }
         }
 
-        .drag-handle {
-            width: 40px;
-            height: 4px;
-            background: var(--border-color);
-            border-radius: 4px;
-            margin: 0 auto 20px auto;
-        }
-
-        /* Search Input Area */
-        .search-box {
-            background: var(--bg-color);
-            padding: 16px 20px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .search-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--primary-blue);
-            border-radius: 50%;
-        }
-
-        .search-input {
-            border: none;
-            background: transparent;
-            outline: none;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-main);
-            width: 100%;
-        }
-
-        /* Ride Options */
-        .ride-list {
-            overflow-y: auto;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            padding-bottom: 20px;
-        }
-
-        .ride-list::-webkit-scrollbar {
-            display: none; /* Hide scrollbar for clean UI */
-        }
-
-        .ride-card {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px;
-            border-radius: 16px;
-            border: 2px solid transparent;
-            background: var(--card-bg);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .ride-card:hover {
-            background: var(--bg-color);
-        }
-
-        .ride-card.active {
-            border-color: var(--primary-blue);
-            background: rgba(0, 0, 255, 0.03);
-            box-shadow: 0 4px 15px rgba(0, 0, 255, 0.05);
-        }
-
-        .ride-info {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        /* UI Generated Avatars */
-        .ui-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: var(--primary-gradient);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 16px;
-            letter-spacing: 0.5px;
-        }
-
-        .ride-details h4 {
-            font-size: 16px;
-            color: var(--text-main);
-            margin-bottom: 4px;
-        }
-
-        .ride-details p {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        .ride-price {
-            text-align: right;
-        }
-
-        .ride-price h4 {
-            font-size: 16px;
-            color: var(--text-main);
-        }
-
-        /* Confirm Button */
-        .confirm-btn {
-            width: 100%;
-            padding: 18px;
-            border: none;
-            border-radius: 16px;
-            background: var(--primary-gradient);
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 10px 20px rgba(0, 0, 255, 0.2);
-            transition: transform 0.1s ease;
-            margin-top: auto;
-        }
-
-        .confirm-btn:active {
-            transform: scale(0.98);
-        }
-
-        /* --- Mobile Bottom Navigation --- */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            height: 85px;
-            background: var(--card-bg);
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding-bottom: 20px;
-            z-index: 30;
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            color: var(--text-muted);
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .nav-item.active {
-            color: var(--primary-blue);
-        }
-
-        /* --- Desktop Responsive Breakpoint --- */
         @media (min-width: 900px) {
-            .sidebar {
-                display: flex;
-            }
-            
-            .bottom-nav {
-                display: none;
-            }
-
-            .map-view {
-                height: 100%;
-            }
-
-            /* Transform Bottom Sheet into Floating Panel */
-            .booking-panel {
-                top: 32px;
-                left: 32px;
-                width: 420px;
-                height: calc(100vh - 64px);
-                max-height: 800px;
-                border-radius: 24px;
-                padding: 32px;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            }
-
-            .drag-handle {
-                display: none; /* No drag handle needed on desktop */
-            }
+            .sidebar { display: flex; }
+            .booking-panel { top: 30px; left: 30px; width: 400px; height: calc(100vh - 60px); border-radius: 24px; padding: 30px; }
+            .mobile-nav { display: none; }
         }
 
+        /* --- UI Components --- */
+        .ride-list { overflow-y: auto; flex: 1; margin: 15px 0; }
+        .ride-card {
+            display: flex; align-items: center; justify-content: space-between; padding: 15px;
+            border-radius: 16px; margin-bottom: 8px; border: 2px solid transparent; background: #f9f9fb; cursor: pointer;
+        }
+        .ride-card.active { border-color: var(--primary-blue); background: rgba(0,0,255,0.02); }
+
+        .ui-avatar {
+            width: 45px; height: 45px; border-radius: 50%; background: var(--primary-gradient);
+            color: white; display: flex; align-items: center; justify-content: center; font-weight: 700;
+        }
+
+        .confirm-btn {
+            width: 100%; padding: 16px; border: none; border-radius: 12px;
+            background: var(--primary-gradient); color: white; font-weight: 600; cursor: pointer;
+        }
+
+        /* --- Floating Mobile Nav --- */
+        .mobile-nav {
+            position: fixed; bottom: 20px; left: 20px; right: 20px; height: 65px;
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px);
+            border-radius: 20px; display: flex; justify-content: space-around; align-items: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.3); z-index: 100;
+        }
+
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); cursor: pointer; }
+        .nav-item.active { color: var(--primary-blue); }
+        .nav-item svg { width: 22px; height: 22px; margin-bottom: 4px; }
+
+        #auth-overlay {
+            position: fixed; inset: 0; background: white; z-index: 1000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
     </style>
 </head>
 <body>
 
-    <div class="layout-wrapper">
-        
-        <aside class="sidebar">
-            <div class="brand-logo">
-                <div class="ui-avatar" style="width: 32px; height: 32px; font-size: 14px;">VX</div>
-                VynixRide
-            </div>
-            
-            <nav class="nav-links">
-                <a class="nav-link active">Book a Ride</a>
-                <a class="nav-link">My Trips</a>
-                <a class="nav-link">Wallet</a>
-                <a class="nav-link">Saved Places</a>
-                <a class="nav-link" style="margin-top: auto;">Settings</a>
-            </nav>
+    <div id="auth-overlay">
+        <h1 style="color: var(--primary-blue); margin-bottom: 20px;">VynixRide</h1>
+        <button onclick="login()" class="confirm-btn" style="width: auto; padding: 15px 40px;">Sign in with Google</button>
+    </div>
 
-            <div class="user-profile-mini">
-                <div class="ui-avatar" style="width: 40px; height: 40px; background: #1D1D1F;">KP</div>
-                <div>
-                    <h4 style="font-size: 14px; color: var(--text-main);">K. Phasha</h4>
-                    <p style="font-size: 12px; color: var(--text-muted);">Manage Account</p>
-                </div>
-            </div>
+    <div class="layout-wrapper" id="app-ui" style="display: none;">
+        <aside class="sidebar">
+            <h2 style="color: var(--primary-blue); margin-bottom: 30px;">Vynix</h2>
+            <nav style="display:flex; flex-direction:column; gap:10px;">
+                <div class="nav-link active">Ride</div>
+                <div class="nav-link">Activity</div>
+                <div class="nav-link">Payment</div>
+            </nav>
+            <div id="user-info" style="margin-top:auto; display:flex; align-items:center; gap:10px;"></div>
         </aside>
 
         <main class="main-content">
-            
-            <div class="map-view">
-                <div class="location-pin"></div>
-            </div>
-
+            <div class="map-view"></div>
             <div class="booking-panel">
-                <div class="drag-handle"></div>
-                
-                <h2 style="margin-bottom: 20px; font-size: 24px;">Where to?</h2>
-
-                <div class="search-box">
-                    <div class="search-dot"></div>
-                    <input type="text" class="search-input" value="Mokopane Mall" readonly>
-                </div>
-
-                <h3 style="margin: 10px 0 16px 0; font-size: 16px; color: var(--text-muted);">Available Rides</h3>
-
-                <div class="ride-list" id="rideList">
-                    </div>
-
+                <h2 id="greeting">Where to?</h2>
+                <div class="ride-list" id="rideList">Loading rides...</div>
                 <button class="confirm-btn" id="confirmBtn">Confirm Ride</button>
             </div>
-            
         </main>
 
-        <nav class="bottom-nav">
+        <nav class="mobile-nav">
             <div class="nav-item active">
-                <div style="font-size: 20px;">🚙</div>
-                <span>Ride</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                <span style="font-size:10px">Ride</span>
             </div>
             <div class="nav-item">
-                <div style="font-size: 20px;">📋</div>
-                <span>Trips</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <span style="font-size:10px">Activity</span>
             </div>
             <div class="nav-item">
-                <div style="font-size: 20px;">👤</div>
-                <span>Account</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span style="font-size:10px">Account</span>
             </div>
         </nav>
-
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
     <script>
-        const rideData = [
-            { id: 1, type: 'VynixGo', time: '3 min', capacity: 4, price: 45.00, driver: 'Kabelo P.', specs: 'Compact' },
-            { id: 2, type: 'VynixComfort', time: '7 min', capacity: 4, price: 68.50, driver: 'Thabo M.', specs: 'Newer cars, extra legroom' },
-            { id: 3, type: 'VynixXL', time: '12 min', capacity: 6, price: 110.00, driver: 'Lesego R.', specs: 'SUVs & Vans' },
-            { id: 4, type: 'VynixBlack', time: '15 min', capacity: 4, price: 185.00, driver: 'David', specs: 'Premium rides' }
-        ];
-
-        let selectedRideId = 1;
-
-        // UI-Avatar Generator (Zero Cloudinary/Image dependency)
-        const getInitials = (name) => {
-            return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        const firebaseConfig = {
+            apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
+            authDomain: "fire-b-a8878.firebaseapp.com",
+            databaseURL: "https://fire-b-a8878.firebaseio.com",
+            projectId: "fire-b-a8878",
+            storageBucket: "fire-b-a8878.firebasestorage.app",
+            messagingSenderId: "658673187627",
+            appId: "1:658673187627:web:32699cbc33e85f4bafa36e",
+            measurementId: "G-2505EVBRWX"
         };
 
-        const renderRides = () => {
-            const listContainer = document.getElementById('rideList');
-            listContainer.innerHTML = '';
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
 
-            rideData.forEach(ride => {
-                const isActive = ride.id === selectedRideId ? 'active' : '';
-                const avatarInitials = getInitials(ride.driver);
+        // Authentication Logic
+        function login() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider);
+        }
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('app-ui').style.display = 'flex';
+                document.getElementById('greeting').innerText = `Hi, ${user.displayName.split(' ')[0]}!`;
                 
-                const rideEl = document.createElement('div');
-                rideEl.className = `ride-card ${isActive}`;
-                rideEl.onclick = () => selectRide(ride.id);
+                // Set Sidebar User Info
+                document.getElementById('user-info').innerHTML = `
+                    <div class="ui-avatar" style="width:35px; height:35px; background:#1d1d1f">${user.displayName.charAt(0)}</div>
+                    <span style="font-size:14px; font-weight:600">${user.displayName}</span>
+                `;
+                
+                loadRides();
+            } else {
+                document.getElementById('auth-overlay').style.display = 'flex';
+                document.getElementById('app-ui').style.display = 'none';
+            }
+        });
 
-                rideEl.innerHTML = `
-                    <div class="ride-info">
-                        <div class="ui-avatar">${avatarInitials}</div>
-                        <div class="ride-details">
-                            <h4>${ride.type} <span style="font-weight:400; font-size:12px; color:var(--text-muted);">👤 ${ride.capacity}</span></h4>
-                            <p>${ride.time} away &#183; ${ride.specs}</p>
+        // Real-time Database Logic
+        function loadRides() {
+            const ridesRef = db.ref('rides');
+            ridesRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data) {
+                    seedDatabase(); // Auto-populate if DB is empty
+                    return;
+                }
+                renderRides(Object.values(data));
+            });
+        }
+
+        function renderRides(rides) {
+            const list = document.getElementById('rideList');
+            list.innerHTML = '';
+            rides.forEach((ride, index) => {
+                const card = document.createElement('div');
+                card.className = `ride-card ${index === 0 ? 'active' : ''}`;
+                card.onclick = () => {
+                    document.querySelectorAll('.ride-card').forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    document.getElementById('confirmBtn').innerText = `Confirm ${ride.type}`;
+                };
+                
+                card.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div class="ui-avatar">${ride.driver.charAt(0)}</div>
+                        <div>
+                            <h4 style="font-size:15px">${ride.type}</h4>
+                            <p style="font-size:12px; color:var(--text-muted)">${ride.time} away</p>
                         </div>
                     </div>
-                    <div class="ride-price">
-                        <h4>R ${ride.price.toFixed(2)}</h4>
-                    </div>
+                    <div style="font-weight:700">R ${ride.price}</div>
                 `;
-                listContainer.appendChild(rideEl);
+                list.appendChild(card);
             });
-        };
+        }
 
-        const selectRide = (id) => {
-            selectedRideId = id;
-            renderRides();
-            
-            const selectedRide = rideData.find(r => r.id === id);
-            document.getElementById('confirmBtn').innerText = `Confirm ${selectedRide.type}`;
-        };
-
-        // Initialize 
-        renderRides();
-        selectRide(1); // Set default active state
+        // Initialize DB with Real Data if empty
+        function seedDatabase() {
+            const rides = {
+                r1: { type: 'VynixGo', price: 45, time: '2 min', driver: 'Kabelo' },
+                r2: { type: 'VynixComfort', price: 72, time: '5 min', driver: 'Sarah' },
+                r3: { type: 'VynixXL', price: 115, time: '9 min', driver: 'John' }
+            };
+            db.ref('rides').set(rides);
+        }
     </script>
 </body>
 </html>
