@@ -3,345 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BanterBox CRM | Executive Edition</title>
+    <title>Medical Appointment Booking</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.28.0/esm/index.js" type="module"></script>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
     <style>
-       body { font-family: 'Inter', sans-serif; }
-       @import url('https://rsms.me/inter/inter.css');
-      .section { display: none; }
-      .section.active { display: block; }
-      .modal { transition: opacity 0.3s, visibility 0.3s; opacity: 0; visibility: hidden; }
-      .modal.active { opacity: 1; visibility: visible; }
-      .nav-item { transition: background-color 0.2s, color 0.2s; }
-      .nav-item.active { background-color: #0c4a6e; color: white; }
-      .chart-container { height: 320px; }
-       ::-webkit-scrollbar { width: 6px; }
-       ::-webkit-scrollbar-track { background: #f1f5f9; }
-       ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
-       ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Subtle floating animation for background blobs */
+        @keyframes blob {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .animate-blob {
+            animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+            animation-delay: 2s;
+        }
     </style>
 </head>
-<body class="bg-slate-100 flex h-screen overflow-hidden text-slate-800">
+<body class="antialiased overflow-x-hidden">
 
-    <!-- Auth Modal -->
-    <div id="loginModal" class="modal active fixed inset-0 z-50 flex items-center justify-center bg-slate-900 bg-opacity-80 backdrop-blur-sm">
-        <div class="bg-white p-10 rounded-xl shadow-2xl w-full max-w-sm text-center">
-            <h1 class="text-4xl font-bold mb-2 text-sky-900">BanterBox</h1>
-            <p class="text-slate-500 mb-8 text-sm font-semibold uppercase tracking-widest">Executive CRM</p>
-            <button onclick="auth.loginWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-white border border-slate-300 hover:bg-slate-50 font-medium py-3 px-4 rounded-lg shadow-sm transition-all">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5">
-                Sign in with Google
+    <nav class="container mx-auto px-6 py-6 flex justify-between items-center relative z-50">
+        <div class="text-2xl font-extrabold text-blue-600 flex items-center gap-2 tracking-tight">
+            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm">
+                <i class="fa-solid fa-staff-snake"></i>
+            </div>
+            MediCare.
+        </div>
+        
+        <div class="hidden md:flex space-x-10 text-slate-600 font-semibold text-sm">
+            <a href="#" class="text-blue-600 transition">Home</a>
+            <a href="#" class="hover:text-blue-600 transition">Find a Doctor</a>
+            <a href="#" class="hover:text-blue-600 transition">Services</a>
+            <a href="#" class="hover:text-blue-600 transition">Reviews</a>
+        </div>
+
+        <div class="hidden md:flex items-center gap-4">
+            <a href="#" class="text-slate-600 font-semibold text-sm hover:text-blue-600">Log In</a>
+            <button class="bg-slate-900 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-blue-600 transition-colors shadow-lg shadow-slate-200">
+                Book Appointment
             </button>
         </div>
-    </div>
+    </nav>
 
-    <!-- Main App -->
-    <div id="appContent" class="flex-1 flex h-screen overflow-hidden filter blur-sm opacity-0 transition-all duration-500">
-        <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col z-10 shrink-0">
-            <div class="p-5 text-2xl font-bold border-b border-slate-800 text-white flex items-center gap-3">
-                <svg class="w-8 h-8 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                <span>BanterBox</span>
-            </div>
-            <nav id="mainNav" class="flex-1 p-3 space-y-1.5">
-                <button data-section="dashboard" class="nav-item w-full text-left p-3 rounded-md flex gap-3 items-center font-semibold">📊 Dashboard</button>
-                <button data-section="deals" class="nav-item w-full text-left p-3 rounded-md flex gap-3 items-center font-semibold">💰 Deals</button>
-                <button data-section="clients" class="nav-item w-full text-left p-3 rounded-md flex gap-3 items-center font-semibold">🏢 Clients</button>
-                <button data-section="tasks" class="nav-item w-full text-left p-3 rounded-md flex gap-3 items-center font-semibold">📋 Tasks</button>
-                <button data-section="employees" class="nav-item w-full text-left p-3 rounded-md flex gap-3 items-center font-semibold">👥 Employees</button>
-            </nav>
-            <div id="userProfile" class="p-4 border-t border-slate-800"></div>
-        </aside>
-
-        <main class="flex-1 flex flex-col overflow-y-auto">
-            <section id="dashboard" class="section p-8">
-                <div class="grid grid-cols-12 gap-6">
-                    <!-- KPIs -->
-                    <div class="col-span-12">
-                        <h2 class="text-3xl font-bold mb-1">Dashboard</h2>
-                        <p class="text-slate-500 mb-6">Here's the executive overview of your business.</p>
-                    </div>
-                    <div id="kpiWinRate" class="col-span-6 md:col-span-3 bg-white p-5 rounded-xl border"></div>
-                    <div id="kpiSalesCycle" class="col-span-6 md:col-span-3 bg-white p-5 rounded-xl border"></div>
-                    <div id="kpiAvgDeal" class="col-span-6 md:col-span-3 bg-white p-5 rounded-xl border"></div>
-                    <div id="kpiRevenue" class="col-span-6 md:col-span-3 bg-white p-5 rounded-xl border"></div>
-
-                    <!-- Charts -->
-                    <div class="col-span-12 lg:col-span-8 bg-white p-6 rounded-xl border shadow-sm"><div class="chart-container"><canvas id="revenueChart"></canvas></div></div>
-
-                    <!-- Activity Feed -->
-                    <div class="col-span-12 lg:col-span-4 bg-white p-6 rounded-xl border shadow-sm flex flex-col">
-                        <h3 class="font-bold text-lg mb-4">Activity Feed</h3>
-                        <div id="activityFeed" class="space-y-4 overflow-y-auto flex-1 pr-2"></div>
-                    </div>
-
-                    <!-- Leaderboard -->
-                     <div class="col-span-12 lg:col-span-5 bg-white p-6 rounded-xl border shadow-sm">
-                        <h3 class="font-bold text-lg mb-4">Top Performers by Revenue</h3>
-                        <div id="leaderboard" class="space-y-3"></div>
-                    </div>
-
-                    <!-- Tasks Overview -->
-                    <div class="col-span-12 lg:col-span-7 bg-white p-6 rounded-xl border shadow-sm">
-                        <h3 class="font-bold text-lg mb-4">Tasks Overview</h3>
-                        <div id="tasksOverview" class="grid grid-cols-3 gap-4"></div>
-                    </div>
+    <main class="container mx-auto px-6 pt-12 pb-24 md:pt-16 lg:pt-20 relative">
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+            
+            <div class="space-y-8 relative z-20">
+                <div class="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-full text-xs font-bold tracking-wide uppercase border border-blue-100">
+                    <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+                    24/7 Emergency Service
                 </div>
-            </section>
+                
+                <h1 class="text-5xl md:text-6xl lg:text-[4rem] font-extrabold text-slate-900 leading-[1.1] tracking-tight">
+                    Find & Book <br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Top Doctors</span> <br>
+                    Near You.
+                </h1>
+                
+                <p class="text-lg text-slate-500 leading-relaxed max-w-lg font-medium">
+                    Get access to the best medical professionals, read reviews, and effortlessly schedule your appointments online.
+                </p>
 
-            <section id="deals" class="section p-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-3xl font-bold">Deals Pipeline</h2>
-                    <button onclick="ui.showModal('dealModal')" class="bg-sky-600 text-white py-2 px-5 rounded-lg font-bold hover:bg-sky-700 transition flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                        <span>New Deal</span>
-                    </button>
-                </div>
-                <div id="dealKanban" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-5"></div>
-            </section>
-
-            <!-- Other sections (Clients, Tasks, Employees) would be structured similarly -->
-            <section id="clients" class="section p-8">...</section>
-            <section id="tasks" class="section p-8">...</section>
-            <section id="employees" class="section p-8">...</section>
-
-        </main>
-    </div>
-
-    <!-- Modals -->
-    <div id="dealModal" class="modal fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm" onclick="ui.hideModalIfOutside(this, event)">
-        <div class="bg-white p-8 rounded-xl shadow-xl w-full max-w-lg space-y-4">
-            <h3 class="font-bold text-2xl">Create New Deal</h3>
-            <input type="text" id="dealName" placeholder="Deal Name (e.g., 'Q3 Marketing Campaign')" class="w-full border p-3 rounded-lg bg-slate-50">
-            <select id="dealClientSelect" class="w-full border p-3 rounded-lg bg-slate-50"></select>
-            <input type="number" id="dealValue" placeholder="Deal Value ($)" class="w-full border p-3 rounded-lg bg-slate-50">
-            <input type="date" id="dealCloseDate" placeholder="Expected Close Date" class="w-full border p-3 rounded-lg bg-slate-50 text-slate-500">
-            <select id="dealStage" class="w-full border p-3 rounded-lg bg-slate-50"></select>
-            <button onclick="crm.addDeal()" class="w-full bg-sky-600 text-white py-3 rounded-lg font-bold">Save Deal</button>
-        </div>
-    </div>
-    <!-- Other modals would be styled similarly -->
-
-    <script type="module">
-        import { format, differenceInDays, formatDistanceToNowStrict } from 'https://cdn.jsdelivr.net/npm/date-fns@2.28.0/esm/index.js';
-
-        // --- Config ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
-            authDomain: "fire-b-a8878.firebaseapp.com",
-            projectId: "fire-b-a8878",
-            databaseURL: "https://fire-b-a8878-default-rtdb.firebaseio.com",
-            appId: "1:658673187627:web:6e4c29af661785f0afa36e"
-        };
-        firebase.initializeApp(firebaseConfig);
-
-        // --- Globals ---
-        const fb_auth = firebase.auth();
-        const db = firebase.database();
-        const googleProvider = new firebase.auth.GoogleAuthProvider();
-        const DEAL_STAGES = ["Lead In", "Contact Made", "Proposal Sent", "Negotiation", "Closed-Won", "Closed-Lost"];
-        let appData = { employees:{}, clients:{}, tasks:{}, deals:{}, activity: {} };
-        let charts = { revenue: null };
-
-        // --- Authentication ---
-        const auth = {
-            user: null,
-            loginWithGoogle: () => fb_auth.signInWithPopup(googleProvider),
-            logout: () => fb_auth.signOut(),
-            onStateChange: (callback) => fb_auth.onAuthStateChanged(callback)
-        };
-
-        // --- UI Manager ---
-        const ui = {
-            showSection: (id) => {
-                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-                document.getElementById(id).classList.add('active');
-                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-                document.querySelector(`.nav-item[data-section="${id}"]`).classList.add('active');
-            },
-            showModal: (id) => document.getElementById(id).classList.add('active'),
-            hideModalIfOutside: (el, e) => { if(e.target === el) el.classList.remove('active'); },
-            toggleAuthView: (user) => {
-                const app = document.getElementById('appContent');
-                const loginModal = document.getElementById('loginModal');
-                if (user) {
-                    auth.user = user;
-                    loginModal.classList.remove('active');
-                    app.classList.remove('blur-sm', 'opacity-0');
-                    initApp();
-                } else {
-                    auth.user = null;
-                    loginModal.classList.add('active');
-                    app.classList.add('blur-sm', 'opacity-0');
-                }
-            },
-            renderUserProfile: (user) => {
-                const profileHTML = `
-                    <div class="flex items-center gap-3">
-                        <img src="${user.photoURL}" class="w-10 h-10 rounded-full">
-                        <div class="flex-1 overflow-hidden">
-                           <p class="font-bold text-white text-sm truncate">${user.displayName}</p>
-                           <p class="text-xs text-slate-400 truncate">${user.email}</p>
+                <div class="bg-white p-3 rounded-[1.5rem] shadow-xl shadow-slate-200/50 flex flex-col md:flex-row gap-2 border border-slate-100 max-w-2xl">
+                    
+                    <div class="flex-1 px-4 py-2 border-b md:border-b-0 md:border-r border-slate-100">
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Doctor, Speciality...</label>
+                        <div class="flex items-center text-slate-700">
+                            <i class="fa-solid fa-magnifying-glass text-slate-300 mr-2"></i>
+                            <input type="text" placeholder="e.g. Cardiologist" class="w-full focus:outline-none placeholder-slate-300 font-semibold text-slate-700 bg-transparent">
                         </div>
                     </div>
-                    <button onclick="auth.logout()" class="w-full text-left mt-3 p-2 text-slate-400 hover:text-white text-sm rounded hover:bg-slate-800 transition">Sign Out</button>
-                `;
-                document.getElementById('userProfile').innerHTML = profileHTML;
-            }
-        };
+                    
+                    <div class="flex-1 px-4 py-2">
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Location</label>
+                        <div class="flex items-center text-slate-700">
+                            <i class="fa-solid fa-location-dot text-slate-300 mr-2"></i>
+                            <input type="text" placeholder="New York, NY" class="w-full focus:outline-none placeholder-slate-300 font-semibold text-slate-700 bg-transparent">
+                        </div>
+                    </div>
+                    
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold transition-colors w-full md:w-auto flex items-center justify-center gap-2">
+                        Search
+                    </button>
+                </div>
 
-        // --- CRM Logic ---
-        const crm = {
-            logActivity: (message) => {
-                 db.ref('activity').push({
-                    message,
-                    user: auth.user.displayName,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
-                });
-            },
-            addDeal: () => {
-                const name = document.getElementById('dealName').value;
-                const clientId = document.getElementById('dealClientSelect').value;
-                const value = parseFloat(document.getElementById('dealValue').value);
-                const stage = document.getElementById('dealStage').value;
-                const closeDate = document.getElementById('dealCloseDate').value;
+                <div class="flex items-center gap-8 pt-4">
+                    <div>
+                        <h3 class="text-3xl font-extrabold text-slate-900">10k+</h3>
+                        <p class="text-sm text-slate-500 font-medium mt-1">Active Patients</p>
+                    </div>
+                    <div class="w-px h-10 bg-slate-200"></div>
+                    <div>
+                        <h3 class="text-3xl font-extrabold text-slate-900">500+</h3>
+                        <p class="text-sm text-slate-500 font-medium mt-1">Expert Doctors</p>
+                    </div>
+                    <div class="w-px h-10 bg-slate-200"></div>
+                    <div>
+                        <h3 class="text-3xl font-extrabold text-slate-900">4.9</h3>
+                        <div class="flex text-yellow-400 text-xs mt-1">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                if(!name ||!clientId ||!value ||!closeDate) return alert("Please fill all deal fields.");
+            <div class="relative mt-12 lg:mt-0">
+                <div class="absolute top-0 right-0 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob"></div>
+                <div class="absolute top-0 right-24 w-72 h-72 bg-cyan-300 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-blob animation-delay-2000"></div>
 
-                const newDealRef = db.ref('deals').push();
-                newDealRef.set({ name, clientId, value, stage, expectedCloseDate: closeDate, createdAt: firebase.database.ServerValue.TIMESTAMP, owner: auth.user.uid });
+                <div class="relative z-10 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-blue-900/10 border-[6px] border-white h-[500px] lg:h-[600px] bg-slate-100">
+                    <img src="https://images.unsplash.com/photo-1622253692010-333f2da6031d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Professional Doctor" class="w-full h-full object-cover object-top">
+                </div>
 
-                crm.logActivity(`${auth.user.displayName} added a new deal: ${name}`);
-                document.getElementById('dealModal').classList.remove('active');
-            },
-            updateDealStage: (did, newStage) => {
-                db.ref(`deals/${did}/stage`).set(newStage);
-                db.ref(`deals/${did}`).once('value', snap => {
-                    crm.logActivity(`${auth.user.displayName} moved deal "${snap.val().name}" to ${newStage}.`);
-                });
-            },
-             // Placeholder for other CRM functions like addTask, addClient, etc.
-             // Each would call crm.logActivity()
-        };
+                <div class="absolute top-12 -left-6 lg:-left-12 glass-card p-4 rounded-2xl shadow-xl border border-white/60 flex items-center gap-4 z-20 animate-fade-in">
+                    <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-500 text-xl shadow-inner">
+                        <i class="fa-solid fa-shield-check"></i>
+                    </div>
+                    <div class="pr-2">
+                        <p class="text-sm font-extrabold text-slate-900">Top Rated</p>
+                        <p class="text-xs text-slate-500 font-medium">Verified Experts</p>
+                    </div>
+                </div>
 
-        // --- Data Rendering & Calculations ---
-        function render(data) {
-            // Populate modal dropdowns
-            const dealStageSelect = document.getElementById('dealStage');
-            dealStageSelect.innerHTML = DEAL_STAGES.map(s => `<option value="${s}">${s}</option>`).join('');
+                <div class="absolute bottom-12 -right-6 lg:-right-8 glass-card p-4 rounded-2xl shadow-xl border border-white/60 flex flex-col gap-3 z-20">
+                    <div class="flex -space-x-3">
+                        <img class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-sm" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" alt="Patient">
+                        <img class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-sm" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=100&q=80" alt="Patient">
+                        <img class="w-10 h-10 rounded-full border-2 border-white object-cover shadow-sm" src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=100&q=80" alt="Patient">
+                        <div class="w-10 h-10 rounded-full border-2 border-white bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-bold shadow-sm">+2k</div>
+                    </div>
+                    <div>
+                        <p class="text-sm font-extrabold text-slate-900">Happy Patients</p>
+                        <p class="text-[11px] text-slate-500 font-medium mt-0.5">Trust our services everyday</p>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </main>
 
-            // --- Dashboard Calculations ---
-            const wonDeals = Object.values(data.deals).filter(d => d.stage === 'Closed-Won');
-            const lostDeals = Object.values(data.deals).filter(d => d.stage === 'Closed-Lost');
-
-            const winRate = (wonDeals.length + lostDeals.length) > 0? Math.round((wonDeals.length / (wonDeals.length + lostDeals.length)) * 100) : 0;
-            const totalRevenue = wonDeals.reduce((sum, d) => sum + d.value, 0);
-
-            const cycleDurations = wonDeals.map(d => differenceInDays(new Date(d.expectedCloseDate), new Date(d.createdAt)));
-            const avgCycle = cycleDurations.length > 0? Math.round(cycleDurations.reduce((a, b) => a + b, 0) / cycleDurations.length) : 0;
-            const avgDealSize = wonDeals.length > 0? Math.round(totalRevenue / wonDeals.length) : 0;
-
-            // --- Render KPIs ---
-            document.getElementById('kpiWinRate').innerHTML = `<p class="text-slate-500 text-sm font-bold">Win Rate</p><p class="text-4xl font-black">${winRate}%</p>`;
-            document.getElementById('kpiSalesCycle').innerHTML = `<p class="text-slate-500 text-sm font-bold">Avg. Sales Cycle</p><p class="text-4xl font-black">${avgCycle}<span class="text-2xl text-slate-400"> days</span></p>`;
-            document.getElementById('kpiAvgDeal').innerHTML = `<p class="text-slate-500 text-sm font-bold">Avg. Deal Size</p><p class="text-4xl font-black">$${(avgDealSize/1000).toFixed(1)}k</p>`;
-            document.getElementById('kpiRevenue').innerHTML = `<p class="text-slate-500 text-sm font-bold">Total Revenue</p><p class="text-4xl font-black text-teal-600">$${(totalRevenue/1000).toFixed(1)}k</p>`;
-
-            // --- Render Activity Feed ---
-            const feed = document.getElementById('activityFeed');
-            feed.innerHTML = '';
-            Object.values(data.activity).reverse().slice(0, 10).forEach(act => {
-                feed.innerHTML += `<div class="text-sm"><p class="font-semibold">${act.message}</p><p class="text-xs text-slate-400">${formatDistanceToNowStrict(new Date(act.timestamp))} ago</p></div>`;
-            });
-
-            // --- Render Leaderboard ---
-            const employeeRevenue = {};
-            wonDeals.forEach(deal => {
-                const ownerId = deal.owner;
-                if(!employeeRevenue[ownerId]) employeeRevenue[ownerId] = 0;
-                employeeRevenue[ownerId] += deal.value;
-            });
-            const sortedPerformers = Object.entries(employeeRevenue).sort((a, b) => b[1] - a[1]);
-
-            const leaderboard = document.getElementById('leaderboard');
-            leaderboard.innerHTML = '';
-            sortedPerformers.forEach(([uid, revenue]) => {
-                // In a real app, you'd look up the employee name from the UID. Here we just show the revenue.
-                leaderboard.innerHTML += `<div class="flex justify-between items-center text-sm"><p class="font-semibold">User ${uid.substring(0,5)}...</p><p class="font-bold text-teal-700">$${revenue.toLocaleString()}</p></div>`;
-            });
-
-            // --- Render Kanban Board ---
-            const kanban = document.getElementById('dealKanban');
-            kanban.innerHTML = '';
-            DEAL_STAGES.forEach(stage => {
-                let stageDealsHTML = Object.entries(data.deals).filter(([_,d]) => d.stage === stage).map(([id,d]) => `
-                    <div class="bg-white p-3 rounded-lg border shadow-sm mb-3">
-                         <p class="font-bold">${d.name}</p>
-                         <p class="text-sm text-slate-500">Client Placeholder</p>
-                         <p class="text-sky-600 font-black mt-1">$${d.value.toLocaleString()}</p>
-                         <select onchange="crm.updateDealStage('${id}', this.value)" class="w-full text-xs mt-2 p-1 border rounded bg-slate-50">
-                            ${DEAL_STAGES.map(s => `<option value="${s}" ${s === stage? 'selected' : ''}>${s}</option>`).join('')}
-                         </select>
-                    </div>`
-                ).join('');
-                kanban.innerHTML += `<div><h3 class="font-bold text-sm uppercase text-slate-500 p-2">${stage}</h3><div class="bg-slate-100 p-2 rounded-lg h-full min-h-">${stageDealsHTML}</div></div>`;
-            });
-
-            // --- Update Revenue Chart ---
-            const forecast = { 'Jan': 0, 'Feb': 0, 'Mar': 0, 'Apr': 0, 'May': 0, 'Jun': 0, 'Jul': 0, 'Aug': 0, 'Sep': 0, 'Oct': 0, 'Nov': 0, 'Dec': 0 };
-            Object.values(data.deals).filter(d => d.stage!== 'Closed-Lost' && d.expectedCloseDate).forEach(deal => {
-                const month = format(new Date(deal.expectedCloseDate), 'MMM');
-                if(forecast[month]!== undefined) forecast[month] += deal.value;
-            });
-            charts.revenue.data.datasets[0].data = Object.values(forecast);
-            charts.revenue.update();
-        }
-
-        // --- Initialization ---
-        function initCharts(){
-             Chart.defaults.font.family = "'Inter', sans-serif";
-             Chart.defaults.plugins.legend.display = false;
-
-            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-            charts.revenue = new Chart(revenueCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                    datasets: [{ label: 'Forecasted Revenue', data: [], backgroundColor: '#0ea5e9', borderRadius: 4 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { callback: (v) => `$${v/1000}k` } } } }
-            });
-        }
-
-        function initApp() {
-            if (!auth.user) return;
-            ui.renderUserProfile(auth.user);
-            ui.showSection('dashboard');
-            initCharts();
-
-            document.getElementById('mainNav').addEventListener('click', (e) => {
-                const section = e.target.closest('.nav-item')?.dataset.section;
-                if(section) ui.showSection(section);
-            });
-
-            const refs = {
-                employees: db.ref('employees'), clients: db.ref('clients'), tasks: db.ref('tasks'),
-                deals: db.ref('deals'), activity: db.ref('activity')
-            };
-
-            Object.entries(refs).forEach(([key, ref]) => {
-                 ref.on('value', snap => {
-                    appData[key] = snap.val() || {};
-                    render(appData);
-                 });
-            });
-        }
-
-        auth.onStateChange(ui.toggleAuthView);
-    </script>
 </body>
 </html>
