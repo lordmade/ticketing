@@ -607,19 +607,48 @@ fetchAndActivate(rc).then(() => {
   if(remoteKey) { yocoPublicKey = remoteKey; }
 }).catch(console.error);
 
-// ── Yoco payment trigger ─────────────────────────────────────────────
-// Hides any open .mbg modal BEFORE opening Yoco so nothing blocks it.
-// Restores the modal on payment failure/cancel.
 window.triggerYocoPayment = function(amount, description, onSuccessCallback, restoreModalId) {
   if (typeof window.YocoSDK === 'undefined') {
     window.showToast("Payment system currently unavailable.");
     return;
   }
 
-  // Hide the triggering modal so it can't sit above Yoco's iframe
+  // Hide the triggering modal
   if (restoreModalId) {
     document.getElementById(restoreModalId).classList.remove('show');
   }
+
+  // On mobile: slide down all bottom sheets so Yoco popup is fully visible
+  const isMobile = window.innerWidth < 900;
+  const bookPanel = document.getElementById('bookPanel');
+  const activePanel = document.getElementById('activeRidePanel');
+  let bookPanelWasVisible = false;
+  let activePanelWasVisible = false;
+
+  if (isMobile) {
+    if (bookPanel && bookPanel.style.display !== 'none') {
+      bookPanelWasVisible = true;
+      bookPanel.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+      bookPanel.style.transform = 'translateY(110%)';
+      bookPanel.style.opacity = '0';
+    }
+    if (activePanel && activePanel.classList.contains('show')) {
+      activePanelWasVisible = true;
+      activePanel.classList.remove('show');
+    }
+  }
+
+  const restoreSheets = () => {
+    if (isMobile) {
+      if (bookPanelWasVisible && bookPanel) {
+        bookPanel.style.transform = '';
+        bookPanel.style.opacity = '';
+      }
+      if (activePanelWasVisible && activePanel) {
+        activePanel.classList.add('show');
+      }
+    }
+  };
 
   const yoco = new window.YocoSDK({ publicKey: yocoPublicKey });
   yoco.showPopup({
@@ -629,12 +658,14 @@ window.triggerYocoPayment = function(amount, description, onSuccessCallback, res
     description: description,
     callback: function (result) {
       if (result.error) {
-        // Restore the original modal on failure so the user can retry
+        // Restore modal + sheets on failure so user can retry
         if (restoreModalId) {
           document.getElementById(restoreModalId).classList.add('show');
         }
+        restoreSheets();
         window.showToast("Payment failed: " + result.error.message);
       } else {
+        // Success — sheets stay hidden, success handler takes over
         onSuccessCallback(result.id);
       }
     }
