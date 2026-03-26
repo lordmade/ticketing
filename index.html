@@ -59,7 +59,7 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 .map-wrap{flex:1;position:relative;height:100vh;}
 #map{position:absolute;inset:0;width:100%;height:100%;}
 .mapboxgl-ctrl-bottom-right{bottom:10px;right:10px;}
-@media(max-width:899px){.mapboxgl-ctrl-bottom-right{bottom:calc(var(--nav-h) + 10px);}}
+@media(max-width:899px){.mapboxgl-ctrl-bottom-right{display: none;}} /* Hide logo/attribution on mobile to keep it clean */
 .cmarker{width:18px;height:18px;background:var(--blue);border:3px solid #fff;
   border-radius:50%;box-shadow:0 2px 12px var(--glow);}
 .dmarker{width:16px;height:16px;background:var(--blue2);border:3px solid #fff;
@@ -72,15 +72,31 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
   font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: transform 0.3s;
 }
 
+/* Locate Me Button */
+.locate-btn {
+  position: absolute; right: 20px; bottom: calc(100% + 16px);
+  width: 46px; height: 46px; background: #fff; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12); cursor: pointer; z-index: 40;
+  color: var(--blue); transition: 0.2s; border: 1px solid var(--border);
+}
+.locate-btn:active { transform: scale(0.92); }
+@media(min-width: 900px) { .locate-btn { bottom: 24px; right: 24px; } }
+
 /* Mobile Fluid Panel (Booking) */
-.panel{position:absolute;background:rgba(255,255,255,.93);backdrop-filter:blur(22px) saturate(1.8);
+.panel{position:absolute;background:rgba(255,255,255,.95);backdrop-filter:blur(22px) saturate(1.8);
   -webkit-backdrop-filter:blur(22px) saturate(1.8);
   display:flex;flex-direction:column;z-index:30;
   border:1px solid rgba(255,255,255,.8);}
 @media(max-width:899px){
-  .panel{bottom:0;left:0;width:100%;height:auto;max-height:85vh;border-radius:28px 28px 0 0;
-    padding:16px 20px calc(var(--nav-h) + env(safe-area-inset-bottom, 16px));
-    box-shadow:0 -12px 40px rgba(0,0,0,.1);}
+  .panel{
+    /* Sit directly ABOVE the nav bar */
+    bottom:calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+    left:0;width:100%;height:auto;max-height:calc(100vh - var(--nav-h) - 80px);
+    border-radius:28px 28px 0 0;
+    padding:16px 20px 20px; /* Reduced bottom padding since it clears the nav bar */
+    box-shadow:0 -12px 40px rgba(0,0,0,.1);
+  }
 }
 @media(min-width:900px){
   .panel{top:22px;left:22px;width:385px;height:calc(100vh - 44px);max-height:860px;
@@ -88,8 +104,18 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 }
 .drag-handle{width:34px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 14px;flex-shrink:0;}
 @media(min-width:900px){.drag-handle{display:none;}}
-.ptitle{font-family:'Syne',sans-serif;font-size:21px;font-weight:800;margin-bottom:12px;
-  flex-shrink:0;letter-spacing:-.35px;}
+
+/* Top Right Confirm Button & Header */
+.panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-shrink: 0; }
+.ptitle{font-family:'Syne',sans-serif;font-size:21px;font-weight:800; letter-spacing:-.35px; margin: 0;}
+.top-cbtn {
+  background: linear-gradient(130deg,var(--blue2),var(--blue)); color: #fff;
+  padding: 9px 18px; border-radius: 20px; border: none; font-size: 13px; font-weight: 700;
+  cursor: pointer; box-shadow: 0 4px 12px var(--glow); transition: transform 0.1s, opacity 0.2s;
+  display: none; /* Hidden by default */
+  font-family: 'DM Sans', sans-serif; letter-spacing: 0.02em;
+}
+.top-cbtn:active { transform: scale(0.96); }
 
 /* geocoder override */
 .geo-wrap{margin-bottom:12px;flex-shrink:0;}
@@ -118,10 +144,10 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 /* ride list */
 .ride-list{
   flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px;
-  padding-right:2px; margin-bottom:12px;
+  padding-right:2px; padding-bottom: 6px;
   -webkit-overflow-scrolling: touch; /* smooth mobile scrolling */
 }
-@media(max-width:899px){ .ride-list{max-height: 42vh;} } 
+@media(max-width:899px){ .ride-list{max-height: 48vh;} } 
 .ride-list::-webkit-scrollbar{display:none;}
 .rcard{display:flex;align-items:center;justify-content:space-between;padding:12px 13px;
   border-radius:15px;border:2px solid var(--border);cursor:pointer;
@@ -139,24 +165,6 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 .rtbadge{font-size:10px;font-weight:600;color:var(--blue);
   background:rgba(26,59,255,.09);padding:2px 8px;border-radius:20px;
   margin-top:4px;display:inline-block;}
-
-/* Mobile: Tap to confirm hint on selected card */
-@media(max-width:899px){
-  .rcard.sel::after{
-    content:'Tap to confirm'; position:absolute; bottom:8px; right:13px;
-    font-size:10px; font-weight:700; color:var(--blue); background:rgba(26,59,255,.09);
-    padding:2px 8px; border-radius:20px;
-  }
-  #confirmBtn{display:none;}
-}
-
-/* confirm btn */
-.cbtn{width:100%;padding:16px;border:none;border-radius:14px;flex-shrink:0;
-  background:linear-gradient(130deg,var(--blue2),var(--blue));color:#fff;
-  font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.02em;
-  font-family:'DM Sans',sans-serif;box-shadow:0 8px 22px var(--glow);
-  transition:transform .1s,box-shadow .1s;}
-.cbtn:active{transform:scale(.98);}
 
 /* ----- 1 MINUTE SEARCH OVERLAY ----- */
 .search-overlay {
@@ -196,8 +204,10 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 }
 .active-panel.show{transform:translateY(0);}
 @media(max-width:899px){
-  .active-panel{bottom:0;left:0;width:100%;border-radius:28px 28px 0 0;
-    padding:20px 24px calc(var(--nav-h) + env(safe-area-inset-bottom, 20px));
+  .active-panel{
+    bottom:calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+    left:0;width:100%;border-radius:28px 28px 0 0;
+    padding:20px 24px 24px;
     box-shadow:0 -12px 40px rgba(0,0,0,.1);}
 }
 @media(min-width:900px){
@@ -377,6 +387,7 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
   <div class="modal">
     <div class="mh">Confirm Booking</div>
     <div class="mr"><span class="mrl">Ride</span><b class="mrv" id="m-type">—</b></div>
+    <div class="mr"><span class="mrl">Driver</span><b class="mrv" id="m-driver">—</b></div>
     <div class="mr"><span class="mrl">ETA (Driver)</span><b class="mrv" id="m-eta">—</b></div>
     <div class="mr"><span class="mrl">Trip Duration</span><b class="mrv" id="m-trip-time">—</b></div>
     <div class="mr"><span class="mrl">Pickup</span><b class="mrv" id="m-pickup">Current Location</b></div>
@@ -441,7 +452,16 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 
     <div class="panel" id="bookPanel">
       <div class="drag-handle"></div>
-      <div class="ptitle">Where to?</div>
+      
+      <div class="locate-btn" onclick="zoomToCurrent()">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+      </div>
+
+      <div class="panel-header">
+        <div class="ptitle">Where to?</div>
+        <button class="top-cbtn" id="confirmBtn" onclick="openModal()">Book</button>
+      </div>
+
       <div class="origin-row">
         <div class="o-dot"></div>
         <div>
@@ -452,7 +472,6 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
       <div class="geo-wrap" id="geoWrap"></div>
       <div class="slabel">Available Rides</div>
       <div class="ride-list" id="rideList"></div>
-      <button class="cbtn" id="confirmBtn" onclick="openModal()">Search for a destination</button>
     </div>
 
     <div class="active-panel" id="activeRidePanel">
@@ -637,10 +656,13 @@ const TK='pk.eyJ1Ijoia2F0bGVnb3BoYXNoYSIsImEiOiJjbTlpOTdzbmYwMGNsMmpzYWJtZzN4d3p
 mapboxgl.accessToken=TK;
 const DLNG=28.9934,DLAT=-24.1991;
 
+// Default high zoom for current location tracking
+const DEFAULT_ZOOM = 15.5;
+
 const map=new mapboxgl.Map({
   container:'map',
   style:'mapbox://styles/mapbox/light-v11',
-  center:[DLNG,DLAT],zoom:13.5,
+  center:[DLNG,DLAT],zoom:DEFAULT_ZOOM,
   attributionControl:false,
   logoPosition:'bottom-right'
 });
@@ -655,8 +677,14 @@ let driverMarkers = [];
 let searchInterval = null;
 let searchTimeout = null;
 
-function getMobilePadding() { return window.innerWidth < 900 ? window.innerHeight * 0.45 : 55; }
-function getActivePadding() { return window.innerWidth < 900 ? 250 : 55; }
+function getMobilePadding() { return window.innerWidth < 900 ? window.innerHeight * 0.40 : 55; }
+
+// Allow user to manually snap map back to them
+window.zoomToCurrent = function() {
+  if(wULng && wULat) {
+    map.flyTo({center: [wULng, wULat], zoom: DEFAULT_ZOOM, speed: 1.2, padding: {bottom: getMobilePadding()}});
+  }
+}
 
 // Scatter mock drivers around the origin to prepare for real-time tracking
 function spawnNearbyDrivers(lng, lat) {
@@ -676,8 +704,11 @@ if(navigator.geolocation){
   navigator.geolocation.getCurrentPosition(pos=>{
     const{latitude:la,longitude:lo}=pos.coords;
     wULng=lo; wULat=la; oMk.setLngLat([lo,la]);
-    map.flyTo({center:[lo,la],zoom:14,speed:.85, padding:{bottom: getMobilePadding()}});
+    
+    // Zoom straight to user with high zoom
+    map.flyTo({center:[lo,la],zoom:DEFAULT_ZOOM,speed:1.2, padding:{bottom: getMobilePadding()}});
     spawnNearbyDrivers(lo, la);
+    
     fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lo},${la}.json?access_token=${TK}&types=place,neighborhood,address&limit=1`)
       .then(r=>r.json()).then(d=>{
         const lbl=d.features?.[0]?.place_name||`${la.toFixed(4)},${lo.toFixed(4)}`;
@@ -725,15 +756,21 @@ geocoder.on('result',e=>{
   map.fitBounds([[Math.min(wULng,lng)-.008,Math.min(wULat,lat)-.008],[Math.max(wULng,lng)+.008,Math.max(wULat,lat)+.008]],
     {padding:{top:55,bottom:getMobilePadding(),left:55,right:55},duration:850,essential:true});
   drawRoute([wULng,wULat],[lng,lat]);
+  
+  // Show Confirm Button at top right
   const r=window._rides.find(x=>x.id===window._selId);
-  document.getElementById('confirmBtn').textContent=`Confirm ${r.type}`;
+  const btn = document.getElementById('confirmBtn');
+  btn.style.display = 'block';
+  btn.textContent = `Book ${r.type}`;
 });
 geocoder.on('clear',()=>{
   if(dMk){dMk.remove();dMk=null;}
   clearRoute(); destName=''; window._destName='';
-  document.getElementById('confirmBtn').textContent='Search for a destination';
+  
+  // Hide confirm button and zoom closely back to user
+  document.getElementById('confirmBtn').style.display = 'none';
   window._distKm=0; window._tripDurationMins=0; renderRides();
-  map.flyTo({center:[wULng,wULat],zoom:14, padding:{bottom: getMobilePadding()}});
+  map.flyTo({center:[wULng,wULat], zoom:DEFAULT_ZOOM, speed:1.2, padding:{bottom: getMobilePadding()}});
 });
 
 const BASE=[
@@ -784,17 +821,13 @@ function renderRides(){
 }
 
 window.selRide=function(id){
-  if(window._selId===id && window.innerWidth<900){
-    openModal();
-    return;
-  }
-  
   window._selId=id; renderRides();
   const r=window._rides.find(x=>x.id===id);
-  if(window._destName) document.getElementById('confirmBtn').textContent=`Confirm ${r.type}`;
+  if(window._destName) {
+      document.getElementById('confirmBtn').textContent=`Book ${r.type}`;
+  }
 };
 
-// --- REAL-TIME BOOKING & TIMEOUT LOGIC (No simulation hook by default) ---
 window.openModal=function(){
   if(!window._destName){showToast('Search for a destination first');return;}
   const r=window._rides.find(x=>x.id===window._selId);
@@ -843,7 +876,7 @@ window.bookRide=async function(){
     
     // Hide booking sheet and fly map to clear view
     document.getElementById('bookPanel').style.display='none';
-    map.flyTo({ center: [wULng, wULat], zoom: 15, padding: {bottom: 0} });
+    map.flyTo({ center: [wULng, wULat], zoom: DEFAULT_ZOOM, padding: {bottom: 0} });
 
     // Initiate 60-Second driver search timer
     const overlay = document.getElementById('searchOverlay');
@@ -893,7 +926,7 @@ window.cancelActiveRide = function() {
         [Math.max(wULng, dMk.getLngLat().lng)+.008, Math.max(wULat, dMk.getLngLat().lat)+.008]
       ], {padding:{top:55, bottom: getMobilePadding(), left:55, right:55}});
     } else {
-      map.flyTo({center:[wULng,wULat], zoom:14, padding:{bottom: getMobilePadding()}});
+      map.flyTo({center:[wULng,wULat], zoom:DEFAULT_ZOOM, speed:1.2, padding:{bottom: getMobilePadding()}});
     }
   }, 400); 
   
