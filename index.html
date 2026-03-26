@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -202,7 +203,7 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 
 /* trips */
 .tc{background:var(--card);border-radius:16px;padding:16px 18px;
-  margin-bottom:11px;border:1px solid var(--border);transition:.17s;}
+  margin-bottom:11px;border:1px solid var(--border);transition:.1s;}
 .tc:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.07);}
 .tc-row{display:flex;justify-content:space-between;align-items:flex-start;}
 .tc-type{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;}
@@ -364,7 +365,7 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
       <span class="n-txt">Book a Ride</span>
     </div>
     <div class="nl" data-tab="trips" onclick="switchTab('trips')">
-      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       <span class="n-txt">My Trips</span>
     </div>
     <div class="nl" data-tab="wallet" onclick="switchTab('wallet')">
@@ -406,7 +407,7 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
       <div class="geo-wrap" id="geoWrap"></div>
       <div class="slabel">Available Rides</div>
       <div class="ride-list" id="rideList"></div>
-      <button class="cbtn" id="confirmBtn" onclick="openModal()">Search for a destination</button>
+      <button class="cbtn" id="confirmBtn" onclick="openModal()" style="display: none;">Search for a destination</button>
     </div>
 
     <div class="active-panel" id="activeRidePanel">
@@ -581,7 +582,7 @@ window.doSignOut=async()=>{
   showToast('Signed out');
 };
 document.getElementById('gSignIn').onclick=()=>signInWithPopup(auth,gp).catch(()=>showToast('Sign-in cancelled'));
-document.getElementById('skipAuth').onclick=()=>{document.getElementById('authOverlay').style.display='none';showToast('Demo mode — rides won\'t be saved');};
+document.getElementById('skipAuth').onclick=()=>{document.getElementById('authOverlay').style.display='none';showToast('Demo mode — rides won't be saved');};
 </script>
 
 <script>
@@ -692,7 +693,7 @@ function updatePrices(){
 }
 function renderRides(){
   document.getElementById('rideList').innerHTML=window._rides.map(r=>`
-    <div class="rcard ${r.id===window._selId?'sel':''}" onclick="selRide(${r.id})">
+    <div class="rcard ${r.id===window._selId?'sel':''}" onclick="selAndConfirm(${r.id})">
       <div class="rinfo">
         <div class="rav">${ini2(r.driver)}</div>
         <div><div class="rname">${r.type} <span style="font-weight:400;font-size:10px;color:var(--muted)">👤${r.capacity}</span></div>
@@ -704,6 +705,18 @@ function renderRides(){
       </div>
     </div>`).join('');
 }
+
+// --- NEW FUNCTION: selAndConfirm ---
+window.selAndConfirm = function(id) {
+  window._selId = id;
+  renderRides();
+  const r = window._rides.find(x => x.id === id);
+  if (window._destName) {
+    openModal(); // Open the modal immediately
+  }
+};
+
+// --- OLD FUNCTION: selRide ---
 window.selRide=function(id){
   window._selId=id; renderRides();
   const r=window._rides.find(x=>x.id===id);
@@ -745,7 +758,7 @@ window.bookRide=async function(){
     
     // Zoom clear of the UI to current location
     map.flyTo({ center: [wULng, wULat], zoom: 16, padding: {bottom: window.innerWidth < 900 ? 80 : 0} });
-
+    
     // Simulate driver accepting after 3.5 seconds
     simTimeout = setTimeout(() => {
         wb.classList.remove('show');
@@ -757,12 +770,12 @@ window.bookRide=async function(){
         document.getElementById('adPlate').textContent = genPlate();
         document.getElementById('adTime').textContent = r.time;
         document.getElementById('adDist').textContent = window._distKm ? window._distKm.toFixed(1) + ' km' : '1.2 km';
-
+        
         // Slide up active panel
         const actPanel = document.getElementById('activeRidePanel');
         actPanel.style.display = 'flex';
         setTimeout(() => actPanel.classList.add('show'), 50);
-
+        
         // Fit map smoothly above the new active bottom sheet
         map.fitBounds([
           [Math.min(wULng, dMk ? dMk.getLngLat().lng : wULng)-.005, Math.min(wULat, dMk ? dMk.getLngLat().lat : wULat)-.005],
