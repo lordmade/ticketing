@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VynixRide App</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>VynixRide Web App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-blue: #0000FF;
@@ -13,6 +13,7 @@
             --text-main: #1D1D1F;
             --text-muted: #86868B;
             --card-bg: #FFFFFF;
+            --border-color: #E5E5EA;
         }
 
         * {
@@ -24,53 +25,105 @@
         }
 
         body {
-            background-color: #E5E5EA;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        /* Mobile App Container */
-        .app-container {
-            width: 100%;
-            max-width: 430px;
-            height: 100vh;
-            max-height: 932px;
             background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden; /* Prevent body scrolling, manage internally */
+        }
+
+        /* --- Main Layout Wrapper --- */
+        .layout-wrapper {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
             position: relative;
-            overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
 
-        @media (min-width: 431px) {
-            .app-container {
-                height: 90vh;
-                border-radius: 40px;
-                border: 8px solid #000;
-            }
+        /* --- Desktop Sidebar (Hidden on Mobile) --- */
+        .sidebar {
+            display: none;
+            width: 280px;
+            background-color: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            flex-direction: column;
+            padding: 24px;
+            z-index: 50;
+            box-shadow: 2px 0 20px rgba(0,0,0,0.02);
         }
 
-        /* Simulated Map Area */
+        .brand-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-grow: 1;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background-color: rgba(0, 0, 255, 0.04);
+            color: var(--primary-blue);
+        }
+
+        .user-profile-mini {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* --- Main Content Area (Map + Booking Panel) --- */
+        .main-content {
+            flex-grow: 1;
+            position: relative;
+            height: 100vh;
+        }
+
+        /* --- Simulated Map Area --- */
         .map-view {
-            height: 55%;
+            width: 100%;
+            height: 100%;
             background-color: #E8E8ED;
-            position: relative;
+            position: absolute;
+            top: 0;
+            left: 0;
             background-image: radial-gradient(#D1D1D6 1px, transparent 1px);
-            background-size: 20px 20px;
+            background-size: 24px 24px;
+            z-index: 1;
         }
 
         .location-pin {
             position: absolute;
-            top: 40%;
+            top: 45%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             background: var(--primary-blue);
             border: 4px solid #FFF;
             border-radius: 50%;
-            box-shadow: 0 4px 10px rgba(0, 0, 255, 0.4);
+            box-shadow: 0 4px 12px rgba(0, 0, 255, 0.4);
         }
 
         .location-pin::after {
@@ -79,11 +132,11 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
+            width: 80px;
+            height: 80px;
             background: rgba(0, 0, 255, 0.1);
             border-radius: 50%;
-            animation: pulse 2s infinite;
+            animation: pulse 2.5s infinite;
         }
 
         @keyframes pulse {
@@ -91,20 +144,49 @@
             100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
         }
 
-        /* Top Search Bar */
-        .search-container {
+        /* --- Floating Booking Panel --- */
+        .booking-panel {
             position: absolute;
-            top: 50px;
-            left: 20px;
-            right: 20px;
             background: var(--card-bg);
+            display: flex;
+            flex-direction: column;
+            z-index: 20;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Mobile specific booking panel (Bottom Sheet) */
+        @media (max-width: 899px) {
+            .booking-panel {
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 55vh;
+                border-radius: 32px 32px 0 0;
+                padding: 24px 20px 100px 20px;
+                box-shadow: 0 -10px 30px rgba(0,0,0,0.08);
+            }
+            .map-view {
+                height: 50vh; /* Leave room for sheet */
+            }
+        }
+
+        .drag-handle {
+            width: 40px;
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 4px;
+            margin: 0 auto 20px auto;
+        }
+
+        /* Search Input Area */
+        .search-box {
+            background: var(--bg-color);
             padding: 16px 20px;
-            border-radius: 24px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            border-radius: 16px;
             display: flex;
             align-items: center;
             gap: 12px;
-            z-index: 10;
+            margin-bottom: 20px;
         }
 
         .search-dot {
@@ -116,42 +198,12 @@
 
         .search-input {
             border: none;
+            background: transparent;
             outline: none;
             font-size: 16px;
             font-weight: 600;
             color: var(--text-main);
             width: 100%;
-        }
-
-        /* Bottom Sheet */
-        .bottom-sheet {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 55%;
-            background: var(--card-bg);
-            border-radius: 32px 32px 0 0;
-            padding: 24px 20px 100px 20px;
-            box-shadow: 0 -10px 30px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            z-index: 20;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .drag-handle {
-            width: 40px;
-            height: 4px;
-            background: #E5E5EA;
-            border-radius: 4px;
-            margin: 0 auto;
-        }
-
-        .sheet-header h2 {
-            font-size: 22px;
-            color: var(--text-main);
-            margin-top: 10px;
         }
 
         /* Ride Options */
@@ -165,7 +217,7 @@
         }
 
         .ride-list::-webkit-scrollbar {
-            display: none;
+            display: none; /* Hide scrollbar for clean UI */
         }
 
         .ride-card {
@@ -173,16 +225,21 @@
             align-items: center;
             justify-content: space-between;
             padding: 16px;
-            border-radius: 20px;
+            border-radius: 16px;
             border: 2px solid transparent;
-            background: #F9F9FB;
+            background: var(--card-bg);
             cursor: pointer;
             transition: all 0.2s ease;
+        }
+
+        .ride-card:hover {
+            background: var(--bg-color);
         }
 
         .ride-card.active {
             border-color: var(--primary-blue);
             background: rgba(0, 0, 255, 0.03);
+            box-shadow: 0 4px 15px rgba(0, 0, 255, 0.05);
         }
 
         .ride-info {
@@ -191,6 +248,7 @@
             gap: 16px;
         }
 
+        /* UI Generated Avatars */
         .ui-avatar {
             width: 48px;
             height: 48px;
@@ -201,8 +259,8 @@
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 18px;
-            text-transform: uppercase;
+            font-size: 16px;
+            letter-spacing: 0.5px;
         }
 
         .ride-details h4 {
@@ -230,32 +288,33 @@
             width: 100%;
             padding: 18px;
             border: none;
-            border-radius: 20px;
+            border-radius: 16px;
             background: var(--primary-gradient);
             color: white;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             box-shadow: 0 10px 20px rgba(0, 0, 255, 0.2);
             transition: transform 0.1s ease;
+            margin-top: auto;
         }
 
         .confirm-btn:active {
             transform: scale(0.98);
         }
 
-        /* Bottom Navigation Bar */
+        /* --- Mobile Bottom Navigation --- */
         .bottom-nav {
-            position: absolute;
+            position: fixed;
             bottom: 0;
             width: 100%;
-            height: 80px;
+            height: 85px;
             background: var(--card-bg);
-            border-top: 1px solid #E5E5EA;
+            border-top: 1px solid var(--border-color);
             display: flex;
             justify-content: space-around;
             align-items: center;
-            padding-bottom: 15px;
+            padding-bottom: 20px;
             z-index: 30;
         }
 
@@ -263,7 +322,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
             color: var(--text-muted);
             font-size: 11px;
             font-weight: 600;
@@ -274,74 +333,122 @@
             color: var(--primary-blue);
         }
 
-        .nav-icon {
-            width: 24px;
-            height: 24px;
-            background-color: currentColor;
-            mask-size: cover;
-            -webkit-mask-size: cover;
-        }
+        /* --- Desktop Responsive Breakpoint --- */
+        @media (min-width: 900px) {
+            .sidebar {
+                display: flex;
+            }
+            
+            .bottom-nav {
+                display: none;
+            }
 
-        /* Simple SVG masks for icons */
-        .icon-home { -webkit-mask-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>'); }
-        .icon-activity { -webkit-mask-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>'); }
-        .icon-account { -webkit-mask-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>'); }
+            .map-view {
+                height: 100%;
+            }
+
+            /* Transform Bottom Sheet into Floating Panel */
+            .booking-panel {
+                top: 32px;
+                left: 32px;
+                width: 420px;
+                height: calc(100vh - 64px);
+                max-height: 800px;
+                border-radius: 24px;
+                padding: 32px;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            }
+
+            .drag-handle {
+                display: none; /* No drag handle needed on desktop */
+            }
+        }
 
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <div class="search-container">
-            <div class="search-dot"></div>
-            <input type="text" class="search-input" value="Mokopane Mall" readonly>
-        </div>
+    <div class="layout-wrapper">
+        
+        <aside class="sidebar">
+            <div class="brand-logo">
+                <div class="ui-avatar" style="width: 32px; height: 32px; font-size: 14px;">VX</div>
+                VynixRide
+            </div>
+            
+            <nav class="nav-links">
+                <a class="nav-link active">Book a Ride</a>
+                <a class="nav-link">My Trips</a>
+                <a class="nav-link">Wallet</a>
+                <a class="nav-link">Saved Places</a>
+                <a class="nav-link" style="margin-top: auto;">Settings</a>
+            </nav>
 
-        <div class="map-view">
-            <div class="location-pin"></div>
-        </div>
+            <div class="user-profile-mini">
+                <div class="ui-avatar" style="width: 40px; height: 40px; background: #1D1D1F;">KP</div>
+                <div>
+                    <h4 style="font-size: 14px; color: var(--text-main);">K. Phasha</h4>
+                    <p style="font-size: 12px; color: var(--text-muted);">Manage Account</p>
+                </div>
+            </div>
+        </aside>
 
-        <div class="bottom-sheet">
-            <div class="drag-handle"></div>
-            <div class="sheet-header">
-                <h2>Select a Ride</h2>
+        <main class="main-content">
+            
+            <div class="map-view">
+                <div class="location-pin"></div>
             </div>
 
-            <div class="ride-list" id="rideList">
+            <div class="booking-panel">
+                <div class="drag-handle"></div>
+                
+                <h2 style="margin-bottom: 20px; font-size: 24px;">Where to?</h2>
+
+                <div class="search-box">
+                    <div class="search-dot"></div>
+                    <input type="text" class="search-input" value="Mokopane Mall" readonly>
                 </div>
 
-            <button class="confirm-btn" id="confirmBtn">Confirm VynixGo</button>
-        </div>
+                <h3 style="margin: 10px 0 16px 0; font-size: 16px; color: var(--text-muted);">Available Rides</h3>
+
+                <div class="ride-list" id="rideList">
+                    </div>
+
+                <button class="confirm-btn" id="confirmBtn">Confirm Ride</button>
+            </div>
+            
+        </main>
 
         <nav class="bottom-nav">
             <div class="nav-item active">
-                <div class="nav-icon icon-home"></div>
+                <div style="font-size: 20px;">🚙</div>
                 <span>Ride</span>
             </div>
             <div class="nav-item">
-                <div class="nav-icon icon-activity"></div>
-                <span>Activity</span>
+                <div style="font-size: 20px;">📋</div>
+                <span>Trips</span>
             </div>
             <div class="nav-item">
-                <div class="nav-icon icon-account"></div>
+                <div style="font-size: 20px;">👤</div>
                 <span>Account</span>
             </div>
         </nav>
+
     </div>
 
     <script>
-        // Mock Data specifically structured for a scalable software architecture
         const rideData = [
-            { id: 1, type: 'VynixGo', time: '3 min', capacity: 4, price: 45.00, driver: 'Kabelo P.', recommended: true },
-            { id: 2, type: 'VynixComfort', time: '7 min', capacity: 4, price: 68.50, driver: 'Thabo M.', recommended: false },
-            { id: 3, type: 'VynixXL', time: '12 min', capacity: 6, price: 110.00, driver: 'Lesego', recommended: false }
+            { id: 1, type: 'VynixGo', time: '3 min', capacity: 4, price: 45.00, driver: 'Kabelo P.', specs: 'Compact' },
+            { id: 2, type: 'VynixComfort', time: '7 min', capacity: 4, price: 68.50, driver: 'Thabo M.', specs: 'Newer cars, extra legroom' },
+            { id: 3, type: 'VynixXL', time: '12 min', capacity: 6, price: 110.00, driver: 'Lesego R.', specs: 'SUVs & Vans' },
+            { id: 4, type: 'VynixBlack', time: '15 min', capacity: 4, price: 185.00, driver: 'David', specs: 'Premium rides' }
         ];
 
         let selectedRideId = 1;
 
-        // UI-Avatar Generator function (No image uploads/cloudinary required)
+        // UI-Avatar Generator (Zero Cloudinary/Image dependency)
         const getInitials = (name) => {
-            return name.split(' ').map(n => n[0]).join('').substring(0, 2);
+            return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
         };
 
         const renderRides = () => {
@@ -360,8 +467,8 @@
                     <div class="ride-info">
                         <div class="ui-avatar">${avatarInitials}</div>
                         <div class="ride-details">
-                            <h4>${ride.type} <span style="font-weight:400; font-size:12px; color:#86868B;">&#183; ${ride.capacity} seats</span></h4>
-                            <p>${ride.time} away &#183; ${ride.driver}</p>
+                            <h4>${ride.type} <span style="font-weight:400; font-size:12px; color:var(--text-muted);">👤 ${ride.capacity}</span></h4>
+                            <p>${ride.time} away &#183; ${ride.specs}</p>
                         </div>
                     </div>
                     <div class="ride-price">
@@ -376,14 +483,13 @@
             selectedRideId = id;
             renderRides();
             
-            // Update button text
             const selectedRide = rideData.find(r => r.id === id);
             document.getElementById('confirmBtn').innerText = `Confirm ${selectedRide.type}`;
         };
 
         // Initialize 
         renderRides();
-
+        selectRide(1); // Set default active state
     </script>
 </body>
 </html>
