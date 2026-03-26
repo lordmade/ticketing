@@ -3,312 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MediCare - Find & Book Doctors Near You</title>
-   
+    <title>VitaCare - Book Healthcare Appointments</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-   
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js"></script>
+    
     <!-- Mapbox -->
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-       
+        
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
             background-color: #f8fafc; 
         }
-       
-        .glass-card { 
-            background: rgba(255, 255, 255, 0.92); 
-            backdrop-filter: blur(16px); 
-        }
-
+        
         .hero-bg {
-            background: linear-gradient(135deg, #1e40af 0%, #0e7490 100%);
-        }
-
-        .doctor-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
         }
         
-        .doctor-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
         }
-
+        
+        .doctor-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .doctor-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15);
+        }
+        
         .marker {
-            background-color: #2563eb;
-            width: 28px;
-            height: 28px;
+            background: linear-gradient(135deg, #14b8a6, #0f766e);
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             border: 4px solid white;
-            box-shadow: 0 10px 15px -3px rgb(37 99 235 / 0.3);
-            cursor: pointer;
+            box-shadow: 0 10px 15px -3px rgb(45 212 191 / 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .modal {
-            animation: modalPop 0.3s ease-out forwards;
+            font-size: 18px;
         }
         
-        @keyframes modalPop {
-            from {
-                opacity: 0;
-                transform: scale(0.95) translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
+        .nav-link {
+            position: relative;
+        }
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px;
+            left: 0;
+            background: #14b8a6;
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover:after {
+            width: 100%;
         }
     </style>
 </head>
-<body class="antialiased overflow-x-hidden">
+<body class="antialiased">
+
     <!-- Navbar -->
-    <nav class="bg-white border-b border-slate-100 sticky top-0 z-50">
-        <div class="container mx-auto px-6 py-5 flex justify-between items-center">
+    <nav class="bg-white border-b sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg">
-                    <i class="fa-solid fa-staff-snake"></i>
+                <div class="w-11 h-11 bg-gradient-to-br from-teal-600 to-cyan-600 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg">
+                    <i class="fa-solid fa-heart-pulse"></i>
                 </div>
-                <div>
-                    <span class="text-3xl font-bold tracking-tighter text-slate-900">MediCare</span>
-                </div>
+                <div class="text-3xl font-bold tracking-tighter text-slate-900">VitaCare</div>
             </div>
             
-            <div class="hidden md:flex items-center gap-8 text-sm font-semibold">
-                <a href="#" class="text-slate-600 hover:text-slate-900 transition-colors">Find Doctors</a>
-                <a href="#" class="text-slate-600 hover:text-slate-900 transition-colors">Hospitals</a>
-                <a href="#" class="text-slate-600 hover:text-slate-900 transition-colors">Specialities</a>
-                <a href="#" class="text-slate-600 hover:text-slate-900 transition-colors">How it Works</a>
+            <div class="hidden md:flex items-center gap-8 font-medium">
+                <a href="#" class="nav-link text-slate-700 hover:text-teal-700">Find Doctors</a>
+                <a href="#" class="nav-link text-slate-700 hover:text-teal-700">Hospitals</a>
+                <a href="#" class="nav-link text-slate-700 hover:text-teal-700">Specialities</a>
+                <a href="#" class="nav-link text-slate-700 hover:text-teal-700">For Providers</a>
             </div>
 
-            <div class="flex items-center gap-4">
-                <button onclick="showLoginModal()" 
-                        class="px-6 py-2.5 text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors">
-                    Log In
-                </button>
-                <button onclick="showRegisterModal()" 
-                        class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-2xl transition-all">
-                    Join Free
-                </button>
+            <div id="authSection" class="flex items-center gap-4">
+                <!-- Populated by JS after auth check -->
             </div>
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <header class="hero-bg text-white pt-20 pb-24">
-        <div class="container mx-auto px-6">
+    <!-- Hero -->
+    <header class="hero-bg text-white pt-24 pb-28">
+        <div class="max-w-7xl mx-auto px-6">
             <div class="grid lg:grid-cols-2 gap-16 items-center">
-                <!-- Left Content -->
-                <div class="space-y-8">
-                    <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-5 py-2 rounded-3xl text-sm font-medium">
-                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                        248 doctors available near you right now
+                <div class="space-y-10">
+                    <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-6 py-3 rounded-full text-sm">
+                        <span class="text-teal-300">●</span>
+                        Trusted by 12,450+ patients in Limpopo
                     </div>
-
-                    <h1 class="text-6xl lg:text-7xl font-extrabold leading-[1.05] tracking-tighter">
-                        Book the Best<br>Doctors <span class="text-cyan-300">Instantly</span>
+                    
+                    <h1 class="text-6xl lg:text-7xl font-extrabold leading-none tracking-tighter">
+                        Healthcare,<br>made <span class="text-teal-300">simple</span>.
                     </h1>
                     
-                    <p class="text-xl text-blue-100 max-w-lg">
-                        Find trusted doctors and hospitals in your area. Book appointments in seconds.
+                    <p class="text-xl text-teal-100 max-w-md">
+                        Book appointments with trusted doctors and hospitals near you in seconds.
                     </p>
 
-                    <!-- Search Bar -->
-                    <div class="bg-white rounded-3xl p-2 shadow-2xl max-w-2xl">
-                        <div class="flex flex-col md:flex-row gap-2">
-                            <div class="flex-1 px-6 py-5">
-                                <label class="block text-xs font-bold text-slate-400 tracking-widest mb-1">SEARCH DOCTOR OR SPECIALITY</label>
+                    <div class="bg-white rounded-3xl p-2 shadow-2xl">
+                        <div class="flex flex-col md:flex-row">
+                            <div class="flex-1 p-6">
+                                <label class="block text-xs font-bold text-slate-400 tracking-widest mb-2">SEARCH DOCTOR / SPECIALITY</label>
                                 <input id="searchInput" type="text" 
-                                       placeholder="Cardiologist, Dentist, Dr. Thabo..." 
-                                       class="w-full bg-transparent focus:outline-none text-xl font-semibold text-slate-900 placeholder-slate-400">
+                                       placeholder="Cardiologist, Dr. Mokoena..." 
+                                       class="w-full bg-transparent text-xl font-medium text-slate-900 focus:outline-none">
                             </div>
-                            <div class="flex-1 px-6 py-5 border-t md:border-t-0 md:border-l border-slate-100">
-                                <label class="block text-xs font-bold text-slate-400 tracking-widest mb-1">LOCATION</label>
-                                <input id="locationInput" type="text" 
-                                       value="Mokopane, Limpopo" 
-                                       class="w-full bg-transparent focus:outline-none text-xl font-semibold text-slate-900 placeholder-slate-400">
+                            <div class="flex-1 p-6 border-t md:border-t-0 md:border-l">
+                                <label class="block text-xs font-bold text-slate-400 tracking-widest mb-2">YOUR LOCATION</label>
+                                <input id="locationInput" type="text" value="Mokopane, Limpopo" 
+                                       class="w-full bg-transparent text-xl font-medium text-slate-900 focus:outline-none">
                             </div>
                             <button onclick="performSearch()" 
-                                    class="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white px-12 py-6 rounded-2xl font-bold text-lg flex items-center gap-3 transition-all active:scale-95">
+                                    class="bg-teal-600 hover:bg-teal-700 text-white px-12 py-6 rounded-2xl font-semibold text-lg flex items-center gap-3 transition-all">
                                 <i class="fa-solid fa-magnifying-glass"></i>
                                 Search
                             </button>
                         </div>
                     </div>
-
-                    <div class="flex items-center gap-8 text-sm">
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-check text-green-400"></i>
-                            <span>Instant Booking</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-check text-green-400"></i>
-                            <span>Verified Doctors</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-check text-green-400"></i>
-                            <span>Secure Payments</span>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- Right Hero Image -->
                 <div class="relative hidden lg:block">
-                    <div class="absolute -inset-4 bg-gradient-to-br from-blue-500/30 to-cyan-500/30 rounded-[4rem] -rotate-6"></div>
-                    <img src="https://images.unsplash.com/photo-1559757148-5e995136c87b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
-                         alt="Happy doctor with patient" 
-                         class="relative rounded-3xl shadow-2xl border-8 border-white">
-                    
-                    <!-- Floating Stats -->
-                    <div class="absolute -bottom-6 -left-6 bg-white text-slate-900 rounded-3xl shadow-xl p-6 glass-card">
-                        <div class="flex items-center gap-4">
-                            <div class="text-4xl">⭐</div>
-                            <div>
-                                <div class="font-bold text-2xl">4.9/5</div>
-                                <div class="text-sm text-slate-500">Average Rating</div>
-                            </div>
-                        </div>
-                    </div>
+                    <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
+                         alt="Doctor consultation" 
+                         class="rounded-3xl shadow-2xl border-8 border-white/30">
                 </div>
             </div>
         </div>
     </header>
 
     <!-- Results Section -->
-    <section id="resultsSection" class="hidden container mx-auto px-6 py-16">
-        <div class="flex justify-between items-end mb-10">
-            <h2 id="resultsTitle" class="text-4xl font-bold text-slate-900">Doctors Near Mokopane</h2>
-            <div class="text-slate-500 font-medium">
-                <span id="resultCount">12</span> results found
-            </div>
+    <section id="resultsSection" class="hidden max-w-7xl mx-auto px-6 py-16">
+        <div class="flex justify-between items-center mb-10">
+            <h2 id="resultsTitle" class="text-4xl font-bold text-slate-900">Available Healthcare Providers</h2>
+            <p class="text-slate-500" id="resultCount">0 results</p>
         </div>
 
         <div class="grid lg:grid-cols-12 gap-8">
             <!-- Doctor List -->
             <div class="lg:col-span-5">
-                <div id="doctorList" class="space-y-6 max-h-[680px] overflow-y-auto pr-4 custom-scroll">
-                    <!-- Populated by JavaScript -->
+                <div id="doctorList" class="space-y-6 max-h-[720px] overflow-y-auto pr-4">
+                    <!-- Dynamically populated -->
                 </div>
             </div>
 
             <!-- Map -->
             <div class="lg:col-span-7">
-                <div class="rounded-3xl overflow-hidden shadow-2xl border border-slate-100 h-[680px] relative">
+                <div class="rounded-3xl overflow-hidden shadow-2xl h-[720px] relative border border-slate-100">
                     <div id="map" class="w-full h-full"></div>
-                    
-                    <!-- Map Controls -->
-                    <div class="absolute top-6 right-6 bg-white rounded-2xl shadow-lg p-2 flex flex-col gap-2 z-10">
-                        <button onclick="centerMapOnUser()" 
-                                class="w-10 h-10 flex items-center justify-center hover:bg-slate-100 rounded-xl text-slate-600">
-                            <i class="fa-solid fa-location-crosshairs"></i>
-                        </button>
-                    </div>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Popular Specialities -->
-    <section class="container mx-auto px-6 py-20 border-t border-slate-100">
-        <h2 class="text-3xl font-bold text-center mb-12">Popular Specialities</h2>
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-            <div onclick="searchSpeciality('Cardiologist')" class="bg-white p-8 rounded-3xl text-center hover:shadow-xl cursor-pointer transition-all hover:-translate-y-2">
-                <div class="w-16 h-16 mx-auto bg-red-100 text-red-600 rounded-2xl flex items-center justify-center text-3xl mb-4">❤️</div>
-                <h3 class="font-semibold">Cardiology</h3>
-            </div>
-            <div onclick="searchSpeciality('Pediatrician')" class="bg-white p-8 rounded-3xl text-center hover:shadow-xl cursor-pointer transition-all hover:-translate-y-2">
-                <div class="w-16 h-16 mx-auto bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mb-4">👶</div>
-                <h3 class="font-semibold">Pediatrics</h3>
-            </div>
-            <div onclick="searchSpeciality('Dermatologist')" class="bg-white p-8 rounded-3xl text-center hover:shadow-xl cursor-pointer transition-all hover:-translate-y-2">
-                <div class="w-16 h-16 mx-auto bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-3xl mb-4">🧴</div>
-                <h3 class="font-semibold">Dermatology</h3>
-            </div>
-            <div onclick="searchSpeciality('Gynecologist')" class="bg-white p-8 rounded-3xl text-center hover:shadow-xl cursor-pointer transition-all hover:-translate-y-2">
-                <div class="w-16 h-16 mx-auto bg-pink-100 text-pink-600 rounded-2xl flex items-center justify-center text-3xl mb-4">👩</div>
-                <h3 class="font-semibold">Gynecology</h3>
-            </div>
-            <div onclick="searchSpeciality('Dentist')" class="bg-white p-8 rounded-3xl text-center hover:shadow-xl cursor-pointer transition-all hover:-translate-y-2">
-                <div class="w-16 h-16 mx-auto bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-3xl mb-4">🦷</div>
-                <h3 class="font-semibold">Dentistry</h3>
-            </div>
-            <div onclick="searchSpeciality('General Practitioner')" class="bg-white p-8 rounded-3xl text-center hover:shadow-xl cursor-pointer transition-all hover:-translate-y-2">
-                <div class="w-16 h-16 mx-auto bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl mb-4">🩺</div>
-                <h3 class="font-semibold">General Practice</h3>
             </div>
         </div>
     </section>
 
     <!-- Booking Modal -->
-    <div id="bookingModal" class="fixed inset-0 bg-black/60 backdrop-blur-xl z-[100] hidden items-center justify-center p-4">
-        <div class="modal bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl">
-            <div class="px-8 pt-8 pb-6 border-b flex items-center justify-between">
+    <div id="bookingModal" class="fixed inset-0 bg-black/70 backdrop-blur-xl hidden flex items-center justify-center z-[100] p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full overflow-hidden">
+            <div class="px-8 py-6 border-b flex items-center justify-between">
                 <div>
-                    <h3 class="text-2xl font-bold text-slate-900">Book Appointment</h3>
-                    <p id="modalDoctorName" class="text-blue-600 font-semibold mt-1"></p>
+                    <h3 class="text-2xl font-bold">Book Appointment</h3>
+                    <p id="modalDoctorName" class="text-teal-600 font-semibold"></p>
                 </div>
-                <button onclick="closeBookingModal()" class="text-3xl text-slate-400 hover:text-slate-600 transition-colors">
-                    ×
-                </button>
+                <button onclick="closeBookingModal()" class="text-4xl text-slate-300 hover:text-slate-600">×</button>
             </div>
-
+            
             <form id="bookingForm" class="p-8 space-y-6">
                 <input type="hidden" id="doctorId">
-
+                
                 <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Full Name</label>
-                    <input type="text" id="patientName" required 
-                           class="w-full px-5 py-4 border border-slate-200 rounded-2xl focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none text-lg">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Full Name</label>
+                    <input type="text" id="patientName" required class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:border-teal-600 focus:ring-4 focus:ring-teal-100 outline-none">
                 </div>
-
+                
                 <div class="grid grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">Phone Number</label>
-                        <input type="tel" id="patientPhone" required 
-                               class="w-full px-5 py-4 border border-slate-200 rounded-2xl focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none text-lg">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Phone Number</label>
+                        <input type="tel" id="patientPhone" required class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:border-teal-600 focus:ring-4 focus:ring-teal-100 outline-none">
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-slate-700 mb-2">Email</label>
-                        <input type="email" id="patientEmail" 
-                               class="w-full px-5 py-4 border border-slate-200 rounded-2xl focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none text-lg">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Preferred Date</label>
+                        <input type="datetime-local" id="appointmentDate" required class="w-full px-5 py-4 rounded-2xl border border-slate-200 focus:border-teal-600 focus:ring-4 focus:ring-teal-100 outline-none">
                     </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Preferred Date & Time</label>
-                    <input type="datetime-local" id="appointmentDate" required 
-                           class="w-full px-5 py-4 border border-slate-200 rounded-2xl focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none text-lg">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">Reason for Visit</label>
-                    <textarea id="reason" rows="3"
-                              class="w-full px-5 py-4 border border-slate-200 rounded-2xl focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none resize-none"></textarea>
                 </div>
 
                 <button type="submit" 
-                        class="w-full bg-gradient-to-r from-slate-900 to-blue-600 hover:from-slate-800 hover:to-blue-700 text-white font-bold py-5 rounded-2xl text-lg transition-all">
-                    Confirm Appointment
+                        class="w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-5 rounded-2xl text-lg transition-all">
+                    Confirm Booking
                 </button>
             </form>
         </div>
     </div>
 
     <script type="module">
-        // ====================== FULL CODE ======================
-        // Firebase Setup
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
-
+        // ====================== VITA CARE - FULL CODE ======================
+        
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBOyZ3As4GTuNvjemvPF_SpsC6m6vqtNhc",
             authDomain: "fire-b-a8878.firebaseapp.com",
@@ -319,77 +224,78 @@
             appId: "1:658673187627:web:32699cbc33e85f4bafa36e"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
 
-        // Mapbox Token - REPLACE WITH YOUR OWN TOKEN
-        mapboxgl.accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';   // ←←← CHANGE THIS
+        // Google Auth Provider
+        const provider = new firebase.auth.GoogleAuthProvider();
 
-        let map;
-        let currentMarkers = [];
+        // Mapbox Token - REPLACE WITH YOUR OWN
+        mapboxgl.accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
 
-        // Enhanced Mock Data (More realistic for South Africa)
-        let doctors = [
-            {
-                id: "d1",
-                name: "Dr. Thabo Mokoena",
-                spec: "General Practitioner",
-                address: "123 Main Street, Mokopane",
-                lat: -24.1833,
-                lng: 29.0167,
-                rating: 4.9,
-                experience: "12 years",
-                fee: "R450",
-                hospital: "Mokopane Provincial Hospital"
-            },
-            {
-                id: "d2",
-                name: "Dr. Lerato Nkosi",
-                spec: "Cardiologist",
-                address: "45 Church Street, Mokopane",
-                lat: -24.1900,
-                lng: 29.0200,
-                rating: 4.8,
-                experience: "18 years",
-                fee: "R850",
-                hospital: "Private Practice"
-            },
-            {
-                id: "d3",
-                name: "Dr. Sipho Khumalo",
-                spec: "Pediatrician",
-                address: "78 Market Road, Mokopane",
-                lat: -24.1750,
-                lng: 29.0100,
-                rating: 5.0,
-                experience: "9 years",
-                fee: "R520",
-                hospital: "Mokopane Clinic"
-            },
-            {
-                id: "d4",
-                name: "Dr. Naledi Modise",
-                spec: "Dermatologist",
-                address: "12 Hospital Lane, Polokwane",
-                lat: -23.9042,
-                lng: 29.4689,
-                rating: 4.7,
-                experience: "15 years",
-                fee: "R680",
-                hospital: "Polokwane MediClinic"
+        let map = null;
+        let currentUser = null;
+        let doctorsData = []; // Will be loaded from Firebase later
+
+        // Auth UI
+        function updateAuthUI(user) {
+            currentUser = user;
+            const authDiv = document.getElementById('authSection');
+            
+            if (user) {
+                authDiv.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <img src="${user.photoURL}" class="w-9 h-9 rounded-full border-2 border-teal-200">
+                        <div>
+                            <p class="text-sm font-medium text-slate-700">${user.displayName}</p>
+                        </div>
+                        <button onclick="signOut()" 
+                                class="px-5 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-2xl transition-colors">
+                            Logout
+                        </button>
+                    </div>
+                `;
+            } else {
+                authDiv.innerHTML = `
+                    <button onclick="signInWithGoogle()" 
+                            class="flex items-center gap-3 bg-white border border-slate-300 hover:border-slate-400 px-6 py-3 rounded-2xl font-medium text-slate-700 transition-all">
+                        <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" 
+                             class="h-5">
+                        Sign in with Google
+                    </button>
+                `;
             }
-        ];
+        }
 
-        let selectedDoctor = null;
+        // Sign In with Google
+        async function signInWithGoogle() {
+            try {
+                const result = await auth.signInWithPopup(provider);
+                updateAuthUI(result.user);
+                alert(`Welcome, ${result.user.displayName}!`);
+            } catch (error) {
+                console.error("Google Sign-in Error:", error);
+                alert("Failed to sign in. Please try again.");
+            }
+        }
+
+        function signOut() {
+            auth.signOut().then(() => {
+                updateAuthUI(null);
+            });
+        }
 
         // Initialize Map
         function initMap() {
             if (mapboxgl.accessToken === 'YOUR_MAPBOX_ACCESS_TOKEN') {
                 document.getElementById('map').innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full bg-red-50 text-red-600 p-10 text-center">
-                        <i class="fa-solid fa-key text-6xl mb-4"></i>
-                        <p class="font-bold text-xl mb-2">Mapbox Token Required</p>
-                        <p class="text-sm">Please replace 'YOUR_MAPBOX_ACCESS_TOKEN' with your actual Mapbox public token in the script.</p>
+                    <div class="h-full flex items-center justify-center bg-slate-50 text-slate-400">
+                        <div class="text-center">
+                            <i class="fa-solid fa-map text-6xl mb-4"></i>
+                            <p class="font-medium">Map will appear after adding Mapbox token</p>
+                        </div>
                     </div>`;
                 return;
             }
@@ -397,143 +303,68 @@
             map = new mapboxgl.Map({
                 container: 'map',
                 style: 'mapbox://styles/mapbox/streets-v12',
-                center: [29.0167, -24.1833], // Mokopane coordinates
-                zoom: 13,
-                pitch: 45,
-                bearing: -17
+                center: [29.0167, -24.1833], // Mokopane
+                zoom: 12
             });
-
-            map.addControl(new mapboxgl.NavigationControl());
         }
 
-        // Render Doctors
-        function renderDoctors(filteredDoctors) {
-            const doctorList = document.getElementById('doctorList');
-            doctorList.innerHTML = '';
+        // Render Doctors (from Firebase in future)
+        function renderDoctors(doctors) {
+            const container = document.getElementById('doctorList');
+            container.innerHTML = '';
 
-            // Clear previous markers
-            currentMarkers.forEach(marker => marker.remove());
-            currentMarkers = [];
-
-            filteredDoctors.forEach(doc => {
-                // Create Doctor Card
-                const cardHTML = `
-                    <div class="doctor-card bg-white rounded-3xl overflow-hidden border border-slate-100">
-                        <div class="p-6">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h3 class="font-bold text-xl text-slate-900">${doc.name}</h3>
-                                    <p class="text-blue-600 font-semibold">${doc.spec}</p>
-                                </div>
-                                <div class="text-right">
-                                    <div class="flex items-center gap-1 text-yellow-400">
-                                        <i class="fa-solid fa-star"></i>
-                                        <span class="font-bold text-slate-700">${doc.rating}</span>
-                                    </div>
-                                </div>
+            doctors.forEach(doc => {
+                const card = document.createElement('div');
+                card.className = "doctor-card bg-white rounded-3xl overflow-hidden border border-slate-100";
+                card.innerHTML = `
+                    <div class="p-7">
+                        <div class="flex justify-between">
+                            <div>
+                                <h3 class="font-bold text-2xl">${doc.name}</h3>
+                                <p class="text-teal-600 font-semibold mt-1">${doc.speciality}</p>
                             </div>
-                            
-                            <div class="mt-6 space-y-2 text-sm">
-                                <div class="flex items-center gap-3 text-slate-600">
-                                    <i class="fa-solid fa-location-dot w-4"></i>
-                                    <span>${doc.address}</span>
-                                </div>
-                                <div class="flex items-center gap-3 text-slate-600">
-                                    <i class="fa-solid fa-clock w-4"></i>
-                                    <span>${doc.experience} experience</span>
-                                </div>
-                                <div class="flex items-center gap-3 text-slate-600">
-                                    <i class="fa-solid fa-money-bill w-4"></i>
-                                    <span>Consultation: <strong>${doc.fee}</strong></span>
-                                </div>
+                            <div class="text-right">
+                                <span class="text-amber-500 text-xl">★</span>
+                                <span class="font-bold text-slate-700">${doc.rating}</span>
                             </div>
                         </div>
-                        
-                        <div class="border-t p-6 bg-slate-50 flex gap-3">
-                            <button onclick="openBookingModal('${doc.id}')" 
-                                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl transition-all">
-                                Book Now
-                            </button>
-                            <button onclick="viewDoctorProfile('${doc.id}')" 
-                                    class="flex-1 border border-slate-300 hover:bg-white font-bold py-4 rounded-2xl transition-all">
-                                View Profile
-                            </button>
-                        </div>
+                        <p class="text-slate-500 mt-4 text-sm">${doc.address}</p>
+                    </div>
+                    <div class="bg-slate-50 px-7 py-5 flex gap-3">
+                        <button onclick="bookAppointment('${doc.id}')" 
+                                class="flex-1 bg-teal-600 text-white font-bold py-4 rounded-2xl hover:bg-teal-700 transition-all">
+                            Book Now
+                        </button>
                     </div>
                 `;
-
-                doctorList.innerHTML += cardHTML;
-
-                // Add Map Marker
-                if (map) {
-                    const el = document.createElement('div');
-                    el.className = 'marker';
-                    el.innerHTML = `<span class="text-xs">👨‍⚕️</span>`;
-
-                    const marker = new mapboxgl.Marker({ element: el })
-                        .setLngLat([doc.lng, doc.lat])
-                        .setPopup(new mapboxgl.Popup({ offset: 30 })
-                            .setHTML(`
-                                <div class="p-3">
-                                    <h4 class="font-bold">${doc.name}</h4>
-                                    <p class="text-sm text-blue-600">${doc.spec}</p>
-                                    <p class="text-xs mt-2">${doc.address}</p>
-                                </div>
-                            `))
-                        .addTo(map);
-
-                    currentMarkers.push(marker);
-                }
+                container.appendChild(card);
             });
         }
 
-        // Perform Search
+        // Search Function
         function performSearch() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-            const locationTerm = document.getElementById('locationInput').value.toLowerCase().trim();
-
             document.getElementById('resultsSection').classList.remove('hidden');
-
-            let filtered = doctors;
-
-            if (searchTerm) {
-                filtered = filtered.filter(doc => 
-                    doc.name.toLowerCase().includes(searchTerm) || 
-                    doc.spec.toLowerCase().includes(searchTerm)
-                );
-            }
-
-            document.getElementById('resultsTitle').textContent = 
-                searchTerm ? `Results for "${searchTerm}"` : "Doctors Near You";
-
-            document.getElementById('resultCount').textContent = filtered.length;
-
-            renderDoctors(filtered);
-
-            // Initialize map if not already done
+            
+            // For now using placeholder data - replace with real Firebase query later
+            const sampleDoctors = [
+                { id: "1", name: "Dr. Thabo Mokoena", speciality: "General Practitioner", address: "Mokopane", rating: "4.9" },
+                { id: "2", name: "Dr. Lerato Nkosi", speciality: "Cardiologist", address: "Mokopane", rating: "4.8" }
+            ];
+            
+            renderDoctors(sampleDoctors);
+            
             if (!map) initMap();
         }
 
-        // Search by speciality
-        function searchSpeciality(spec) {
-            document.getElementById('searchInput').value = spec;
-            performSearch();
-        }
+        // Booking Modal
+        let selectedDoctor = null;
 
-        // Open Booking Modal
-        function openBookingModal(docId) {
-            selectedDoctor = doctors.find(d => d.id === docId);
-            if (!selectedDoctor) return;
-
-            document.getElementById('doctorId').value = selectedDoctor.id;
-            document.getElementById('modalDoctorName').innerHTML = `
-                with <span class="font-bold">${selectedDoctor.name}</span><br>
-                <span class="text-sm text-slate-500">${selectedDoctor.spec} • ${selectedDoctor.fee}</span>
-            `;
-
-            const modal = document.getElementById('bookingModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+        function bookAppointment(docId) {
+            // In production, fetch doctor details from Firebase
+            selectedDoctor = { id: docId, name: "Dr. Example" }; // Placeholder
+            document.getElementById('modalDoctorName').textContent = `with ${selectedDoctor.name}`;
+            document.getElementById('bookingModal').classList.remove('hidden');
+            document.getElementById('bookingModal').classList.add('flex');
         }
 
         function closeBookingModal() {
@@ -542,88 +373,56 @@
             modal.classList.remove('flex');
         }
 
-        // View Doctor Profile (placeholder)
-        function viewDoctorProfile(docId) {
-            const doctor = doctors.find(d => d.id === docId);
-            alert(`Opening profile for ${doctor.name}\n\nSpeciality: ${doctor.spec}\nExperience: ${doctor.experience}\n\n(This would open a full profile page in production)`);
-        }
-
         // Booking Form Submit
-        document.getElementById('bookingForm').addEventListener('submit', async function(e) {
+        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            if (!currentUser) {
+                alert("Please sign in with Google to book an appointment.");
+                closeBookingModal();
+                return;
+            }
 
             const appointmentData = {
-                doctorId: document.getElementById('doctorId').value,
-                doctorName: selectedDoctor.name,
+                doctorId: selectedDoctor.id,
+                patientUid: currentUser.uid,
                 patientName: document.getElementById('patientName').value,
                 patientPhone: document.getElementById('patientPhone').value,
-                patientEmail: document.getElementById('patientEmail').value,
                 appointmentDate: document.getElementById('appointmentDate').value,
-                reason: document.getElementById('reason').value,
-                timestamp: new Date().toISOString(),
                 status: "pending",
-                location: "Mokopane, Limpopo"
+                createdAt: new Date().toISOString()
             };
 
             try {
-                const submitBtn = this.querySelector('button[type="submit"]');
-                const originalText = submitBtn.innerText;
-                submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Booking...`;
-                submitBtn.disabled = true;
-
-                const appointmentsRef = ref(db, 'appointments');
-                const newAppointmentRef = push(appointmentsRef);
-                await set(newAppointmentRef, appointmentData);
-
-                alert(`✅ Appointment successfully booked with ${selectedDoctor.name}!\n\nYou will receive a confirmation SMS shortly.`);
-
+                const newAppointmentRef = db.ref('appointments').push();
+                await newAppointmentRef.set(appointmentData);
+                
+                alert("✅ Appointment booked successfully! You will receive confirmation shortly.");
                 closeBookingModal();
-                this.reset();
-
+                document.getElementById('bookingForm').reset();
             } catch (error) {
-                console.error("Firebase Error:", error);
-                alert("❌ Failed to book appointment. Please try again.");
-            } finally {
-                const submitBtn = this.querySelector('button[type="submit"]');
-                submitBtn.innerText = "Confirm Appointment";
-                submitBtn.disabled = false;
+                console.error(error);
+                alert("Failed to book appointment. Please try again.");
             }
         });
 
-        // Fake Login & Register Modals
-        function showLoginModal() {
-            alert("Login Modal would open here.\n\nDemo: Use any email + password to 'login'");
-        }
-
-        function showRegisterModal() {
-            alert("Registration form would appear here.\n\nThis is a demo landing page.");
-        }
-
-        function centerMapOnUser() {
-            if (map) {
-                map.flyTo({
-                    center: [29.0167, -24.1833],
-                    zoom: 14,
-                    duration: 2000
-                });
-            }
-        }
-
-        // Keyboard support for search
-        document.getElementById('searchInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') performSearch();
+        // Auth State Listener
+        auth.onAuthStateChanged((user) => {
+            updateAuthUI(user);
         });
 
-        // Tailwind script already included via CDN
-
-        // Auto search on load for demo
-        window.onload = function() {
+        // Initialize on load
+        window.onload = () => {
             // Show results by default for demo
             setTimeout(() => {
                 document.getElementById('resultsSection').classList.remove('hidden');
-                renderDoctors(doctors);
+                const demoDoctors = [
+                    { id: "1", name: "Dr. Thabo Mokoena", speciality: "General Practitioner", address: "123 Hospital Road, Mokopane", rating: "4.9" },
+                    { id: "2", name: "Dr. Lerato Nkosi", speciality: "Cardiologist", address: "45 Medical Centre, Mokopane", rating: "4.8" }
+                ];
+                renderDoctors(demoDoctors);
                 initMap();
-            }, 800);
+            }, 600);
         };
     </script>
 </body>
