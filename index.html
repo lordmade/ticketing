@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>VynixRide</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
@@ -20,44 +20,60 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 
 .shell{display:flex;height:100vh;width:100vw;overflow:hidden;position:relative;}
 
-/* sidebar */
-.sidebar{display:none;width:260px;background:var(--card);border-right:1px solid var(--border);
-  flex-direction:column;padding:26px 18px;z-index:60;flex-shrink:0;}
+/* Expandable Sidebar */
+.sidebar{
+  display:none; width:88px; background:var(--card); border-right:1px solid var(--border);
+  flex-direction:column; padding:26px 18px; z-index:60; flex-shrink:0;
+  transition:width .35s cubic-bezier(.4,0,.2,1); overflow-x:hidden; white-space:nowrap;
+}
 @media(min-width:900px){.sidebar{display:flex;}}
+.sidebar:hover{width:260px; box-shadow:4px 0 24px rgba(0,0,0,.04);}
+
 .logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--blue);
-  display:flex;align-items:center;gap:10px;margin-bottom:36px;}
-.logo-mark{width:34px;height:34px;background:var(--blue);border-radius:9px;
-  display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;
+  display:flex;align-items:center;gap:16px;margin-bottom:36px;padding-left:6px;}
+.logo-mark{width:38px;height:38px;background:var(--blue);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;
   font-weight:800;flex-shrink:0;box-shadow:0 4px 14px var(--glow);}
-.nl{display:flex;align-items:center;gap:13px;padding:12px 14px;border-radius:12px;
-  color:var(--muted);font-size:14px;font-weight:500;cursor:pointer;transition:.17s;margin-bottom:2px;}
+.l-txt{opacity:0; transition:opacity .2s; letter-spacing:-.5px;}
+.sidebar:hover .l-txt{opacity:1; transition-delay:.1s;}
+
+.nl{display:flex;align-items:center;gap:18px;padding:14px;border-radius:12px;
+  color:var(--muted);font-size:15px;font-weight:500;cursor:pointer;transition:.17s;margin-bottom:4px;overflow:hidden;}
+.nl svg{flex-shrink:0;}
 .nl:hover{background:rgba(26,59,255,.05);color:var(--blue);}
 .nl.act{background:rgba(26,59,255,.09);color:var(--blue);font-weight:600;}
+.n-txt{opacity:0; transition:opacity .2s;}
+.sidebar:hover .n-txt{opacity:1; transition-delay:.1s;}
+
 .nav-spacer{flex:1;}
-.user-mini{display:flex;align-items:center;gap:11px;padding:14px 12px;
-  background:var(--bg);border-radius:12px;margin-top:10px;cursor:pointer;transition:.17s;}
+
+.user-mini{display:flex;align-items:center;gap:16px;padding:12px 14px;
+  background:var(--bg);border-radius:12px;margin-top:10px;cursor:pointer;transition:.17s;overflow:hidden;}
 .user-mini:hover{background:rgba(26,59,255,.07);}
-.av{width:34px;height:34px;border-radius:50%;background:var(--blue);color:#fff;
-  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;}
+.av{width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+.user-txt{opacity:0; transition:opacity .2s; display:flex; flex-direction:column;}
+.sidebar:hover .user-txt{opacity:1; transition-delay:.1s;}
 
 /* map */
 .map-wrap{flex:1;position:relative;height:100vh;}
 #map{position:absolute;inset:0;width:100%;height:100%;}
 .mapboxgl-ctrl-bottom-right{bottom:10px;right:10px;}
+@media(max-width:899px){.mapboxgl-ctrl-bottom-right{bottom:calc(var(--nav-h) + 10px);}}
 .cmarker{width:18px;height:18px;background:var(--blue);border:3px solid #fff;
   border-radius:50%;box-shadow:0 2px 12px var(--glow);}
 .dmarker{width:16px;height:16px;background:var(--blue2);border:3px solid #fff;
   border-radius:50%;box-shadow:0 2px 10px var(--glow);}
 
-/* panel */
+/* Mobile Fluid Panel */
 .panel{position:absolute;background:rgba(255,255,255,.93);backdrop-filter:blur(22px) saturate(1.8);
   -webkit-backdrop-filter:blur(22px) saturate(1.8);
   display:flex;flex-direction:column;z-index:30;
   border:1px solid rgba(255,255,255,.8);}
 @media(max-width:899px){
-  .panel{bottom:0;left:0;width:100%;height:62vh;border-radius:28px 28px 0 0;
-    padding:16px 16px calc(var(--nav-h)+14px);box-shadow:0 -12px 40px rgba(0,0,0,.1);}
-  #map{height:42vh;}
+  .panel{bottom:0;left:0;width:100%;height:auto;max-height:80vh;border-radius:28px 28px 0 0;
+    padding:16px 20px calc(var(--nav-h) + env(safe-area-inset-bottom, 16px));
+    box-shadow:0 -12px 40px rgba(0,0,0,.1);}
 }
 @media(min-width:900px){
   .panel{top:22px;left:22px;width:385px;height:calc(100vh - 44px);max-height:860px;
@@ -95,6 +111,7 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 /* ride list */
 .ride-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;
   padding-right:2px;margin-bottom:12px;}
+@media(max-width:899px){ .ride-list{max-height:36vh;} } /* Ensure scrolling on mobile */
 .ride-list::-webkit-scrollbar{display:none;}
 .rcard{display:flex;align-items:center;justify-content:space-between;padding:12px 13px;
   border-radius:15px;border:2px solid var(--border);cursor:pointer;
@@ -114,7 +131,7 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
   margin-top:4px;display:inline-block;}
 
 /* confirm btn */
-.cbtn{width:100%;padding:15px;border:none;border-radius:13px;flex-shrink:0;
+.cbtn{width:100%;padding:16px;border:none;border-radius:14px;flex-shrink:0;
   background:linear-gradient(130deg,var(--blue2),var(--blue));color:#fff;
   font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.02em;
   font-family:'DM Sans',sans-serif;box-shadow:0 8px 22px var(--glow);
@@ -122,10 +139,10 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 .cbtn:active{transform:scale(.98);}
 
 /* bottom nav */
-.bnav{position:fixed;bottom:0;width:100%;height:var(--nav-h);
+.bnav{position:fixed;bottom:0;width:100%;height:calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
   background:rgba(255,255,255,.96);backdrop-filter:blur(16px);
   border-top:1px solid var(--border);display:flex;justify-content:space-around;
-  align-items:center;padding-bottom:10px;z-index:50;}
+  align-items:flex-start;padding-top:10px;z-index:50;}
 @media(min-width:900px){.bnav{display:none;}}
 .bni{display:flex;flex-direction:column;align-items:center;gap:4px;
   color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;
@@ -137,7 +154,7 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 /* full pages */
 .fpage{position:absolute;inset:0;z-index:20;background:var(--bg);
   display:none;flex-direction:column;overflow-y:auto;
-  padding:28px 18px calc(var(--nav-h)+18px);}
+  padding:28px 20px calc(var(--nav-h) + env(safe-area-inset-bottom, 20px));}
 @media(min-width:900px){.fpage{padding:32px 36px 32px;}}
 .fpage.show{display:flex;}
 .ph{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:22px;letter-spacing:-.4px;}
@@ -167,7 +184,7 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
   margin-bottom:16px;letter-spacing:-.5px;}
 .wbtns{display:flex;gap:10px;position:relative;z-index:1;}
 .wbtn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);
-  color:#fff;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:600;
+  color:#fff;border-radius:10px;padding:10px 18px;font-size:13px;font-weight:600;
   cursor:pointer;font-family:'DM Sans',sans-serif;}
 .txi{display:flex;justify-content:space-between;align-items:center;
   padding:13px 0;border-bottom:1px solid var(--border);}
@@ -223,9 +240,9 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
   display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
 @media(min-width:900px){.mbg{align-items:center;}}
 .mbg.show{display:flex;}
-.modal{background:#fff;border-radius:26px 26px 0 0;padding:26px 24px 34px;
+.modal{background:#fff;border-radius:26px 26px 0 0;padding:26px 24px calc(34px + env(safe-area-inset-bottom, 0px));
   width:100%;max-width:420px;animation:su .28s cubic-bezier(.4,0,.2,1);}
-@media(min-width:900px){.modal{border-radius:22px;}}
+@media(min-width:900px){.modal{border-radius:22px; padding-bottom:34px;}}
 @keyframes su{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}
 .mh{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;margin-bottom:16px;}
 .mr{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);}
@@ -243,7 +260,7 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
   justify-content:center;gap:10px;}
 
 /* toast */
-.toast{position:fixed;bottom:calc(var(--nav-h)+12px);left:50%;
+.toast{position:fixed;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom, 16px) + 12px);left:50%;
   transform:translateX(-50%) translateY(10px);
   background:var(--ink);color:#fff;padding:11px 20px;border-radius:30px;
   font-size:13px;font-weight:600;opacity:0;pointer-events:none;
@@ -263,7 +280,6 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 </head>
 <body>
 
-<!-- AUTH -->
 <div class="auth-overlay" id="authOverlay">
   <div class="auth-card">
     <div class="auth-logo">⚡ VynixRide</div>
@@ -276,7 +292,6 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
   </div>
 </div>
 
-<!-- MODAL -->
 <div class="mbg" id="confirmModal">
   <div class="modal">
     <div class="mh">Confirm Booking</div>
@@ -297,39 +312,37 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
 
 <div class="shell">
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="mainSidebar">
     <div class="logo">
       <div class="logo-mark">VX</div>
-      VynixRide
+      <span class="l-txt">VynixRide</span>
     </div>
     <div class="nl act" data-tab="ride" onclick="switchTab('ride')">
-      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-      Book a Ride
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      <span class="n-txt">Book a Ride</span>
     </div>
     <div class="nl" data-tab="trips" onclick="switchTab('trips')">
-      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      My Trips
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span class="n-txt">My Trips</span>
     </div>
     <div class="nl" data-tab="wallet" onclick="switchTab('wallet')">
-      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="16" cy="15" r="1" fill="currentColor"/></svg>
-      Wallet
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="16" cy="15" r="1" fill="currentColor"/></svg>
+      <span class="n-txt">Wallet</span>
     </div>
     <div class="nav-spacer"></div>
     <div class="nl" data-tab="account" onclick="switchTab('account')">
-      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Account
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="n-txt">Account</span>
     </div>
     <div class="user-mini" onclick="switchTab('account')">
       <div class="av" id="sbAv">?</div>
-      <div>
-        <div style="font-size:13px;font-weight:600" id="sbName">Guest</div>
-        <div style="font-size:11px;color:var(--muted)" id="sbEmail">Not signed in</div>
+      <div class="user-txt">
+        <div style="font-size:14px;font-weight:700" id="sbName">Guest</div>
+        <div style="font-size:12px;color:var(--muted)" id="sbEmail">Not signed in</div>
       </div>
     </div>
   </aside>
 
-  <!-- RIDE TAB -->
   <div class="map-wrap" id="tab-ride">
     <div id="map"></div>
     <div class="panel" id="bookPanel">
@@ -349,13 +362,11 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
     </div>
   </div>
 
-  <!-- TRIPS -->
   <div class="fpage" id="tab-trips">
     <div class="ph">My Trips</div>
     <div id="tripsList"></div>
   </div>
 
-  <!-- WALLET -->
   <div class="fpage" id="tab-wallet">
     <div class="ph">Wallet</div>
     <div class="w-hero">
@@ -367,7 +378,6 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
     <div id="txList"></div>
   </div>
 
-  <!-- ACCOUNT -->
   <div class="fpage" id="tab-account">
     <div class="ph">Account</div>
     <div class="prof-banner">
@@ -410,7 +420,6 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
     </div>
   </div>
 
-  <!-- BOTTOM NAV -->
   <nav class="bnav">
     <div class="bni act" id="bn-ride" onclick="switchTab('ride')">
       <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
@@ -431,7 +440,6 @@ html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;color:var
   </nav>
 </div>
 
-<!-- FIREBASE -->
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import{getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut as fbOut}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -518,12 +526,16 @@ const oMk=new mapboxgl.Marker({element:oEl,anchor:'center'}).setLngLat([DLNG,DLA
 let dMk=null,wULng=DLNG,wULat=DLAT,destName='';
 
 // Geolocation
+function getMobilePadding() {
+  return window.innerWidth < 900 ? window.innerHeight * 0.45 : 55;
+}
+
 if(navigator.geolocation){
   navigator.geolocation.getCurrentPosition(pos=>{
     const{latitude:la,longitude:lo}=pos.coords;
     wULng=lo; wULat=la;
     oMk.setLngLat([lo,la]);
-    map.flyTo({center:[lo,la],zoom:14,speed:.85});
+    map.flyTo({center:[lo,la],zoom:14,speed:.85, padding:{bottom: getMobilePadding()}});
     fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lo},${la}.json?access_token=${TK}&types=place,neighborhood,address&limit=1`)
       .then(r=>r.json()).then(d=>{
         const lbl=d.features?.[0]?.place_name||`${la.toFixed(4)},${lo.toFixed(4)}`;
@@ -572,8 +584,9 @@ geocoder.on('result',e=>{
   if(dMk)dMk.remove();
   const de=document.createElement('div'); de.className='dmarker';
   dMk=new mapboxgl.Marker({element:de,anchor:'center'}).setLngLat([lng,lat]).addTo(map);
+  
   map.fitBounds([[Math.min(wULng,lng)-.008,Math.min(wULat,lat)-.008],[Math.max(wULng,lng)+.008,Math.max(wULat,lat)+.008]],
-    {padding:{top:55,bottom:320,left:55,right:55},duration:850,essential:true});
+    {padding:{top:55,bottom:getMobilePadding(),left:55,right:55},duration:850,essential:true});
   drawRoute([wULng,wULat],[lng,lat]);
   const r=window._rides.find(x=>x.id===window._selId);
   document.getElementById('confirmBtn').textContent=`Confirm ${r.type}`;
@@ -583,6 +596,7 @@ geocoder.on('clear',()=>{
   clearRoute(); destName=''; window._destName='';
   document.getElementById('confirmBtn').textContent='Search for a destination';
   window._distKm=0; renderRides();
+  map.flyTo({center:[wULng,wULat],zoom:14, padding:{bottom: getMobilePadding()}});
 });
 
 // Rides
@@ -669,6 +683,12 @@ window.showToast=function(msg){
   t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3000);
 };
+
+// Handle seamless Mapbox resizing when sidebar expands/collapses via flexbox
+const mapWrap = document.getElementById('tab-ride');
+if(window.ResizeObserver) {
+  new ResizeObserver(() => { if(map) map.resize(); }).observe(mapWrap);
+}
 
 renderRides();
 document.getElementById('tab-ride').style.display='block';
